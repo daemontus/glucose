@@ -15,19 +15,19 @@ class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
     }
 
     fun testLogMessage() {
-        LogV { "This is a verbose message" }
-        LogD { "This is a debug message" }
-        LogI { "This is an info message" }
-        LogW { "This is a warning message" }
-        LogE { "This is an error message" }
+        logV { "This is a verbose message" }
+        logD { "This is a debug message" }
+        logI { "This is an info message" }
+        logW { "This is a warning message" }
+        logE { "This is an error message" }
     }
 
     fun testLogThrowable() {
         val e = IllegalArgumentException("Some problem")
-        LogV(e) { "This is a verbose message with a throwable" }
-        LogD(e) { "This is a debug message with a throwable" }
-        LogI(e) { "This is an info message with a throwable" }
-        LogW(e) { "This is a warning message with a throwable" }
-        LogE(e) { "This is an error message with a throwable" }
+        logV(e) { "This is a verbose message with a throwable" }
+        logD(e) { "This is a debug message with a throwable" }
+        logI(e) { "This is an info message with a throwable" }
+        logW(e) { "This is a warning message with a throwable" }
+        logE(e) { "This is an error message with a throwable" }
     }
 }
