@@ -8,7 +8,7 @@ import android.graphics.Color
 
 object MaterialColor {
 
-    private interface ColorPalette {
+    interface ColorPalette {
 
         val colorPalette: List<Int>
 
@@ -43,7 +43,7 @@ object MaterialColor {
             get() = colorPalette[9]
     }
 
-    private interface AccentPalette {
+    interface AccentPalette {
 
         val accentPalette: List<Int>
 
@@ -73,11 +73,11 @@ object MaterialColor {
     }
 
     object Pink : ColorPalette, AccentPalette {
-        override val accentPalette: List<Int> = listOf(
+        override val colorPalette: List<Int> = listOf(
                 "#FCE4EC", "#F8BBD0", "#F48FB1", "#F06292", "#EC407A",
                 "#E91E63", "#D81B60", "#C2185B", "#AD1457", "#880E4F"
         ).map { Color.parseColor(it) }
-        override val colorPalette: List<Int> = listOf(
+        override val accentPalette: List<Int> = listOf(
                 "#FF80AB", "#FF4081", "#F50057", "#C51162"
         ).map { Color.parseColor(it) }
     }
@@ -245,4 +245,14 @@ object MaterialColor {
 
     val Black = Color.BLACK
     val White = Color.WHITE
+
+    val colorPalettes: List<ColorPalette> = listOf(
+            Red, Pink, Purple, DeepPurple, Indigo, Blue, LightBlue, Cyan, Teal, Green,
+            LightGreen, Lime, Yellow, Amber, Orange, DeepOrange, Brown, Grey, BlueGrey
+    )
+
+    val accentPalettes: List<AccentPalette> = listOf(
+            Red, Pink, Purple, DeepPurple, Indigo, Blue, LightBlue, Cyan,
+            Teal, Green, LightGreen, Lime, Yellow, Amber, Orange, DeepOrange
+    )
 }
