@@ -1,8 +1,10 @@
 package com.github.daemontus.glucose.utils.device
 
+import android.annotation.TargetApi
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
+import android.os.Build
 
 object Network {
 
@@ -19,7 +21,22 @@ object Network {
      * @return True if device is connected to network that is not metered (not paid by amount of transported data).
      */
     fun canDownloadLargeFiles(context: Context): Boolean {
+        if (Device.OS.atLeastJellyBean()) {
+            return canDownloadLargeFilesNew(context)
+        } else {
+            return canDownloadLargeFilesLegacy(context)
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+    private fun canDownloadLargeFilesNew(context: Context): Boolean {
         return !(context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).isActiveNetworkMetered
+    }
+
+    private fun canDownloadLargeFilesLegacy(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetworkInfo = connectivityManager.activeNetworkInfo
+        return activeNetworkInfo.type == ConnectivityManager.TYPE_WIFI || activeNetworkInfo.type == ConnectivityManager.TYPE_ETHERNET
     }
 
     /**

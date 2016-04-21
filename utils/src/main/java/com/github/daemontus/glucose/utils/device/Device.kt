@@ -1,12 +1,12 @@
 package com.github.daemontus.glucose.utils.device
 
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.view.inputmethod.InputMethodManager
 import java.io.File
 import java.util.regex.Pattern
@@ -26,18 +26,29 @@ object Device {
     fun hasNavigationBar(context: Context): Boolean {
         //on 5.0 and 5.1, the "hasBackKey" technique no longer works (6.0 is fine, but, WTF?!)
         if (Device.OS.atLeastJellyBeanMR1()) {
-            val windowManager = context.getSystemService(Activity.WINDOW_SERVICE) as WindowManager
-            val d = windowManager.defaultDisplay
-
-            val realDisplayMetrics = DisplayMetrics()
-            d.getRealMetrics(realDisplayMetrics)
-
-            val displayMetrics = DisplayMetrics()
-            d.getMetrics(displayMetrics)
-
-            return realDisplayMetrics.heightPixels - displayMetrics.heightPixels > 0
+            return hasNavigationBarCurrent(context)
         } else
-            return false
+            return hasNavigationBarLegacy(context)
+    }
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+    private fun hasNavigationBarCurrent(context: Context): Boolean {
+        val windowManager = context.getSystemService(Activity.WINDOW_SERVICE) as WindowManager
+        val d = windowManager.defaultDisplay
+
+        val realDisplayMetrics = DisplayMetrics()
+        d.getRealMetrics(realDisplayMetrics)
+
+        val displayMetrics = DisplayMetrics()
+        d.getMetrics(displayMetrics)
+
+        return realDisplayMetrics.heightPixels - displayMetrics.heightPixels > 0
+    }
+
+    private fun hasNavigationBarLegacy(context: Context): Boolean {
+        val hasMenuKey = ViewConfiguration.get(context).hasPermanentMenuKey();
+        val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+        return !hasMenuKey && !hasBackKey
     }
 
     /**
