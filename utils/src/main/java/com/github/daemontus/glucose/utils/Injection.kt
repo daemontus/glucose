@@ -8,11 +8,11 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 @Suppress("UNCHECKED_CAST")
-class InjectibleFragment() : Fragment() {
+open class InjectableFragment() : Fragment() {
 
     private val propertyMap = HashMap<Int, ViewProperty<*>>()
 
-    protected fun <T: View> bindView(id: Int): ReadOnlyProperty<InjectibleFragment, T> = ViewProperty(id)
+    protected fun <T: View> bindView(id: Int): ReadOnlyProperty<InjectableFragment, T> = ViewProperty(id)
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -24,16 +24,16 @@ class InjectibleFragment() : Fragment() {
     @Suppress("UNCHECKED_CAST")
     private inner class ViewProperty<V: View>(
             private val id: Int
-    ) : ReadOnlyProperty<InjectibleFragment, V> {
+    ) : ReadOnlyProperty<InjectableFragment, V> {
 
         var view: V? = null
 
         init {
             propertyMap[id] = this
-            this.view = this@InjectibleFragment.view?.findViewById(id) as V?
+            this.view = this@InjectableFragment.view?.findViewById(id) as V?
         }
 
-        override fun getValue(thisRef: InjectibleFragment, property: KProperty<*>): V = view!!
+        override fun getValue(thisRef: InjectableFragment, property: KProperty<*>): V = view!!
 
     }
 }
