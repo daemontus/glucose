@@ -1,0 +1,50 @@
+dependencies:
+
+Component -> activity
+UIComponent -> activity, view
+UIGroupComponent -> activity, view_group
+
+
+Blueprint -> view, parent_layout, component
+GroupBlueprint -> view_group, parent_layout, child_layout, component
+
+
+ComponentRoot (I) 
+ - Provides a root "context" for the component tree. 
+ - Provides a "priviledged thread" handler that should be used to modify view hierarchy and component tree. (Operations on detached components can run in background)
+Contract:
+ - correctly create and initialize the component tree
+ - preserve the state of the tree in case of restart (if possible)
+ - preserve the permanent state using some form of non-volatile storage
+
+Component (C) -> ComponentRoot, FinalType
+ - A single purpose part of the application. Part of a component tree planted in a component root.
+ - We distinguid between two types of components. Generic and Concrete.
+ - Generic component doesn't have the final type set and therefore can't be instantiated (inifnite recursion). Use generic components to represent reusable parts of your app.
+ - Concrete component has a final type, therefore it can be instantiated but it can't be overriden with new type. 
+ - A component can have arbitrary number of child components which have their state preserved automatically by the component. However, they are not automatically recreated from the initial state. However, you can ensure that their state will be preserved by providing them with a key.
+Lifecycle: 
+ - Constructor
+ 	- component is created with reference to the component root, but it is not yet attached to the main component tree. Here you should initialise all state independent properties.
+ - onAttach(state)
+ 	- component has been attached to the component tree and is ready to become "active". Here you should initialise all state related stuff. 
+ - onDetach
+ 	- after this call returns, component will be detached from the component tree. Clean up all your mess and pack up.
+ - onDestroy
+ 	- "destructor" - after a call to onDestory, component is considered to be detached from it's root and will no longer be used.
+ - saveState
+ 	- can be called at any time during the lifetime (not after onDestroy) and should return a bundle containing the whole state of this component (How to handle view state is described later in UIComponent)
+ 
+UIComponent (C) -> View, ComponentRoot, FinalType
+ - A single purpose part of the application that is connected to a part of the view tree. 
+ - UIComponent is tightly bound to it's view, like a view holder. However, it can be "redrawn" with new data when it's reattached.
+ - Also can be generic or concrete and have child componentes.
+ - The component 
+ Child UIComponents
+ - Unless using some blueprint magic or other yet unforseen features, each component must either a) inflate the view also for it's children and pass them a direct reference or b) Let the children inflate their own views and then attach these views to it's view hierarchy
+ Lifecycle:
+ - Two additional methods:
+ - beforeShow
+ 	- called right before the component becomes visible (it must be already attached)
+ - afterHide
+ 	- called right after component became invisible
