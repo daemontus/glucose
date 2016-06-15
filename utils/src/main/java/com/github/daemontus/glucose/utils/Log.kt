@@ -1,7 +1,12 @@
 package com.github.daemontus.glucose.utils
 
 import android.util.Log
+import java.util.*
 
+/**
+ * We introduce extra LogLevel class because Android Log level system is a little richer and not
+ * exactly type safe.
+ */
 enum class LogLevel(
         val androidLogLevel: Int
 ) : Comparable<LogLevel> {
@@ -9,59 +14,96 @@ enum class LogLevel(
 }
 
 interface Logger {
-    fun logMessage(level: LogLevel, loggable: () -> String)
-    fun logThrowable(level: LogLevel, e: Throwable, loggable: () -> String)
+    /**
+     * Log some data on specified level, if this level is accepted. If not, ignore.
+     */
+    fun log(level: LogLevel, message: String?, throwable: Throwable?)
+
+    /**
+     * True if given log level is accepted.
+     */
+    fun canLog(level: LogLevel): Boolean
 }
 
-var debugLogger: Logger? = AndroidConsoleLogger()
-var productionLogger: Logger? = null
+object Log {
 
-fun logD(loggable: () -> String) {
-    debugLogger?.logMessage(LogLevel.DEBUG, loggable)
-    productionLogger?.logMessage(LogLevel.DEBUG, loggable)
-}
+    val loggers = ArrayList<Logger>()
 
-fun logV(loggable: () -> String) {
-    debugLogger?.logMessage(LogLevel.VERBOSE, loggable)
-    productionLogger?.logMessage(LogLevel.VERBOSE, loggable)
-}
+    //Note: Make sure log is called with the same stack depth so that the line can be easily determined
+    //Also there is currently a problem with inline functions, since they have bad line numbers.
+    //Another problem is default arguments, these also throw off the stack, so avoid them :)
 
-fun logW(loggable: () -> String) {
-    debugLogger?.logMessage(LogLevel.WARNING, loggable)
-    productionLogger?.logMessage(LogLevel.WARNING, loggable)
-}
+    inline fun v(loggable: () -> String) {
+        log(LogLevel.VERBOSE, unwrap(LogLevel.VERBOSE, loggable))
+    }
 
-fun logI(loggable: () -> String) {
-    debugLogger?.logMessage(LogLevel.INFO, loggable)
-    productionLogger?.logMessage(LogLevel.INFO, loggable)
-}
+    fun v(message: String?) {
+        log(LogLevel.VERBOSE, message, null)
+    }
 
-fun logE(loggable: () -> String) {
-    debugLogger?.logMessage(LogLevel.ERROR, loggable)
-    productionLogger?.logMessage(LogLevel.ERROR, loggable)
-}
+    fun v(message: String?, throwable: Throwable?) {
+        log(LogLevel.VERBOSE, message, throwable)
+    }
 
-fun logD(e: Throwable, loggable: () -> String) {
-    debugLogger?.logThrowable(LogLevel.DEBUG, e, loggable)
-    productionLogger?.logThrowable(LogLevel.DEBUG, e, loggable)
-}
+    inline fun d(loggable: () -> String) {
+        log(LogLevel.DEBUG, unwrap(LogLevel.DEBUG, loggable))
+    }
 
-fun logV(e: Throwable, loggable: () -> String) {
-    debugLogger?.logThrowable(LogLevel.VERBOSE, e, loggable)
-    productionLogger?.logThrowable(LogLevel.VERBOSE, e, loggable)
-}
+    fun d(message: String?) {
+        log(LogLevel.DEBUG, message, null)
+    }
 
-fun logW(e: Throwable, loggable: () -> String) {
-    debugLogger?.logThrowable(LogLevel.WARNING, e, loggable)
-    productionLogger?.logThrowable(LogLevel.WARNING, e, loggable)
-}
+    fun d(message: String?, throwable: Throwable?) {
+        log(LogLevel.DEBUG, message, throwable)
+    }
 
-fun logI(e: Throwable, loggable: () -> String) {
-    debugLogger?.logThrowable(LogLevel.INFO, e, loggable)
-    productionLogger?.logThrowable(LogLevel.INFO, e, loggable)
-}
+    inline fun i(loggable: () -> String) {
+        log(LogLevel.INFO, unwrap(LogLevel.INFO, loggable))
+    }
 
-fun logE(e: Throwable, loggable: () -> String) {
-    debugLogger?.logThrowable(LogLevel.ERROR, e, loggable)
-    productionLogger?.logThrowable(LogLevel.ERROR, e, loggable)
+    fun i(message: String?) {
+        log(LogLevel.INFO, message, null)
+    }
+
+    fun i(message: String?, throwable: Throwable?) {
+        log(LogLevel.INFO, message, throwable)
+    }
+
+    inline fun w(loggable: () -> String) {
+        log(LogLevel.WARNING, unwrap(LogLevel.WARNING, loggable))
+    }
+
+    fun w(message: String?) {
+        log(LogLevel.WARNING, message, null)
+    }
+
+    fun w(message: String?, throwable: Throwable?) {
+        log(LogLevel.WARNING, message, throwable)
+    }
+
+    inline fun e(loggable: () -> String) {
+        log(LogLevel.ERROR, unwrap(LogLevel.ERROR, loggable))
+    }
+
+    fun e(message: String?) {
+        log(LogLevel.ERROR, message, null)
+    }
+
+    fun e(message: String?, throwable: Throwable?) {
+        log(LogLevel.ERROR, message, throwable)
+    }
+
+    fun log(level: LogLevel, message: String? = null, throwable: Throwable? = null) {
+        loggers.forEach {
+            it.log(level, message, throwable)
+        }
+    }
+
+    inline fun unwrap(level: LogLevel, loggable: () -> String): String? {
+        return if (loggers.any { it.canLog(level) }) {
+            loggable()
+        } else {
+            null
+        }
+    }
 }

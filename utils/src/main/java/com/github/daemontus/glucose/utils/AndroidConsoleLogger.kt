@@ -5,38 +5,38 @@ import android.util.Log
 class AndroidConsoleLogger(
         private val printTraceInfo: Boolean = true,
         private val minimalLogLevel: LogLevel = LogLevel.VERBOSE,
-        private val stackTraceDepth: Int = 5
+        private val stackTraceDepth: Int = 6
 ): Logger {
 
-    override fun logMessage(level: LogLevel, loggable: () -> String) {
-        if (level >= minimalLogLevel) {
-            val message = if (printTraceInfo) {
-                "${getLineNumber()} | ${loggable()}"
-            } else loggable()
-            when (level) {
-                LogLevel.VERBOSE -> Log.v(getTag(), message)
-                LogLevel.DEBUG -> Log.d(getTag(), message)
-                LogLevel.INFO -> Log.i(getTag(), message)
-                LogLevel.WARNING -> Log.w(getTag(), message)
-                LogLevel.ERROR -> Log.e(getTag(), message)
+    override fun log(level: LogLevel, message: String?, throwable: Throwable?) {
+        if (canLog(level)) {
+            val tag = getTag()
+            val actualMessage = when {
+                printTraceInfo && message != null -> "${getLineNumber()} | $message"
+                printTraceInfo && message == null -> "${getLineNumber()}"
+                else -> message ?: ""
+            }
+            if (throwable != null) {
+                when (level) {
+                    LogLevel.VERBOSE -> Log.v(tag, actualMessage, throwable)
+                    LogLevel.DEBUG -> Log.d(tag, actualMessage, throwable)
+                    LogLevel.INFO -> Log.i(tag, actualMessage, throwable)
+                    LogLevel.WARNING -> Log.w(tag, actualMessage, throwable)
+                    LogLevel.ERROR -> Log.e(tag, actualMessage, throwable)
+                }
+            } else {
+                when (level) {
+                    LogLevel.VERBOSE -> Log.v(tag, actualMessage)
+                    LogLevel.DEBUG -> Log.d(tag, actualMessage)
+                    LogLevel.INFO -> Log.i(tag, actualMessage)
+                    LogLevel.WARNING -> Log.w(tag, actualMessage)
+                    LogLevel.ERROR -> Log.e(tag, actualMessage)
+                }
             }
         }
     }
 
-    override fun logThrowable(level: LogLevel, e: Throwable, loggable: () -> String) {
-        if (level >= minimalLogLevel) {
-            val message = if (printTraceInfo) {
-                "${getLineNumber()} | ${loggable()}"
-            } else loggable()
-            when (level) {
-                LogLevel.VERBOSE -> Log.v(getTag(), message, e)
-                LogLevel.DEBUG -> Log.d(getTag(), message, e)
-                LogLevel.INFO -> Log.i(getTag(), message, e)
-                LogLevel.WARNING -> Log.w(getTag(), message, e)
-                LogLevel.ERROR -> Log.e(getTag(), message, e)
-            }
-        }
-    }
+    override fun canLog(level: LogLevel): Boolean = level >= minimalLogLevel
 
     private fun getTag(): String {
         val element = Thread.currentThread().stackTrace[stackTraceDepth]
