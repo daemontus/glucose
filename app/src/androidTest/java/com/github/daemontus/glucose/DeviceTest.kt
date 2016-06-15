@@ -1,10 +1,12 @@
-package com.github.daemontus.glucose.utils
+package com.github.daemontus.glucose
 
 import android.app.Application
 import android.test.ApplicationTestCase
+import com.github.daemontus.glucose.utils.AndroidConsoleLogger
+import com.github.daemontus.glucose.utils.Log
 import com.github.daemontus.glucose.utils.device.Device
 
-class DeviceInfoTest : ApplicationTestCase<Application>(Application::class.java) {
+class DeviceTest : ApplicationTestCase<Application>(Application::class.java) {
 
     companion object {
         init {

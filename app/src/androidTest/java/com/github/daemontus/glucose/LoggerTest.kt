@@ -1,7 +1,10 @@
-package com.github.daemontus.glucose.utils
+package com.github.daemontus.glucose
 
 import android.app.Application
 import android.test.ApplicationTestCase
+import com.github.daemontus.glucose.utils.AndroidConsoleLogger
+import com.github.daemontus.glucose.utils.Log
+import com.github.daemontus.glucose.utils.LogLevel
 
 class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
 

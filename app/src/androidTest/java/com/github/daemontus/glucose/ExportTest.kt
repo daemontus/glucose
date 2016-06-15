@@ -1,7 +1,8 @@
-package com.github.daemontus.glucose.utils.device
+package com.github.daemontus.glucose
 
 import android.app.Application
 import android.test.ApplicationTestCase
+import com.github.daemontus.glucose.utils.device.Export
 
 class ExportTest : ApplicationTestCase<Application>(Application::class.java) {
 
