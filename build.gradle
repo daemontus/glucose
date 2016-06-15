@@ -5,7 +5,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.0'
+        classpath 'com.android.tools.build:gradle:2.1.2'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
@@ -24,4 +24,10 @@ task clean(type: Delete) {
 subprojects {
     group = 'com.github.daemontus'
     version = '0.0.4'
+    ext.version_code = 4
+    ext.compile_sdk = 23
+    ext.target_sdk = 23
+    ext.build_tools = '23.0.2'
+    ext.kotlin_version = '1.0.2-1'
+    ext.support_library = '23.4.0'
 }
