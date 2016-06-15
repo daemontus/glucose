@@ -6,8 +6,10 @@ import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import android.util.DisplayMetrics
-import android.view.*
-import android.view.inputmethod.InputMethodManager
+import android.view.KeyCharacterMap
+import android.view.KeyEvent
+import android.view.ViewConfiguration
+import android.view.WindowManager
 import java.io.File
 import java.util.regex.Pattern
 

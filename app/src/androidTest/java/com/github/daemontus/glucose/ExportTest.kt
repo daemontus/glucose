@@ -1,29 +1,45 @@
 package com.github.daemontus.glucose
 
-import android.app.Application
-import android.test.ApplicationTestCase
+import android.support.test.InstrumentationRegistry
+import android.support.test.runner.AndroidJUnit4
+import android.test.ActivityInstrumentationTestCase2
 import com.github.daemontus.glucose.utils.device.Export
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Test
+import org.junit.runner.RunWith
 
-class ExportTest : ApplicationTestCase<Application>(Application::class.java) {
+@RunWith(AndroidJUnit4::class)
+class ExportTest : ActivityInstrumentationTestCase2<MainActivity>(MainActivity::class.java) {
 
-    override fun setUp() {
-        super.setUp()
-        createApplication()
+    @Before
+    fun init() {
+        injectInstrumentation(InstrumentationRegistry.getInstrumentation())
     }
 
+    //Only run these tests one by one
+
+    @Ignore
+    @Test
     fun testOpen() {
-        Export.view(application, "http://google.com")
+        Export.view(activity, "http://google.com")
     }
 
+    @Ignore
+    @Test
     fun testSend() {
-        Export.send(application, "Some text")
+        Export.send(activity, "Some text")
     }
 
+    @Ignore
+    @Test
     fun testSendFacebook() {
-        Export.send(application, "Some text", Export.App.Facebook)
+        Export.send(activity, "Some text", Export.App.Facebook)
     }
 
+    @Ignore
+    @Test
     fun testSendTwitter() {
-        Export.send(application, "Some text", Export.App.Twitter)
+        Export.send(activity, "Some text", Export.App.Twitter)
     }
 }

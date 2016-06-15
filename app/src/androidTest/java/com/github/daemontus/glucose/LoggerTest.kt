@@ -1,12 +1,15 @@
 package com.github.daemontus.glucose
 
-import android.app.Application
-import android.test.ApplicationTestCase
+import android.support.test.runner.AndroidJUnit4
+import android.test.ActivityInstrumentationTestCase2
 import com.github.daemontus.glucose.utils.AndroidConsoleLogger
 import com.github.daemontus.glucose.utils.Log
 import com.github.daemontus.glucose.utils.LogLevel
+import org.junit.Test
+import org.junit.runner.RunWith
 
-class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
+@RunWith(AndroidJUnit4::class)
+class LoggerTest : ActivityInstrumentationTestCase2<MainActivity>(MainActivity::class.java) {
 
     companion object {
         init {
@@ -14,6 +17,7 @@ class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
         }
     }
 
+    @Test
     fun testLogLevels() {
         assertEquals(android.util.Log.DEBUG, LogLevel.DEBUG.androidLogLevel)
         assertEquals(android.util.Log.INFO, LogLevel.INFO.androidLogLevel)
@@ -22,6 +26,7 @@ class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
         assertEquals(android.util.Log.VERBOSE, LogLevel.VERBOSE.androidLogLevel)
     }
 
+    @Test
     fun testLazyLogMessage() {
         Log.v { "This is a lazy verbose message" }
         Log.d { "This is a lazy debug message" }
@@ -30,6 +35,7 @@ class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
         Log.e { "This is a lazy error message" }
     }
 
+    @Test
     fun testLogMessage() {
         Log.v("This is a lazy verbose message")
         Log.d("This is a lazy debug message")
@@ -38,6 +44,7 @@ class LoggerTest : ApplicationTestCase<Application>(Application::class.java) {
         Log.e("This is a lazy error message")
     }
 
+    @Test
     fun testLogThrowable() {
         val e = IllegalArgumentException("Some problem")
         Log.v("This is a verbose message with a throwable", e)

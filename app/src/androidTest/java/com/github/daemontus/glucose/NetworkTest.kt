@@ -1,11 +1,16 @@
 package com.github.daemontus.glucose
 
-import android.app.Application
-import android.test.ApplicationTestCase
+import android.support.test.InstrumentationRegistry
+import android.support.test.runner.AndroidJUnit4
+import android.test.ActivityInstrumentationTestCase2
 import com.github.daemontus.glucose.utils.Log
 import com.github.daemontus.glucose.utils.device.Network
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
 
-class NetworkTest : ApplicationTestCase<Application>(Application::class.java) {
+@RunWith(AndroidJUnit4::class)
+class NetworkTest : ActivityInstrumentationTestCase2<MainActivity>(MainActivity::class.java) {
 
     companion object {
         init {
@@ -13,25 +18,29 @@ class NetworkTest : ApplicationTestCase<Application>(Application::class.java) {
         }
     }
 
-    override fun setUp() {
-        super.setUp()
-        createApplication()
+    @Before
+    fun init() {
+        injectInstrumentation(InstrumentationRegistry.getInstrumentation())
     }
 
+    @Test
     fun testIsConnected() {
-        Log.i("Is connected: ${Network.isConnected(application)}")
+        Log.i("Is connected: ${Network.isConnected(activity)}")
     }
 
+    @Test
     fun testIsWifi() {
-        Log.i("Is on wifi: ${Network.isWifi(application)}")
+        Log.i("Is on wifi: ${Network.isWifi(activity)}")
     }
 
+    @Test
     fun testCanDownloadLargeFiles() {
-        Log.i("Can download large files: ${Network.canDownloadLargeFiles(application)}")
+        Log.i("Can download large files: ${Network.canDownloadLargeFiles(activity)}")
     }
 
+    @Test
     fun testWifiName() {
-        Log.i("Wifi SSID: ${Network.getWifiName(application)}")
+        Log.i("Wifi ID: ${Network.getWifiName(activity)}")
     }
 
 }
