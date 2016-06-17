@@ -7,5 +7,17 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
+    
+    <declare-styleable name="MaterialView_Layout">
+        <attr name="layout_x" format="dimension"/>
+        <attr name="layout_y" format="dimension"/>
+        <attr name="layout_anchor_x" format="dimension"/>
+        <attr name="layout_anchor_y" format="dimension"/>
+        <attr name="layout_shape" format="enum">
+            <enum name="rect" value="0"/>
+            <enum name="rounded_rect" value="1"/>
+            <enum name="oval" value="2"/>
+        </attr>
+    </declare-styleable>
 
 </resources>
