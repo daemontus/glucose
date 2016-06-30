@@ -1,7 +1,6 @@
 package com.github.daemontus.glucose.utils
 
 import android.util.Log
-import java.util.*
 
 /**
  * We introduce extra LogLevel class because Android Log level system is a little richer and not
@@ -27,7 +26,7 @@ interface Logger {
 
 object Log {
 
-    val loggers = ArrayList<Logger>()
+    val loggers = arrayListOf(AndroidConsoleLogger())
 
     //Note: Make sure log is called with the same stack depth so that the line can be easily determined
     //Also there is currently a problem with inline functions, since they have bad line numbers.
