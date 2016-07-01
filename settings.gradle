@@ -1,1 +1,1 @@
-include ':app', ':utils', ':blueprints'
+include ':app', ':utils'
