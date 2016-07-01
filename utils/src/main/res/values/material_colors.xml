@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources">
+
+    <!--
+        Note: None of these colors are actually used in the library,
+        they are just for future use, hence the ignored lint check
+    -->
 
     <color name="black">#000000</color>
     <color name="white">#ffffff</color>

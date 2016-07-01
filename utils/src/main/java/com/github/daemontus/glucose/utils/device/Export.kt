@@ -34,10 +34,10 @@ object Export {
         return if (appPackage == null) {
             this
         } else {
-            val matches = ctx.packageManager.queryIntentActivities(this, 0);
+            val matches = ctx.packageManager.queryIntentActivities(this, 0)
             for (info in matches) {
                 if (info.activityInfo.packageName.toLowerCase().startsWith(appPackage)) {
-                    this.`package` = info.activityInfo.packageName;
+                    this.`package` = info.activityInfo.packageName
                     break
                 }
             }

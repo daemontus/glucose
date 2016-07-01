@@ -5,7 +5,7 @@ import android.graphics.Color
 /**
  * A set of material colors, ready at your disposal!
  */
-
+@Suppress("unused")
 object MaterialColor {
 
     interface ColorPalette {

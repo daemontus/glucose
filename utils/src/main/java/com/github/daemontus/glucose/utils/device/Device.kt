@@ -48,8 +48,8 @@ object Device {
     }
 
     private fun hasNavigationBarLegacy(context: Context): Boolean {
-        val hasMenuKey = ViewConfiguration.get(context).hasPermanentMenuKey();
-        val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+        val hasMenuKey = ViewConfiguration.get(context).hasPermanentMenuKey()
+        val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK)
         return !hasMenuKey && !hasBackKey
     }
 
