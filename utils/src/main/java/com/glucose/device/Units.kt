@@ -22,3 +22,11 @@ object Units {
     }
 
 }
+
+fun Float.dpToPx(ctx: Context): Float = Units.dpToPx(ctx, this)
+
+fun Int.dpToPx(ctx: Context): Int = this.toFloat().dpToPx(ctx).toInt()
+
+fun Float.pxToDp(ctx: Context): Float = Units.pxToDp(ctx, this)
+
+fun Int.pxToDp(ctx: Context): Int = this.toInt().pxToDp(ctx).toInt()
