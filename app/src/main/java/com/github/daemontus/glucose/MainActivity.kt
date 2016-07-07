@@ -6,9 +6,9 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.github.daemontus.glucose.utils.Log
-import com.github.daemontus.glucose.utils.MaterialColor
-import com.github.daemontus.glucose.utils.device.Units
+import com.glucose.Log
+import com.glucose.MaterialColor
+import com.glucose.device.Units
 
 class MainActivity : AppCompatActivity() {
 

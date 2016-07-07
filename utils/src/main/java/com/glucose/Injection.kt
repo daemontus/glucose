@@ -1,4 +1,4 @@
-package glucose
+package com.glucose
 
 import android.app.Activity
 import android.content.Context

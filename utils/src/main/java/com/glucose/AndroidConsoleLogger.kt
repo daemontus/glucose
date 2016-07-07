@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose.utils
+package com.glucose
 
 import android.util.Log
 
@@ -18,19 +18,19 @@ class AndroidConsoleLogger(
             }
             if (throwable != null) {
                 when (level) {
-                    LogLevel.VERBOSE -> Log.v(tag, actualMessage, throwable)
-                    LogLevel.DEBUG -> Log.d(tag, actualMessage, throwable)
-                    LogLevel.INFO -> Log.i(tag, actualMessage, throwable)
-                    LogLevel.WARNING -> Log.w(tag, actualMessage, throwable)
-                    LogLevel.ERROR -> Log.e(tag, actualMessage, throwable)
+                    LogLevel.VERBOSE -> android.util.Log.v(tag, actualMessage, throwable)
+                    LogLevel.DEBUG -> android.util.Log.d(tag, actualMessage, throwable)
+                    LogLevel.INFO -> android.util.Log.i(tag, actualMessage, throwable)
+                    LogLevel.WARNING -> android.util.Log.w(tag, actualMessage, throwable)
+                    LogLevel.ERROR -> android.util.Log.e(tag, actualMessage, throwable)
                 }
             } else {
                 when (level) {
-                    LogLevel.VERBOSE -> Log.v(tag, actualMessage)
-                    LogLevel.DEBUG -> Log.d(tag, actualMessage)
-                    LogLevel.INFO -> Log.i(tag, actualMessage)
-                    LogLevel.WARNING -> Log.w(tag, actualMessage)
-                    LogLevel.ERROR -> Log.e(tag, actualMessage)
+                    LogLevel.VERBOSE -> android.util.Log.v(tag, actualMessage)
+                    LogLevel.DEBUG -> android.util.Log.d(tag, actualMessage)
+                    LogLevel.INFO -> android.util.Log.i(tag, actualMessage)
+                    LogLevel.WARNING -> android.util.Log.w(tag, actualMessage)
+                    LogLevel.ERROR -> android.util.Log.e(tag, actualMessage)
                 }
             }
         }
@@ -40,7 +40,7 @@ class AndroidConsoleLogger(
 
     private fun getTag(): String {
         val element = Thread.currentThread().stackTrace[stackTraceDepth]
-        return element.className.substring(element.className.lastIndexOf(".") + 1)
+        return element.className.substring(element.className.lastIndexOf("") + 1)
     }
 
     private fun getLineNumber(): String {

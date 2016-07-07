@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose.utils.device
+package com.glucose.device
 
 import android.annotation.TargetApi
 import android.app.Activity

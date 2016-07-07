@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose.utils
+package com.glucose
 
 import android.util.Log
 
@@ -9,7 +9,7 @@ import android.util.Log
 enum class LogLevel(
         val androidLogLevel: Int
 ) : Comparable<LogLevel> {
-    VERBOSE(Log.VERBOSE), DEBUG(Log.DEBUG), INFO(Log.INFO), WARNING(Log.WARN), ERROR(Log.ERROR);
+    VERBOSE(android.util.Log.VERBOSE), DEBUG(android.util.Log.DEBUG), INFO(android.util.Log.INFO), WARNING(android.util.Log.WARN), ERROR(android.util.Log.ERROR);
 }
 
 interface Logger {

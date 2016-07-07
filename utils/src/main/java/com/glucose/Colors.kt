@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose.utils
+package com.glucose
 
 import android.graphics.Color
 

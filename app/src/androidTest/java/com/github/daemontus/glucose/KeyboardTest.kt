@@ -3,7 +3,7 @@ package com.github.daemontus.glucose
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import android.test.ActivityInstrumentationTestCase2
-import com.github.daemontus.glucose.utils.device.Keyboard
+import com.glucose.device.Keyboard
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

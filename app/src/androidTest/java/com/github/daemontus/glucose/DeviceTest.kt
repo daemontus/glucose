@@ -3,9 +3,9 @@ package com.github.daemontus.glucose
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import android.test.ActivityInstrumentationTestCase2
-import com.github.daemontus.glucose.utils.AndroidConsoleLogger
-import com.github.daemontus.glucose.utils.Log
-import com.github.daemontus.glucose.utils.device.Device
+import com.glucose.AndroidConsoleLogger
+import com.glucose.Log
+import com.glucose.device.Device
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
