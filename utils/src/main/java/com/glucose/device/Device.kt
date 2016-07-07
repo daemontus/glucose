@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose.utils.device
+package com.glucose.device
 
 import android.annotation.TargetApi
 import android.app.Activity
@@ -27,7 +27,7 @@ object Device {
      */
     fun hasNavigationBar(context: Context): Boolean {
         //on 5.0 and 5.1, the "hasBackKey" technique no longer works (6.0 is fine, but, WTF?!)
-        if (Device.OS.atLeastJellyBeanMR1()) {
+        if (OS.atLeastJellyBeanMR1()) {
             return hasNavigationBarCurrent(context)
         } else
             return hasNavigationBarLegacy(context)

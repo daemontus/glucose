@@ -1,8 +1,8 @@
 package com.github.daemontus.glucose
 
 import android.app.Application
-import com.github.daemontus.glucose.utils.AndroidConsoleLogger
-import com.github.daemontus.glucose.utils.Log
+import com.glucose.AndroidConsoleLogger
+import com.glucose.Log
 
 class App : Application() {
 

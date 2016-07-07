@@ -3,8 +3,9 @@ package com.github.daemontus.glucose
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import android.test.ActivityInstrumentationTestCase2
-import com.github.daemontus.glucose.utils.Log
-import com.github.daemontus.glucose.utils.device.Network
+import com.glucose.Log
+import com.glucose.device.Network
+import com.glucose.AndroidConsoleLogger
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,7 +15,7 @@ class NetworkTest : ActivityInstrumentationTestCase2<MainActivity>(MainActivity:
 
     companion object {
         init {
-            Log.loggers += com.github.daemontus.glucose.utils.AndroidConsoleLogger()
+            Log.loggers += AndroidConsoleLogger()
         }
     }
 
