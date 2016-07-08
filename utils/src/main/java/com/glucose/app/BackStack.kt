@@ -9,6 +9,7 @@ import rx.android.schedulers.AndroidSchedulers
 import java.util.*
 import rx.Observable
 
+//TODO: We need a notification about what is currently on top of the stack
 open class BackStack(
         private val bottom: BackStackEntry, private val container: ViewGroup,
         private val group: PresenterGroup<*>

@@ -20,6 +20,7 @@ fun <T, E> E.asError(): Result<T, E> = Result.Error<T, E>(this)
  * TODO: Should we provide a transition id? Or some other form of identification?
  * TODO: It would be nice to get an error about transitions that were dropped due to being detached
  * TODO: Ensure that someone is not running transitions outside of the execution context.
+ * TODO: Consider adding more info in transition result - so that we know if something was added, moved, etc.
  */
 open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter<Ctx>(view, context) {
 

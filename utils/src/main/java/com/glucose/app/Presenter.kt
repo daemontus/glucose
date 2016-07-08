@@ -30,6 +30,7 @@ import kotlin.reflect.KProperty
  *
  * TODO: Handle configuration changes.
  * TODO: Handle memory notifications.
+ * TODO: Handle onResult calls.
  */
 open class Presenter<out Ctx: PresenterContext>(
         val view: View, private val context: PresenterContext
@@ -70,12 +71,13 @@ open class Presenter<out Ctx: PresenterContext>(
             else return field
         }
 
+    //TODO: Figure out safe semantics for this!
     @Suppress("UNCHECKED_CAST")
     val ctx: Ctx
         get() {
             if (this.isDestroyed)
                 throw IllegalStateException("Accessing state on destroyed presenter.")
-            return context as Ctx
+            return context.activity as Ctx
         }
 
     private fun assertLifecycleChange(from: State, to: State, transition: () -> Unit) {
