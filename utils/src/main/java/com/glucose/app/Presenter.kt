@@ -27,6 +27,9 @@ import kotlin.reflect.KProperty
  *
  *
  * A Presenter that is currently attached has also associated an argument bundle.
+ *
+ * TODO: Handle configuration changes.
+ * TODO: Handle memory notifications.
  */
 open class Presenter<out Ctx: PresenterContext>(
         val view: View, private val context: PresenterContext
@@ -105,56 +108,56 @@ open class Presenter<out Ctx: PresenterContext>(
     internal fun performDestroy()
             = assertLifecycleChange(State.ALIVE, State.DESTROYED) { onDestroy() }
 
-    protected fun onCreate(savedInstanceState: Bundle?) {
+    protected open fun onCreate(savedInstanceState: Bundle?) {
         lifecycleLog("onCreate")
         state = State.ALIVE
         lifecycleEventSubject.onNext(LifecycleEvent.CREATE)
         restoreState(savedInstanceState)
     }
 
-    protected fun onAttach(arguments: Bundle) {
+    protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
         state = State.ATTACHED
         lifecycleEventSubject.onNext(LifecycleEvent.ATTACH)
     }
 
-    protected fun onStart() {
+    protected open fun onStart() {
         lifecycleLog("onStart")
         state = State.STARTED
         lifecycleEventSubject.onNext(LifecycleEvent.START)
     }
 
-    protected fun onResume() {
+    protected open fun onResume() {
         lifecycleLog("onResume")
         state = State.RESUMED
         lifecycleEventSubject.onNext(LifecycleEvent.RESUME)
     }
 
-    fun onBackPressed(): Boolean = false
+    open fun onBackPressed(): Boolean = false
 
-    fun onSaveInstanceState(out: Bundle) {
+    open fun onSaveInstanceState(out: Bundle) {
         saveState(out)
     }
 
-    protected fun onPause() {
+    protected open fun onPause() {
         lifecycleEventSubject.onNext(LifecycleEvent.PAUSE)
         state = State.STARTED
         lifecycleLog("onPause")
     }
 
-    protected fun onStop() {
+    protected open fun onStop() {
         lifecycleEventSubject.onNext(LifecycleEvent.STOP)
         state = State.ATTACHED
         lifecycleLog("onStop")
     }
 
-    protected fun onDetach() {
+    protected open fun onDetach() {
         lifecycleEventSubject.onNext(LifecycleEvent.DETACH)
         state = State.ALIVE
         lifecycleLog("onDetach")
     }
 
-    protected fun onDestroy() {
+    protected open fun onDestroy() {
         lifecycleEventSubject.onNext(LifecycleEvent.DESTROY)
         state = State.DESTROYED
         lifecycleLog("onDestroy")
