@@ -281,4 +281,6 @@ open class Presenter<out Ctx: PresenterContext>(
             = ArgumentDelegate(key, default, { b, k -> b.getParcelable(k) })
 
     //TODO: Make more helper functions! Also consider moving this into extension functions.
+    //TODO: Make the state key depend on property name and not some id
+    //TODO: Get rid of arguments and make them part of the state instead! That way the whole presenter can be serialized!
 }

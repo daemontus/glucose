@@ -4,6 +4,7 @@ import rx.Observable
 import rx.Subscription
 
 //TODO: Add methods like untilDetach(provider), untilStop(), etc...
+//TODO: Add filter shortcuts like lifecycleEvents.nextDetach or lifecycleEvents.onDetach
 
 enum class LifecycleEvent {
     CREATE, ATTACH, START, RESUME, PAUSE, STOP, DETACH, DESTROY

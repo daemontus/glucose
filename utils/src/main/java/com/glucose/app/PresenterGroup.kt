@@ -197,6 +197,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
 
         /**
          * Detach all presenters that satisfy a specific predicate.
+         * TODO: This is not good, if would be much better if this could somehow be an observable
          */
         fun detachAll(predicate: (Presenter<*>) -> Boolean): TransitionResult<List<Presenter<*>>> {
             val victims = children.filter(predicate)
