@@ -116,8 +116,8 @@ open class Presenter<out Ctx: PresenterContext>(
     protected open fun onCreate(savedInstanceState: Bundle?) {
         lifecycleLog("onCreate")
         state = State.ALIVE
-        lifecycleEventSubject.onNext(LifecycleEvent.CREATE)
         restoreState(savedInstanceState)
+        lifecycleEventSubject.onNext(LifecycleEvent.CREATE)
     }
 
     protected open fun onAttach(arguments: Bundle) {

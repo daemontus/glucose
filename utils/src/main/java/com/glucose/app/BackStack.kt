@@ -10,6 +10,7 @@ import java.util.*
 import rx.Observable
 
 //TODO: We need a notification about what is currently on top of the stack
+//TODO: It would be best if we could gently move the presenters somewhere away (pause/stop them)
 open class BackStack(
         private val bottom: BackStackEntry, private val container: ViewGroup,
         private val group: PresenterGroup<*>
@@ -20,7 +21,7 @@ open class BackStack(
     init {
         //PresenterGroup will recursively detach all children when detached.
         //Therefore we have to restore the backStack upon every attachment.
-        val repopulateStack = {
+        /*val repopulateStack = {
             //It has to be a single transition because:
             //a) To guarantee ordering (what if user pushes some buttons?!)
             //b) Back pressure will drop parts of the back stack if it is too big
@@ -40,7 +41,7 @@ open class BackStack(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     repopulateStack()
-                }
+                }*/
     }
 
     override fun onCreate(instanceState: Bundle?) {
@@ -50,6 +51,15 @@ open class BackStack(
 
     override fun onSaveInstanceState(output: Bundle) {
         output.putParcelableArrayList(key, backStack)
+    }
+
+    fun onAttach() {
+        group.enqueueTransition(Observable.from(
+                backStack.map { entry ->
+                    group.newTransition()
+                            .map { it.add(container, entry.clazz, entry.arguments) }
+                }
+        ).onBackpressureBuffer(backStack.size+1L).concatMap { it.toObservable() })
     }
 
     fun push(clazz: Class<out Presenter<*>>, arguments: Bundle = Bundle()) {

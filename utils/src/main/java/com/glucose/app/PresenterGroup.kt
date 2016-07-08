@@ -21,6 +21,9 @@ fun <T, E> E.asError(): Result<T, E> = Result.Error<T, E>(this)
  * TODO: It would be nice to get an error about transitions that were dropped due to being detached
  * TODO: Ensure that someone is not running transitions outside of the execution context.
  * TODO: Consider adding more info in transition result - so that we know if something was added, moved, etc.
+ * TODO: Somehow we have to make sure that if transaction fails but presenter is obtained, it is recycled
+ * TODO: Give option to execute transition immediately instead of waiting for a next slot? (So that we can render something without waiting)
+ * TODO: We have to manually restore view state if the presenter is added after activity is shown.
  */
 open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter<Ctx>(view, context) {
 
