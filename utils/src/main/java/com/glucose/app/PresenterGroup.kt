@@ -40,10 +40,10 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
         transitionSubscription = Observable.concatDelayError(transitionSubject.onBackpressureDrop {
             Log.w("Transaction dropped due to back pressure")
             transitionResultSubject.onNext(IllegalStateException("Transaction dropped due to back pressure").asError())
-        }).subscribe({
+        }).doOnEach(transitionResultSubject).subscribe({
             when (it) {
                 is Result.Ok -> Log.d("Transaction finished successfully: ${it.ok}")
-                is Result.Error -> Log.w("Transaction finished with an error: ${it.error}")
+                is Result.Error -> Log.e("Transaction finished with an error: ${it.error}")
             }
         }, {
             Log.e("Something went horribly wrong in the transaction mechanism!", it)
@@ -92,9 +92,9 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      * It just provides a way of exporting a context that can safely edit the insides of
      * the PresenterGroup.
      */
-    fun newTransition(): Single<out BasicTransition> {
+    fun newTransition(): Single<BasicTransition> {
         transitionLog("New transition")
-        return Single.just(BasicTransition()).doOnSuccess {
+        return Single.just(BasicTransition()).doOnSubscribe {
             transitionLog("Start transition")
         }.observeOn(AndroidSchedulers.mainThread())
     }
@@ -114,7 +114,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
         transitionLog("Commit transition")
         val result = PublishSubject.create<R>()
         val t = transition
-                .doOnSubscribe { transitionLog("End transition") }
+                .doOnNext { transitionLog("End transition") }
                 .map { it.result }
                 .doOnEach(result)
                 .map { it.asOk<Any, Throwable>() }

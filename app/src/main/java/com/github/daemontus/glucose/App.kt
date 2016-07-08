@@ -6,9 +6,4 @@ import com.glucose.Log
 
 class App : Application() {
 
-    companion object {
-        init {
-            Log.loggers += AndroidConsoleLogger()
-        }
-    }
 }

@@ -10,7 +10,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class ExportTest : ActivityInstrumentationTestCase2<MainActivity>(MainActivity::class.java) {
+class ExportTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity::class.java) {
 
     @Before
     fun init() {

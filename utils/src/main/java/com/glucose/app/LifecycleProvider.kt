@@ -3,6 +3,8 @@ package com.glucose.app
 import rx.Observable
 import rx.Subscription
 
+//TODO: Add methods like untilDetach(provider), untilStop(), etc...
+
 enum class LifecycleEvent {
     CREATE, ATTACH, START, RESUME, PAUSE, STOP, DETACH, DESTROY
 }
