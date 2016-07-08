@@ -133,6 +133,12 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
         return enqueueTransition(transition.toObservable()).toSingle()
     }
 
+    /*
+        Helper functions for working with transactions.
+     */
+    fun <R: Any> Observable<TransitionResult<R>>.enqueue(): Observable<R> = enqueueTransition(this)
+    fun <R: Any> Single<TransitionResult<R>>.enqueue(): Single<R> = enqueueTransition(this)
+
     inner open class BasicTransition : Transition() {
 
         /**
