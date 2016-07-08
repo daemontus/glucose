@@ -3,9 +3,9 @@ package com.glucose.app
 import com.github.daemontus.glucose.utils.BuildConfig
 import com.glucose.Log
 
-fun transactionLog(message: String) {
+fun transitionLog(message: String) {
     if (BuildConfig.DEBUG) {
-        Log.d("TRANSACTION: $message")
+        Log.d("TRANSITION: $message")
     }
 }
 

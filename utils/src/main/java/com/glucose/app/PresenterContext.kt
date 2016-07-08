@@ -37,7 +37,7 @@ interface PresenterContext {
      *
      * Note: It is advised to delegate Presenter creation and recycling to PresenterGroups.
      */
-    fun <P: Presenter<*>> obtain(clazz: Class<P>, parent: ViewGroup? = null): P
+    fun <P: Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup? = null): P
 
     /**
      * Return the Presenter to the context for later reuse or destruction.

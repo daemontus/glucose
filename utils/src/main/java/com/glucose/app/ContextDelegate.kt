@@ -24,7 +24,7 @@ open class ContextDelegate(override val activity: Activity) : PresenterContext {
         constructors[clazz] = factory
     }
 
-    override fun <P : Presenter<*>> obtain(clazz: Class<P>, parent: ViewGroup?): P {
+    override fun <P : Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         if (!created) throw IllegalStateException("Cannot request Presenters before onCreate")
         if (destroyed) throw IllegalStateException("Cannot request Presenters after onDestroy")
         val found = freePresenters.find { it.javaClass == clazz }

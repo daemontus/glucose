@@ -16,7 +16,7 @@ class PresenterAppCompatActivity : AppCompatActivity(), PresenterContext {
         contextDelegate.register(clazz, factory)
     }
 
-    override fun <P : Presenter<*>> obtain(clazz: Class<P>, parent: ViewGroup?): P {
+    override fun <P : Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         return contextDelegate.obtain(clazz, parent)
     }
 

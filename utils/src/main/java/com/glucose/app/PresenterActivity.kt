@@ -5,7 +5,7 @@ import android.content.ComponentCallbacks2
 import android.os.Bundle
 import android.view.ViewGroup
 
-class PresenterActivity : Activity(), PresenterContext {
+open class PresenterActivity : Activity(), PresenterContext {
 
     private val contextDelegate = ContextDelegate(this)
 
@@ -15,7 +15,7 @@ class PresenterActivity : Activity(), PresenterContext {
         contextDelegate.register(clazz, factory)
     }
 
-    override fun <P : Presenter<*>> obtain(clazz: Class<P>, parent: ViewGroup?): P {
+    override fun <P : Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         return contextDelegate.obtain(clazz, parent)
     }
 
