@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.FrameLayout
@@ -80,5 +81,9 @@ abstract class RootActivity : PresenterActivity() {
         if (resumed) root.performResume()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        super.onActivityResult(requestCode, resultCode, data)
+        root.performActivityResult(requestCode, resultCode, data)
+    }
 }
 

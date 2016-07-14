@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Parcelable
@@ -44,8 +45,10 @@ import kotlin.reflect.KProperty
  * 5. Context destroys detached presenters that can't change configuration.
  * 6. Context notifies detached presenters about configuration change.
  *
+ * Activity results:
+ * Activity results are propagated only to attached presenters by the root presenter.
+ *
  * TODO: Handle memory notifications.
- * TODO: Handle onResult calls.
  * TODO: We probably don't want the perform* methods to be internal because they might be used by PresenterGroup creators.
  */
 open class Presenter<out Ctx: PresenterContext>(
@@ -132,6 +135,9 @@ open class Presenter<out Ctx: PresenterContext>(
     internal fun performConfigurationChange(newConfig: Configuration)
             = onConfigurationChanged(newConfig)
 
+    internal fun performActivityResult(requestCode: Int, resultCode: Int, data: Intent)
+            = onActivityResult(requestCode, resultCode, data)
+
     protected open fun onCreate(savedInstanceState: Bundle?) {
         lifecycleLog("onCreate")
         state = State.ALIVE
@@ -196,6 +202,10 @@ open class Presenter<out Ctx: PresenterContext>(
     }
 
     open val canChangeConfiguration = false
+
+    protected open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        lifecycleLog("onActivityResult $resultCode for request $requestCode")
+    }
 
     // ============================== State Management =============================================
 

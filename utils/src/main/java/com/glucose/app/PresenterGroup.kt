@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.annotation.IdRes
@@ -101,6 +102,13 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
     }
 
     override val canChangeConfiguration: Boolean = children.fold(true) { a, b -> a && b.canChangeConfiguration }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        super.onActivityResult(requestCode, resultCode, data)
+        children.forEach {
+            it.performActivityResult(requestCode, resultCode, data)
+        }
+    }
 
     /**
      * Create a new transition. The transition is not queued yet and doesn't have to be executed.
