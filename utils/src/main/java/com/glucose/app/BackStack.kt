@@ -5,9 +5,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.view.ViewGroup
 import com.glucose.Log
-import rx.android.schedulers.AndroidSchedulers
-import java.util.*
 import rx.Observable
+import java.util.*
 
 //TODO: We need a notification about what is currently on top of the stack
 //TODO: It would be best if we could gently move the presenters somewhere away (pause/stop them)
@@ -19,6 +18,9 @@ open class BackStack(
     private val backStack = ArrayList<BackStackEntry>()
 
     init {
+        //TODO: Turns out Subject subscriptions are toxic,
+        //so we really want to do the initial setup in attach
+
         //PresenterGroup will recursively detach all children when detached.
         //Therefore we have to restore the backStack upon every attachment.
         /*val repopulateStack = {

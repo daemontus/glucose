@@ -7,7 +7,7 @@ import rx.Subscription
 //TODO: Add filter shortcuts like lifecycleEvents.nextDetach or lifecycleEvents.onDetach
 
 enum class LifecycleEvent {
-    CREATE, ATTACH, START, RESUME, PAUSE, STOP, DETACH, DESTROY
+    CREATE, ATTACH, START, RESUME, PAUSE, STOP, DETACH, DESTROY, CONFIG_CHANGE
 }
 
 interface LifecycleProvider {

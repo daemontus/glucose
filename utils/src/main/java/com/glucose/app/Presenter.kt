@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Parcelable
 import android.support.annotation.IdRes
@@ -28,9 +29,24 @@ import kotlin.reflect.KProperty
  *
  * A Presenter that is currently attached has also associated an argument bundle.
  *
- * TODO: Handle configuration changes.
+ * Configuration changes:
+ * If the Presenter is attached, the parent is responsible for propagating the configuration change
+ * callback in order to ensure that children which shouldn't survive configuration
+ * change are detached.
+ * If the Presenter is detached and cached by the context, it is the responsibility of the context
+ * to either notify it, or destroy it.
+ * So the overall configuration change looks like this:
+ * 1. Presenter tree is notified about config change.
+ * 2. Presenters which can't handle configuration change are detached and recycled.
+ * 3. Configuration change is applied to the attached tree.
+ * 4. Recommended: Attached presenters which didn't survive configuration change are
+ * recreated from state info if the group supports it.
+ * 5. Context destroys detached presenters that can't change configuration.
+ * 6. Context notifies detached presenters about configuration change.
+ *
  * TODO: Handle memory notifications.
  * TODO: Handle onResult calls.
+ * TODO: We probably don't want the perform* methods to be internal because they might be used by PresenterGroup creators.
  */
 open class Presenter<out Ctx: PresenterContext>(
         val view: View, context: PresenterContext
@@ -113,6 +129,9 @@ open class Presenter<out Ctx: PresenterContext>(
     internal fun performDestroy()
             = assertLifecycleChange(State.ALIVE, State.DESTROYED) { onDestroy() }
 
+    internal fun performConfigurationChange(newConfig: Configuration)
+            = onConfigurationChanged(newConfig)
+
     protected open fun onCreate(savedInstanceState: Bundle?) {
         lifecycleLog("onCreate")
         state = State.ALIVE
@@ -167,6 +186,16 @@ open class Presenter<out Ctx: PresenterContext>(
         state = State.DESTROYED
         lifecycleLog("onDestroy")
     }
+
+    protected open fun onConfigurationChanged(newConfig: Configuration) {
+        if (!canChangeConfiguration) {
+            throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
+        }
+        lifecycleLog("onConfigurationChanged")
+        lifecycleEventSubject.onNext(LifecycleEvent.CONFIG_CHANGE)
+    }
+
+    open val canChangeConfiguration = false
 
     // ============================== State Management =============================================
 

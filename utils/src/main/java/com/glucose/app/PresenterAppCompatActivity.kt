@@ -2,6 +2,7 @@ package com.glucose.app
 
 import android.app.Activity
 import android.content.ComponentCallbacks2
+import android.content.res.Configuration
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.ViewGroup
@@ -47,6 +48,11 @@ open class PresenterAppCompatActivity : AppCompatActivity(), PresenterContext {
     override fun onLowMemory() {
         super.onLowMemory()
         contextDelegate.onLowMemory()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        contextDelegate.onConfigurationChange(newConfig)
     }
 
 }

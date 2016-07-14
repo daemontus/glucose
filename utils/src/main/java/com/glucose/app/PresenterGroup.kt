@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.support.annotation.IdRes
 import android.view.View
@@ -24,6 +25,7 @@ fun <T, E> E.asError(): Result<T, E> = Result.Error<T, E>(this)
  * TODO: Somehow we have to make sure that if transaction fails but presenter is obtained, it is recycled
  * TODO: Give option to execute transition immediately instead of waiting for a next slot? (So that we can render something without waiting)
  * TODO: We have to manually restore view state if the presenter is added after activity is shown.
+ * TODO: This group can't handle configuration changes (it will recreate the whole tree) - either fix this or make a better subclass
  */
 open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter<Ctx>(view, context) {
 
@@ -90,6 +92,15 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
         children.clear()
         super.onDetach()
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        children.forEach {
+            it.performConfigurationChange(newConfig)
+        }
+    }
+
+    override val canChangeConfiguration: Boolean = children.fold(true) { a, b -> a && b.canChangeConfiguration }
 
     /**
      * Create a new transition. The transition is not queued yet and doesn't have to be executed.

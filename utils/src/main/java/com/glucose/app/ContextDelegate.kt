@@ -1,6 +1,7 @@
 package com.glucose.app
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup
 import java.util.*
@@ -88,6 +89,14 @@ open class ContextDelegate(override val activity: Activity) : PresenterContext {
         lifecycleLog("Clean up free presenters due to low memory")
         freePresenters.toList().forEach { killPresenter(it) }
         freePresenters.clear()
+    }
+
+    fun onConfigurationChange(newConfig: Configuration) {
+        //kill presenters that can't handle config change
+        freePresenters.filter { !it.canChangeConfiguration }.forEach {
+            killPresenter(it)
+        }
+        freePresenters.forEach { it.performConfigurationChange(newConfig) }
     }
 
 }

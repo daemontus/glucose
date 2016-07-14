@@ -1,5 +1,6 @@
 package com.glucose.app
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.FrameLayout
 import kotlin.properties.Delegates
@@ -13,6 +14,9 @@ abstract class RootActivity : PresenterActivity() {
     private var root: Presenter<*> by Delegates.notNull()
     private var frame: FrameLayout by Delegates.notNull()
 
+    private var started = false
+    private var resumed = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         frame = FrameLayout(this)
@@ -24,11 +28,13 @@ abstract class RootActivity : PresenterActivity() {
 
     override fun onStart() {
         super.onStart()
+        started = true
         root.performStart()
     }
 
     override fun onResume() {
         super.onResume()
+        resumed = true
         root.performResume()
     }
 
@@ -39,11 +45,13 @@ abstract class RootActivity : PresenterActivity() {
     override fun onPause() {
         super.onPause()
         root.performPause()
+        resumed = false
     }
 
     override fun onStop() {
         super.onStop()
         root.performStop()
+        started = false
     }
 
     override fun onDestroy() {
@@ -52,5 +60,25 @@ abstract class RootActivity : PresenterActivity() {
         recycle(root)
         super.onDestroy()
     }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        val keepRoot = root.canChangeConfiguration
+        if (keepRoot) {
+            root.performConfigurationChange(newConfig)
+        } else {
+            if (resumed) root.performPause()
+            if (started) root.performStop()
+            root.performDetach()
+            frame.removeView(root.view)
+            recycle(root)
+        }
+        super.onConfigurationChanged(newConfig)
+        root = obtain(rootPresenter, frame)
+        root.performAttach(rootArguments)
+        frame.addView(root.view)
+        if (started) root.performStart()
+        if (resumed) root.performResume()
+    }
+
 }
 
