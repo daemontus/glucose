@@ -49,6 +49,8 @@ import kotlin.reflect.KProperty
  * Activity results are propagated only to attached presenters by the root presenter.
  *
  * TODO: Handle memory notifications.
+ * TODO: Handle onRestart notifications.
+ * TODO: Handle onRequestPermissionResult.
  * TODO: We probably don't want the perform* methods to be internal because they might be used by PresenterGroup creators.
  */
 open class Presenter<out Ctx: PresenterContext>(

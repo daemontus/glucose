@@ -13,6 +13,11 @@ enum class LifecycleEvent {
 interface LifecycleProvider {
     /**
      * Provides notifications about lifecycle changes.
+     * Note that there is no guarantee about delay between
+     * the lifecycle event and the event delivery.
+     *
+     * Hence one can't assume that after receiving a START notification,
+     * the provider is actually started - it may have been paused already.
      */
     val lifecycleEvents: Observable<LifecycleEvent>
 
