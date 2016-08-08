@@ -15,10 +15,20 @@ import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import java.util.*
 
-fun <T, E> T.asOk(): Result<T, E> = Result.Ok<T, E>(this)
-fun <T, E> E.asError(): Result<T, E> = Result.Error<T, E>(this)
-
 /**
+ * Transition is created by calling one of the modification methods
+ * on the group. This will return observable of transition results.
+ *
+ * The transition can be either executed immediately by subscribing to
+ * said observable, or enqueued for execution using the commit method
+ * (possibly after combining with other transitions/side effects).
+ *
+ * To set up a specific transition, use the observable returned by the
+ * action method. To set up the presenter which is the result of such
+ * transition, use the global transitionResults observable.
+ * This observable will also return information about presenters that were
+ * restored from state.
+ *
  * TODO: Should we provide a transition id? Or some other form of identification?
  * TODO: It would be nice to get an error about transitions that were dropped due to being detached
  * TODO: Ensure that someone is not running transitions outside of the execution context.
@@ -72,13 +82,13 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
     }
 
     override fun onPause() {
-        super.onPause()
         children.forEach { it.performPause() }
+        super.onPause()
     }
 
     override fun onStop() {
-        super.onStop()
         children.forEach { it.performStop() }
+        super.onStop()
     }
 
     override fun onDetach() {
@@ -161,6 +171,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      */
     fun <R: Any> Observable<TransitionResult<R>>.enqueue(): Observable<R> = enqueueTransition(this)
     fun <R: Any> Single<TransitionResult<R>>.enqueue(): Single<R> = enqueueTransition(this)
+
 
     inner open class BasicTransition : Transition() {
 

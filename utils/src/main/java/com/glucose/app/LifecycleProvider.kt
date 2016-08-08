@@ -42,6 +42,8 @@ fun <T: Any> Observable<T>.bindToLifecycle(provider: LifecycleProvider): Observa
     return this.takeUntil(provider, provider.closingEvent())
 }
 
+//TODO: As we have seen, this is terribly slow and there are no guarantees. We should implement this
+//in form of callback/etc. that will be guaranteed to execute when the event happens
 fun Subscription.until(provider: LifecycleProvider, event: LifecycleEvent): Subscription {
     provider.lifecycleEvents.filter { it == event }
             .first().subscribe { this.unsubscribe() }
