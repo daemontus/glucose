@@ -3,13 +3,13 @@
 
 subprojects {
     group = 'com.github.daemontus'
-    version = '0.0.8'
-    ext.version_code = 7
+    version = '0.0.9'
+    ext.version_code = 
     ext.compile_sdk = 24
     ext.target_sdk = 24
     ext.build_tools = '24.0.0'
     ext.kotlin_version = '1.0.3'
-    ext.support_library = '24.0.0'
+    ext.support_library = '24.1.1'
 }
 
 buildscript {
