@@ -1,28 +1,18 @@
 package com.github.daemontus.glucose
 
-import android.support.test.InstrumentationRegistry
+import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.test.ActivityInstrumentationTestCase2
-import com.glucose.AndroidConsoleLogger
 import com.glucose.Log
 import com.glucose.device.Device
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DeviceTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity::class.java) {
+class DeviceTest {
 
-    companion object {
-        init {
-            Log.loggers += AndroidConsoleLogger()
-        }
-    }
-
-    @Before
-    fun init() {
-        injectInstrumentation(InstrumentationRegistry.getInstrumentation())
-    }
+    @Rule
+    @JvmField val rule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
 
     @Test
     fun testIsEmulator() {
@@ -31,17 +21,17 @@ class DeviceTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity
 
     @Test
     fun testHasNavigationBar() {
-        Log.i("Does device has a navigation bar? ${Device.hasNavigationBar(activity)}")
+        Log.i("Does device has a navigation bar? ${Device.hasNavigationBar(rule.activity)}")
     }
 
     @Test
     fun testNavBarHeight() {
-        Log.i("Navigation bar height in pixels: ${Device.getNavBarHeight(activity)}")
+        Log.i("Navigation bar height in pixels: ${Device.getNavBarHeight(rule.activity)}")
     }
 
     @Test
     fun testStatusBarHeight() {
-        Log.i("Status bar height in pixels: ${Device.getStatusBarHeight(activity)}")
+        Log.i("Status bar height in pixels: ${Device.getStatusBarHeight(rule.activity)}")
     }
 
     @Test
@@ -51,7 +41,7 @@ class DeviceTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity
 
     @Test
     fun testDeviceId() {
-        Log.i("Device ID: ${Device.getDeviceId(activity)}")
+        Log.i("Device ID: ${Device.getDeviceId(rule.activity)}")
     }
 
     @Test

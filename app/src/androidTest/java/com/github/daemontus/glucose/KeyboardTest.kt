@@ -1,32 +1,29 @@
 package com.github.daemontus.glucose
 
-import android.support.test.InstrumentationRegistry
+import android.support.test.filters.SmallTest
+import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.test.ActivityInstrumentationTestCase2
 import com.glucose.device.Keyboard
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class KeyboardTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity::class.java) {
+@SmallTest
+class KeyboardTest {
 
-    @Before
-    fun init() {
-        injectInstrumentation(InstrumentationRegistry.getInstrumentation())
-    }
+    @Rule
+    @JvmField val rule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
 
     @Test
     fun openKeyboard() {
-        //Keyboard
-        val content = activity.findViewById(android.R.id.content)!!
-        Keyboard.show(activity, content)
+        val content = rule.activity.findViewById(android.R.id.content)!!
+        Keyboard.show(rule.activity, content)
     }
 
     @Test
     fun hideKeyboard() {
-        //Keyboard
-        val content = activity.findViewById(android.R.id.content)!!
-        Keyboard.hide(activity, content)
+        val content = rule.activity.findViewById(android.R.id.content)!!
+        Keyboard.hide(rule.activity, content)
     }
 }

@@ -1,21 +1,22 @@
 package com.github.daemontus.glucose
 
+import android.support.test.filters.SmallTest
+import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.test.ActivityInstrumentationTestCase2
-import com.glucose.AndroidConsoleLogger
 import com.glucose.Log
 import com.glucose.LogLevel
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
-class LoggerTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity::class.java) {
+@SmallTest
+class LoggerTest {
 
-    companion object {
-        init {
-            Log.loggers += AndroidConsoleLogger()
-        }
-    }
+
+    @Rule
+    @JvmField val rule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
 
     @Test
     fun testLogLevels() {

@@ -9,7 +9,7 @@ subprojects {
     ext.target_sdk = 24
     ext.build_tools = '24.0.0'
     ext.kotlin_version = '1.0.3'
-    ext.support_library = '24.0.0'
+    ext.support_library = '24.1.1'
 }
 
 buildscript {

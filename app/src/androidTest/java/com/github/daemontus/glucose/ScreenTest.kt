@@ -1,47 +1,39 @@
 package com.github.daemontus.glucose
 
-import android.support.test.InstrumentationRegistry
+import android.support.test.filters.SmallTest
+import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.test.ActivityInstrumentationTestCase2
-import com.glucose.AndroidConsoleLogger
 import com.glucose.Log
 import com.glucose.device.Screen
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class ScreenTest : ActivityInstrumentationTestCase2<ColorActivity>(ColorActivity::class.java) {
+@SmallTest
+class ScreenTest {
 
-    companion object {
-        init {
-            Log.loggers += AndroidConsoleLogger()
-        }
-    }
-
-    @Before
-    fun init() {
-        injectInstrumentation(InstrumentationRegistry.getInstrumentation())
-    }
+    @Rule
+    @JvmField val rule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
 
     @Test
     fun getRealWidth() {
-        Log.i("Real width: ${Screen.getRealWidth(activity)}")
+        Log.i("Real width: ${Screen.getRealWidth(rule.activity)}")
     }
 
     @Test
     fun getRealHeight() {
-        Log.i("Real height: ${Screen.getRealHeight(activity)}")
+        Log.i("Real height: ${Screen.getRealHeight(rule.activity)}")
     }
 
     @Test
     fun getWidth() {
-        Log.i("Width: ${Screen.getWidth(activity)}")
+        Log.i("Width: ${Screen.getWidth(rule.activity)}")
     }
 
     @Test
     fun getHeight() {
-        Log.i("Height: ${Screen.getHeight(activity)}")
+        Log.i("Height: ${Screen.getHeight(rule.activity)}")
     }
 
 }
