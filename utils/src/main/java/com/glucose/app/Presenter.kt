@@ -1,12 +1,16 @@
 package com.glucose.app
 
+import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Parcelable
 import android.support.annotation.AnyThread
 import android.support.annotation.IdRes
+import android.support.annotation.LayoutRes
 import android.support.annotation.MainThread
+import android.util.SparseArray
+import android.view.LayoutInflater
 import android.view.View
 import com.github.daemontus.egholm.functional.Result
 import com.glucose.Log
@@ -16,7 +20,6 @@ import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -28,54 +31,60 @@ import kotlin.reflect.KProperty
  * global data by means of a PresenterContext.
  *
  * Presenter is responsible for managing it's child Presenters (if any) and relationships
- * between them.
+ * between them (see [PresenterGroup]).
  *
- * When saving state, Presenter is identified by it's class (like View is identified by id).
- * If you want to change this behavior to support IDs or something else, override the statePrefix.
+ * Presenter lifecycle is similar to that of an [Activity], but instead of the
+ * onCreate -> onRestart loop, it has onAttach -> onDetach.
  *
+ * Other lifecycle information:
+ * - Presenter is always connected to it's view, however, this view is only connected to the
+ * view hierarchy after [onAttach] (and before [onStart]).
+ * - Similarly, presenter's view is detached from the hierarchy before [onDetach], but after [onStop].
+ * - Presenter is identified by it's [id]. If the user does not override the ID getter, the
+ * id is assumed to be given in the argument bundle.
+ * - Similar to views, ID is used to identify presenters when saving/restoring state, so
+ * a presenter without an ID won't have it's state saved and in case of an ID clash, the
+ * behavior is undefined.
+ * - The existence of a child will be saved only if the parent has an ID and the [PresenterLayout]
+ * the child is in also has an ID.
+ * - Presenter can use [canChangeConfiguration] to indicate if it wants to be recreated or if
+ * it will handle a configuration change on it's own.
+ * - In case of a configuration change, presenter's parent should save it's state and recreate if,
+ * or notify it about the change (depending on the presenter)
+ * - Default implementation for [onBackPressed] will traverse the presenter hierarchy and stop as
+ * soon as one of the presenters returns true (hence only the first presenter will actually
+ * do a step back).
+ * - On the other hand, [onActivityResult] is delivered to all presenters in the hierarchy.
+ * (This might be changed later on with a better mechanism as soon as the permissions are
+ * also solved)
  *
- * A Presenter that is currently attached has also associated an argument bundle.
+ * Presenter can always be placed only in the [PresenterLayout] - this is mainly to simplify
+ * the reuse (All them layout params).
  *
- * Configuration changes:
- * If the Presenter is attached, the parent is responsible for propagating the configuration change
- * callback in order to ensure that children which shouldn't survive configuration
- * change are detached.
- * If the Presenter is detached and cached by the context, it is the responsibility of the context
- * to either notify it, or destroy it.
- * So the overall configuration change looks like this:
- * 1. Presenter tree is notified about config change.
- * 2. Presenters which can't handle configuration change are detached and recycled.
- * 3. Configuration change is applied to the attached tree.
- * 4. Recommended: Attached presenters which didn't survive configuration change are
- * recreated from state info if the group supports it.
- * 5. Context destroys detached presenters that can't change configuration.
- * 6. Context notifies detached presenters about configuration change.
- *
- * Activity results:
- * Activity results are propagated only to attached presenters by the root presenter.
- *
- * TODO: This state handling is bad. New Presenter is by definition state-less and it becomes state-full
- * when it's attached. So it does not make sense to restore something on create. Also it is hard to follow
- * how this influences the restoration of UI state, since everything happens sort of all over the place.
- * TODO: Handle memory notifications.
- * TODO: Handle onRestart notifications.
+ **
  * TODO: Handle onRequestPermissionResult.
- * TODO: We probably don't want the perform* methods to be internal because they might be used by PresenterGroup creators.
  */
 open class Presenter(
-        val view: View, context: PresenterContext
-) : StateProvider, LifecycleProvider {
+        context: PresenterContext, val view: View
+) : LifecycleProvider {
+
+    /**
+     * Create a Presenter with view initialized from layout resource.
+     */
+    constructor(context: PresenterContext, @LayoutRes layout: Int) : this(
+            context, LayoutInflater.from(context.activity).inflate(layout, PresenterLayout(context.activity), false)
+    )
 
     // ============================= Lifecycle and Context =========================================
 
     enum class State {
-        DESTROYED, NONE, ALIVE, ATTACHED, STARTED, RESUMED
+        DESTROYED, ALIVE, ATTACHED, STARTED, RESUMED
     }
 
     private val lifecycleEventSubject = PublishSubject.create<LifecycleEvent>()
     override val lifecycleEvents: Observable<LifecycleEvent> = lifecycleEventSubject
 
-    var state: State = State.NONE
+    var state: State = State.ALIVE
         private set
 
     val isAlive: Boolean
@@ -97,27 +106,27 @@ open class Presenter(
         private set
         get() {
             if (!this.isAttached)
-                throw IllegalStateException("Presenter is not attached. Cannot access arguments")
+                throw LifecycleException("Presenter is not attached. Cannot access arguments.")
             else return field
         }
 
-
     val ctx: PresenterContext = context
         get() {
-            if (!this.isAlive) {
+            if (this.isDestroyed)
                 throw LifecycleException("Accessing Context on a destroyed presenter.")
-            }
             return field
         }
+
+    val id: Int
+        get() = if (this.isAttached) {
+            arguments.getInt("id", View.NO_ID)
+        } else View.NO_ID
 
     private fun assertLifecycleChange(from: State, to: State, transition: () -> Unit) {
         if (state != from) throw IllegalStateException("Something is wrong with the lifecycle!")
         transition()
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle!")
     }
-
-    internal fun performCreate(savedInstanceState: Bundle?)
-            = assertLifecycleChange(State.NONE, State.ALIVE) { onCreate(savedInstanceState) }
 
     internal fun performAttach(arguments: Bundle)
             = assertLifecycleChange(State.ALIVE, State.ATTACHED) { onAttach(arguments) }
@@ -140,18 +149,8 @@ open class Presenter(
     internal fun performDestroy()
             = assertLifecycleChange(State.ALIVE, State.DESTROYED) { onDestroy() }
 
-    internal fun performConfigurationChange(newConfig: Configuration)
-            = onConfigurationChanged(newConfig)
-
     internal fun performActivityResult(requestCode: Int, resultCode: Int, data: Intent)
             = onActivityResult(requestCode, resultCode, data)
-
-    protected open fun onCreate(savedInstanceState: Bundle?) {
-        lifecycleLog("onCreate")
-        state = State.ALIVE
-        restoreState(savedInstanceState)
-        lifecycleEventSubject.onNext(LifecycleEvent.CREATE)
-    }
 
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
@@ -174,9 +173,19 @@ open class Presenter(
 
     open fun onBackPressed(): Boolean = false
 
-    open fun onSaveInstanceState(out: Bundle) {
-        saveState(out)
+    open fun saveHierarchyState(container: SparseArray<Bundle>) {
+        if (id != View.NO_ID) {
+            val out = Bundle()
+            onSaveInstanceState(out)
+            container.put(id, out)
+        }
     }
+
+    protected open fun onSaveInstanceState(out: Bundle) {
+        out.putAll(arguments)   //make a copy of the current state
+    }
+
+    open fun onTrimMemory(level: Int) {}
 
     protected open fun onPause() {
         lifecycleEventSubject.onNext(LifecycleEvent.PAUSE)
@@ -204,15 +213,16 @@ open class Presenter(
         lifecycleLog("onDestroy")
     }
 
-    protected open fun onConfigurationChanged(newConfig: Configuration) {
+    open val canChangeConfiguration = true
+
+    open fun onConfigurationChanged(newConfig: Configuration) {
+        ctx.factory.onConfigurationChange(newConfig)
         if (!canChangeConfiguration) {
             throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
         }
         lifecycleLog("onConfigurationChanged")
         lifecycleEventSubject.onNext(LifecycleEvent.CONFIG_CHANGE)
     }
-
-    open val canChangeConfiguration = false
 
     protected open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         lifecycleLog("onActivityResult $resultCode for request $requestCode")
@@ -349,28 +359,6 @@ open class Presenter(
         actionSubject.onCompleted()
     }
 
-    // ============================== State Management =============================================
-
-    private val stateHooks = ArrayList<InstanceState>()
-
-    override val statePrefix: String = this.javaClass.name
-
-    override fun addHook(instance: InstanceState) {
-        if (isAlive) throw IllegalStateException("Cannot add state hooks on presenter that is already created")
-        stateHooks.add(instance)
-    }
-
-    private var nextStateId = AtomicInteger(0)
-    override fun nextStateId(): Int = nextStateId.incrementAndGet()
-
-    private fun restoreState(state: Bundle?) {
-        stateHooks.forEach { it.onCreate(state) }
-    }
-
-    private fun saveState(out: Bundle) {
-        stateHooks.forEach { it.onSaveInstanceState(out) }
-    }
-
     // ============================ View related helper functions ==================================
 
     @Suppress("UNCHECKED_CAST")
@@ -386,7 +374,7 @@ open class Presenter(
         State.ATTACHED -> LifecycleEvent.DETACH
         State.STARTED -> LifecycleEvent.STOP
         State.RESUMED -> LifecycleEvent.PAUSE
-        State.NONE, State.DESTROYED -> throw IllegalStateException("Cannot bind to lifecycle. State: $state")
+        State.DESTROYED -> throw IllegalStateException("Cannot bind to lifecycle. State: $state")
     }
 
     fun <T: Any> Observable<T>.takeUntil(event: LifecycleEvent): Observable<T> {
@@ -410,21 +398,20 @@ open class Presenter(
         State.ATTACHED -> LifecycleEvent.DETACH
         State.STARTED -> LifecycleEvent.STOP
         State.RESUMED -> LifecycleEvent.PAUSE
-        State.NONE -> LifecycleEvent.CREATE
         State.DESTROYED -> throw IllegalStateException("$state does not have a closing event")
     }
 
     override fun startingEvent(): LifecycleEvent = when (state) {
-        State.ALIVE -> LifecycleEvent.CREATE
         State.ATTACHED -> LifecycleEvent.ATTACH
         State.STARTED -> LifecycleEvent.START
         State.RESUMED -> LifecycleEvent.RESUME
         State.DESTROYED -> LifecycleEvent.DESTROY
-        State.NONE -> throw IllegalStateException("$state does not have an opening event")
+        State.ALIVE -> throw IllegalStateException("$state does not have an opening event")
     }
 
     // =========================== Argument related utility functions ==============================
 
+    //TODO: Make more, actually use InstanceState and move it to the file there.
     private class OptionalArgumentDelegate<out T: Any>(
             private val key: String,
             private val default: T?,
@@ -466,7 +453,5 @@ open class Presenter(
     protected fun <T: Parcelable> parcelableArgument(key: String, default: T? = null): ReadOnlyProperty<Presenter, T>
             = ArgumentDelegate(key, default, { b, k -> b.getParcelable(k) })
 
-    //TODO: Make more helper functions! Also consider moving this into extension functions.
-    //TODO: Make the state key depend on property name and not some id
     //TODO: Get rid of arguments and make them part of the state instead! That way the whole presenter can be serialized!
 }

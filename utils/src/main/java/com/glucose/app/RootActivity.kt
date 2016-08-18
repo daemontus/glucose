@@ -3,87 +3,79 @@ package com.glucose.app
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.widget.FrameLayout
+import android.support.annotation.IdRes
+import android.support.v7.app.AppCompatActivity
+import android.view.View
 import kotlin.properties.Delegates
 
-//TODO: Merge this with ContextDelegate - or at least refactor it into some primitive PresenterGroup
-abstract class RootActivity : PresenterActivity() {
+/**
+ * An activity that is connected to a [PresenterContext] and has exactly one root [Presenter].
+ */
+abstract class RootActivity(
+        rootPresenter: Class<out Presenter>,
+        rootArguments: Bundle = Bundle(),
+        @IdRes rootId: Int = View.NO_ID
+) : AppCompatActivity() {
 
-    abstract val rootPresenter: Class<out Presenter>
-    val rootArguments: Bundle = Bundle()
+    private val presenterContext = PresenterContext(this, rootPresenter, rootArguments, rootId)
 
-    private var root: Presenter by Delegates.notNull()
-    private var frame: FrameLayout by Delegates.notNull()
-
-    private var started = false
-    private var resumed = false
+    private var rootView: PresenterLayout by Delegates.notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        frame = FrameLayout(this)
-        setContentView(frame)
-        root = obtain(rootPresenter, frame)
-        root.performAttach(rootArguments)
-        frame.addView(root.view)
+        rootView = PresenterLayout(this)
+        rootView.addView(presenterContext.onCreate(savedInstanceState))
+        setContentView(rootView)
     }
 
     override fun onStart() {
         super.onStart()
-        started = true
-        root.performStart()
+        presenterContext.onStart()
     }
 
     override fun onResume() {
         super.onResume()
-        resumed = true
-        root.performResume()
+        presenterContext.onResume()
     }
 
     override fun onBackPressed() {
-        if (!root.onBackPressed()) super.onBackPressed()
+        if (!presenterContext.onBackPressed()) super.onBackPressed()
     }
 
     override fun onPause() {
+        presenterContext.onPause()
         super.onPause()
-        root.performPause()
-        resumed = false
     }
 
     override fun onStop() {
+        presenterContext.onStop()
         super.onStop()
-        root.performStop()
-        started = false
     }
 
     override fun onDestroy() {
-        frame.removeView(root.view)
-        root.performDetach()
-        recycle(root)
+        rootView.removeAllViews()
+        presenterContext.onDestroy()
         super.onDestroy()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        val keepRoot = root.canChangeConfiguration
-        if (keepRoot) {
-            root.performConfigurationChange(newConfig)
-        } else {
-            if (resumed) root.performPause()
-            if (started) root.performStop()
-            root.performDetach()
-            frame.removeView(root.view)
-            recycle(root)
-        }
         super.onConfigurationChanged(newConfig)
-        root = obtain(rootPresenter, frame)
-        root.performAttach(rootArguments)
-        frame.addView(root.view)
-        if (started) root.performStart()
-        if (resumed) root.performResume()
+        presenterContext.onConfigurationChanged(newConfig)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         super.onActivityResult(requestCode, resultCode, data)
-        root.performActivityResult(requestCode, resultCode, data)
+        presenterContext.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        presenterContext.onTrimMemory(level)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        presenterContext.onSaveInstanceState(outState)
     }
 }
 

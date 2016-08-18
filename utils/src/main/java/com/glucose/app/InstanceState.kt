@@ -1,20 +1,28 @@
 package com.glucose.app
 
 import android.os.Bundle
+import kotlin.properties.ReadOnlyProperty
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
-interface StateProvider {
-    val statePrefix: String
-    fun addHook(instance: InstanceState)
-    fun nextStateId(): Int
+class InstanceArgument<out T>(
+        private val getter: Bundle.(String) -> T
+) : ReadOnlyProperty<Presenter, T> {
+
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
+            = getter.invoke(thisRef.arguments, property.name)
+
 }
 
-abstract class InstanceState(
-        provider: StateProvider
-) {
-    init {
-        provider.addHook(this)
-    }
-    protected val key = "${provider.statePrefix}[state:${provider.nextStateId()}]"
-    abstract fun onCreate(instanceState: Bundle?)
-    abstract fun onSaveInstanceState(output: Bundle)
+class InstanceState<T>(
+        private val getter: Bundle.(String) -> T,
+        private val setter: Bundle.(String, T) -> Unit
+) : ReadWriteProperty<Presenter, T> {
+
+    override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
+            = setter.invoke(thisRef.arguments, property.name, value)
+
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
+            = getter.invoke(thisRef.arguments, property.name)
+
 }
