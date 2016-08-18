@@ -3,7 +3,6 @@ package com.glucose.app
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Looper
 import android.os.Parcelable
 import android.support.annotation.AnyThread
 import android.support.annotation.IdRes
@@ -12,11 +11,10 @@ import android.view.View
 import com.github.daemontus.egholm.functional.Result
 import com.glucose.Log
 import rx.Observable
-import rx.Subscription
 import rx.Observer
+import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
-import rx.subjects.ReplaySubject
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.properties.ReadOnlyProperty
@@ -259,6 +257,8 @@ open class Presenter<out Ctx: PresenterContext>(
      *
      * Implementation note: Everything regarding actions in this class should be happening
      * on the main thread, so that synchronisation is not needed.
+     *
+     * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
      */
 
     //New subject is created when presenter is attached.
@@ -299,7 +299,7 @@ open class Presenter<out Ctx: PresenterContext>(
         actionSubscription = Observable.concat(actionSubject.onBackpressureDrop {
             it.second.onError(IllegalStateException("Action dropped due to backpressure"))
             removeProxy(it.second)
-        }.map { it.first }).subscribe({
+        }.map { it.first.asResult() }).subscribe({
             when (it) {
                 is Result.Ok<*,*> -> transitionLog("Action produced an item")
                 is Result.Error<*,*> -> transitionLog("Action error: ${it.error}")
