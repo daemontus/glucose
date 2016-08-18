@@ -9,9 +9,7 @@ import android.view.ViewGroup
 import com.github.daemontus.egholm.functional.Result
 import com.glucose.Log
 import rx.Observable
-import rx.Single
 import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import java.util.*
 
@@ -37,6 +35,7 @@ import java.util.*
  * TODO: Give option to execute transition immediately instead of waiting for a next slot? (So that we can render something without waiting)
  * TODO: We have to manually restore view state if the presenter is added after activity is shown.
  * TODO: This group can't handle configuration changes (it will recreate the whole tree) - either fix this or make a better subclass
+ * TODO: Split this into an internal abstract group that handles basic stuff, stateless group that can do advanced actions, but can't remember shit and stateful that works like fragment manager.
  */
 open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter<Ctx>(view, context) {
 
@@ -49,7 +48,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
 
     private var transitionSubscription: Subscription? = null
 
-    // ============================ Children and transaction Lifecycle =============================
+    // ============================ Children and Lifecycle =============================
 
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
@@ -120,159 +119,104 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
         }
     }
 
-    /**
-     * Create a new transition. The transition is not queued yet and doesn't have to be executed.
-     * It just provides a way of exporting a context that can safely edit the insides of
-     * the PresenterGroup.
-     */
-    fun newTransition(): Single<BasicTransition> {
-        transitionLog("New transition")
-        return Single.just(BasicTransition()).doOnSubscribe {
-            transitionLog("Start transition")
-        }.observeOn(AndroidSchedulers.mainThread())
-    }
+    // ========================== Children manipulation ============================================
 
     /**
-     * Enqueue a transition to be executed. The transition may be a composition of several
-     * Singles composed into one Observable.
+     * Obtain new presenter and attach it to a ViewGroup with given id.
+     */
+    fun <P: Presenter<*>> add(
+            @IdRes id: Int, clazz: Class<P>, arguments: Bundle = Bundle()
+    ): P = add(findView<ViewGroup>(id), clazz, arguments)
+
+    /**
+     * Obtain new presenter and attach it to a ViewGroup.
+     */
+    fun <P: Presenter<*>> add(
+            parent: ViewGroup, clazz: Class<P>, arguments: Bundle = Bundle()
+    ): P = attach(parent, ctx.obtain(clazz, parent), arguments)
+
+    /**
+     * Attach a presenter to a ViewGroup.
      *
-     * Returns an observable that will emit results of all composed transitions in
-     * order in which they finish (as if subscribed to the transition Observable).
-     *
-     * Note that depending on implementation, this emission might happen after or during
-     * next transition. Therefore you can't make definitive assumptions about the
-     * state of the world.
+     * Warning: It is recommended to use add/remove instead of attach/detach when possible
+     * in order to avoid leaked Presenters.
      */
-    fun <R: Any> enqueueTransition(transition: Observable<TransitionResult<R>>): Observable<R> {
-        transitionLog("Commit transition")
-        val result = PublishSubject.create<R>()
-        val t = transition
-                .doOnNext { transitionLog("End transition") }
-                .map { it.result }
-                .doOnEach(result)
-                .map { it.asOk<Any, Throwable>() }
-                .onErrorReturn { it.asError() }
-        transitionSubject.onNext(t)
-        //The subject is needed to ensure that subscription to the returned observable won't
-        //execute the transaction itself.
-        //Cache ensures that the user will get results even if the transaction executes before he subscribes.
-        return result.cache()
+    fun <P: Presenter<*>> attach(
+            parent: ViewGroup, presenter: P, arguments: Bundle = Bundle()
+    ): P {
+        if (!presenter.isAlive) throw IllegalStateException("Adding presenter that hasn't been created properly")
+        if (presenter.isAttached) throw IllegalStateException("Adding presenter that is already attached")
+        children.add(presenter)
+        presenter.performAttach(arguments)
+        parent.addView(presenter.view)
+        if (isStarted) presenter.performStart()
+        if (isResumed) presenter.performResume()
+        transitionLog("Attached $presenter")
+        return presenter
     }
 
     /**
-     * Enqueue a transition to be executed.
+     * Detach and return a presenter from a ViewGroup.
+     *
+     * Warning: It is recommended to use add/remove instead of attach/detach when possible
+     * in order to avoid leaked Presenters.
      */
-    fun <R: Any> enqueueTransition(transition: Single<TransitionResult<R>>): Single<R> {
-        return enqueueTransition(transition.toObservable()).toSingle()
+    fun <P: Presenter<*>> detach(presenter: P): P {
+        if (!presenter.isAlive) throw IllegalStateException("Removing presenter that hasn't been created properly")
+        if (!presenter.isAttached) throw IllegalStateException("Removing presenter that hasn't been attached properly")
+        if (presenter !in children) throw IllegalStateException("Removing presenter that isn't attached to ${this@PresenterGroup}")
+        if (isResumed) presenter.performPause()
+        if (isStarted) presenter.performStop()
+        val parent = presenter.view.parent as ViewGroup
+        parent.removeView(presenter.view)
+        presenter.performDetach()
+        children.remove(presenter)
+        transitionLog("Detached $presenter")
+        return presenter
     }
 
-    /*
-        Helper functions for working with transactions.
+    /**
+     * Detach all presenters that satisfy a specific predicate.
+     * TODO: This is not good, if would be much better if this could somehow be an observable
      */
-    fun <R: Any> Observable<TransitionResult<R>>.enqueue(): Observable<R> = enqueueTransition(this)
-    fun <R: Any> Single<TransitionResult<R>>.enqueue(): Single<R> = enqueueTransition(this)
+    fun detachAll(predicate: (Presenter<*>) -> Boolean): List<Presenter<*>> {
+        val victims = children.filter(predicate)
+        victims.forEach { detach(it) }
+        return victims
+    }
 
+    /**
+     * Detach and recycle a presenter.
+     */
+    fun remove(presenter: Presenter<*>): Unit {
+        return ctx.recycle(detach(presenter))
+    }
 
-    inner open class BasicTransition : Transition() {
+    /**
+     * Detach and recycle all presenters that satisfy a specific predicate.
+     *
+     * Transition result contains number of recycled presenters.
+     */
+    fun removeAll(predicate: (Presenter<*>) -> Boolean): Int {
+        return detachAll(predicate).map { ctx.recycle(it) }.count()
+    }
 
-        /**
-         * Obtain new presenter and attach it to a ViewGroup with given id.
-         */
-        fun <P: Presenter<*>> add(
-                @IdRes id: Int, clazz: Class<P>, arguments: Bundle = Bundle()
-        ): TransitionResult<P> = add(findView<ViewGroup>(id), clazz, arguments)
+    /**
+     * Detach and recycle all presenters from a specific ViewGroup.
+     *
+     * Transition result contains number of recycled presenters.
+     */
+    fun removeAll(parent: ViewGroup): Int {
+        return removeAll { it.view.parent == parent }
+    }
 
-        /**
-         * Obtain new presenter and attach it to a ViewGroup.
-         */
-        fun <P: Presenter<*>> add(
-                parent: ViewGroup, clazz: Class<P>, arguments: Bundle = Bundle()
-        ): TransitionResult<P> = attach(parent, ctx.obtain(clazz, parent), arguments)
-
-        /**
-         * Attach a presenter to a ViewGroup.
-         *
-         * Warning: It is recommended to use add/remove instead of attach/detach when possible
-         * in order to avoid leaked Presenters.
-         */
-        fun <P: Presenter<*>> attach(
-                parent: ViewGroup, presenter: P, arguments: Bundle = Bundle()
-        ): TransitionResult<P> {
-            if (!presenter.isAlive) throw IllegalStateException("Adding presenter that hasn't been created properly")
-            if (presenter.isAttached) throw IllegalStateException("Adding presenter that is already attached")
-            children.add(presenter)
-            presenter.performAttach(arguments)
-            parent.addView(presenter.view)
-            if (isStarted) presenter.performStart()
-            if (isResumed) presenter.performResume()
-            transitionLog("Attached $presenter")
-            return presenter.asResult()
-        }
-
-        /**
-         * Detach and return a presenter from a ViewGroup.
-         *
-         * Warning: It is recommended to use add/remove instead of attach/detach when possible
-         * in order to avoid leaked Presenters.
-         */
-        fun <P: Presenter<*>> detach(presenter: P): TransitionResult<P> {
-            if (!presenter.isAlive) throw IllegalStateException("Removing presenter that hasn't been created properly")
-            if (!presenter.isAttached) throw IllegalStateException("Removing presenter that hasn't been attached properly")
-            if (presenter !in children) throw IllegalStateException("Removing presenter that isn't attached to ${this@PresenterGroup}")
-            if (isResumed) presenter.performPause()
-            if (isStarted) presenter.performStop()
-            val parent = presenter.view.parent as ViewGroup
-            parent.removeView(presenter.view)
-            presenter.performDetach()
-            children.remove(presenter)
-            transitionLog("Detached $presenter")
-            return presenter.asResult()
-        }
-
-        /**
-         * Detach all presenters that satisfy a specific predicate.
-         * TODO: This is not good, if would be much better if this could somehow be an observable
-         */
-        fun detachAll(predicate: (Presenter<*>) -> Boolean): TransitionResult<List<Presenter<*>>> {
-            val victims = children.filter(predicate)
-            victims.forEach { detach(it) }
-            return victims.asResult()
-        }
-
-        /**
-         * Detach and recycle a presenter.
-         */
-        fun remove(presenter: Presenter<*>): TransitionResult<Unit> {
-            return ctx.recycle(detach(presenter).result).asResult()
-        }
-
-        /**
-         * Detach and recycle all presenters that satisfy a specific predicate.
-         *
-         * Transition result contains number of recycled presenters.
-         */
-        fun removeAll(predicate: (Presenter<*>) -> Boolean): TransitionResult<Int> {
-            return detachAll(predicate).result.map { ctx.recycle(it) }.count().asResult()
-        }
-
-        /**
-         * Detach and recycle all presenters from a specific ViewGroup.
-         *
-         * Transition result contains number of recycled presenters.
-         */
-        fun removeAll(parent: ViewGroup): TransitionResult<Int> {
-            return removeAll { it.view.parent == parent }
-        }
-
-        /**
-         * Detach and recycle all presenters with a specific Class.
-         *
-         * Transition result contains number of recycled presenters.
-         */
-        fun removeAll(clazz: Class<*>): TransitionResult<Int> {
-            return removeAll { it.javaClass == clazz }
-        }
-
+    /**
+     * Detach and recycle all presenters with a specific Class.
+     *
+     * Transition result contains number of recycled presenters.
+     */
+    fun removeAll(clazz: Class<*>): Int {
+        return removeAll { it.javaClass == clazz }
     }
 
     // ============================ Child retrieval ================================================

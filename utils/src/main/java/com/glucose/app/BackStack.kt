@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
 import android.view.ViewGroup
+import com.github.daemontus.egholm.functional.Result
+import com.github.daemontus.egholm.functional.Result.Ok
+import com.github.daemontus.egholm.functional.error
 import com.glucose.Log
 import rx.Observable
 import java.util.*
@@ -56,21 +59,27 @@ open class BackStack(
     }
 
     fun onAttach() {
-        group.enqueueTransition(Observable.from(
-                backStack.map { entry ->
-                    group.newTransition()
-                            .map { it.add(container, entry.clazz, entry.arguments) }
-                }
-        ).onBackpressureBuffer(backStack.size+1L).concatMap { it.toObservable() })
+        Observable.from(backStack.map { entry ->
+            Observable.fromCallable {
+                group.add(container, entry.clazz, entry.arguments)
+            }
+        }).onBackpressureBuffer(backStack.size+1L).concatMap { it.postAction(group) }.asResult()
+                .subscribe {
+            Log.d("State restore: $it")
+        }
     }
 
     fun push(clazz: Class<out Presenter<*>>, arguments: Bundle = Bundle()) {
-        group.enqueueTransition(
-                group.newTransition()
-                .map { it.add(container, clazz, arguments) }
-        ).subscribe {
-            Log.d("Pushing $clazz")
-            backStack.add(BackStackEntry(clazz, arguments))
+        Observable.fromCallable {
+            group.add(container, clazz, arguments)
+        }.postAction(group).asResult().subscribe {
+            when (it) {
+                is Ok -> {
+                    Log.d("Pushed: $it")
+                    backStack.add(BackStackEntry(clazz, arguments))
+                }
+                is Error -> Log.e("Problem pushing: $it")
+            }
         }
     }
 
@@ -78,23 +87,19 @@ open class BackStack(
 
     fun pop(): Boolean {
         if (backStack.size < 2) return false
-        group.enqueueTransition(group.newTransition()
-                .toObservable()
-                //ensure that at the time of the transaction, the stack is still not empty
-                //this will "erase" the transaction, so that it won't be reported as an error
-                .filter { backStack.size >= 2 }
-                .map {
-                    val victimEntry = backStack.last()
-                    backStack.remove(victimEntry)
-                    //if there is no such entry, somebody has been tempering with the back stack
-                    //and the transition will fail
-                    val victim = group.presenters.last {
-                        it.javaClass == victimEntry.clazz && it.view.parent == container
-                    }
-                    Log.d("Popping ${victimEntry.clazz}")
-                    it.remove(victim)
+        Observable.fromCallable {
+            if (backStack.size > 1) {
+                val victimEntry = backStack.last()
+                backStack.remove(victimEntry)
+                //if there is no such entry, somebody has been tempering with the back stack
+                //and the transition will fail
+                val victim = group.presenters.last {
+                    it.javaClass == victimEntry.clazz && it.view.parent == container
                 }
-        )
+                Log.d("Popping ${victimEntry.clazz}")
+                group.remove(victim)
+            }
+        }
         return true
     }
 

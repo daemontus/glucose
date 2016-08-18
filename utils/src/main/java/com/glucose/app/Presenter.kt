@@ -54,6 +54,9 @@ import kotlin.reflect.KProperty
  * Activity results:
  * Activity results are propagated only to attached presenters by the root presenter.
  *
+ * TODO: This state handling is bad. New Presenter is by definition state-less and it becomes state-full
+ * when it's attached. So it does not make sense to restore something on create. Also it is hard to follow
+ * how this influences the restoration of UI state, since everything happens sort of all over the place.
  * TODO: Handle memory notifications.
  * TODO: Handle onRestart notifications.
  * TODO: Handle onRequestPermissionResult.
@@ -241,7 +244,8 @@ open class Presenter<out Ctx: PresenterContext>(
      * If the Presenter is not attached when the Action should be executed, the proxy observable
      * will emit an exception.
      * If the Presenter is being detached while an Action is running, the
-     * action observable is unsubscribed and the proxy observable will receive an exception.
+     * action observable is unsubscribed and the proxy observable will receive an exception
+     * plus unspecified number of items previously emitted by the observable.
      *
      * Except for this, the proxy observable should exactly mirror the behaviour of the
      * original action observable (including errors, un-subscribing, etc.).
@@ -253,12 +257,14 @@ open class Presenter<out Ctx: PresenterContext>(
      *
      * Performance note: To ensure that the action is executed only once, the results
      * of each action are cached. Therefore if you want to avoid excessive memory usage,
-     * avoid actions that emit high amount of items.
+     * avoid actions that emit high amount of items. Future note: Maybe just make it into a
+     * unicast subject and be done with it.
      *
      * Implementation note: Everything regarding actions in this class should be happening
      * on the main thread, so that synchronisation is not needed.
      *
      * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
+     * TODO: Can we make this into an operator? :) Why not?
      */
 
     //New subject is created when presenter is attached.
