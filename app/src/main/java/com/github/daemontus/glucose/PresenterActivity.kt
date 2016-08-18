@@ -17,7 +17,7 @@ class PresenterActivity : RootActivity() {
         register(ControlsPresenter::class.java, ::ControlsPresenter)
     }
 
-    override val rootPresenter: Class<out Presenter<*>> = RootPresenter::class.java
+    override val rootPresenter: Class<out Presenter> = RootPresenter::class.java
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,14 +93,14 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
     }
 }
 
-class ContentPresenter(view: View, context: PresenterContext) : Presenter<PresenterContext>(view, context) {
+class ContentPresenter(view: View, context: PresenterContext) : Presenter(view, context) {
 
     constructor(context: PresenterContext, parent: ViewGroup?) : this(
             LayoutInflater.from(context.activity).inflate(R.layout.presenter_1, parent, false), context)
 
 }
 
-class ControlsPresenter(view: View, context: PresenterContext) : Presenter<PresenterContext>(view, context) {
+class ControlsPresenter(view: View, context: PresenterContext) : Presenter(view, context) {
 
     constructor(context: PresenterContext, parent: ViewGroup?) : this(
             LayoutInflater.from(context.activity).inflate(R.layout.presenter_2, parent, false), context)

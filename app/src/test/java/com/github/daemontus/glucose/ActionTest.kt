@@ -36,11 +36,11 @@ class ActionActivity : RootActivity() {
         register(ActionPresenter::class.java, { a, b -> ActionPresenter(View(this), a) })
     }
 
-    override val rootPresenter: Class<out Presenter<*>> = ActionPresenter::class.java
+    override val rootPresenter: Class<out Presenter> = ActionPresenter::class.java
 
 }
 
-class ActionPresenter(view: View, context: PresenterContext) : Presenter<ActionActivity>(view, context) {
+class ActionPresenter(view: View, context: PresenterContext) : Presenter(view, context) {
 
     override fun onStart() {
         super.onStart()

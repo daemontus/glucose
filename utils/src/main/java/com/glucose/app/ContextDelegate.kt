@@ -9,23 +9,23 @@ import java.util.*
 
 open class ContextDelegate(override val activity: Activity) : PresenterContext {
 
-    private val constructors = HashMap<Class<*>, (PresenterContext, ViewGroup?) -> Presenter<*>>()
+    private val constructors = HashMap<Class<*>, (PresenterContext, ViewGroup?) -> Presenter>()
 
-    private val allPresenters = ArrayList<Presenter<*>>()
-    private val freePresenters = ArrayList<Presenter<*>>()
+    private val allPresenters = ArrayList<Presenter>()
+    private val freePresenters = ArrayList<Presenter>()
 
     private var created = false
     private var destroyed = false
     private var state: Bundle? = null
 
-    override fun <P : Presenter<*>> register(clazz: Class<P>, factory: (PresenterContext, ViewGroup?) -> P) {
+    override fun <P : Presenter> register(clazz: Class<P>, factory: (PresenterContext, ViewGroup?) -> P) {
         if (clazz in constructors.keys) throw IllegalStateException("Constructor for $clazz already registered")
         if (created) throw IllegalStateException("Cannot register constructors after onCreate")
         lifecycleLog("Registered constructor for $clazz")
         constructors[clazz] = factory
     }
 
-    override fun <P : Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
+    override fun <P : Presenter> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         if (!created) throw IllegalStateException("Cannot request Presenters before onCreate")
         if (destroyed) throw IllegalStateException("Cannot request Presenters after onDestroy")
         val found = freePresenters.find { it.javaClass == clazz }
@@ -37,7 +37,7 @@ open class ContextDelegate(override val activity: Activity) : PresenterContext {
         return found as P
     }
 
-    override fun recycle(presenter: Presenter<*>) {
+    override fun recycle(presenter: Presenter) {
         if (!created) throw IllegalStateException("Cannot recycle $presenter before onCreate")
         if (presenter.ctx != this) throw IllegalStateException("$presenter is not managed by $this but by ${presenter.ctx}")
         if (presenter.isAttached) throw IllegalStateException("$presenter is still attached")
@@ -47,7 +47,7 @@ open class ContextDelegate(override val activity: Activity) : PresenterContext {
     }
 
     //Create and initialize presenter with saved state
-    private fun spawnPresenter(clazz: Class<*>, parent: ViewGroup?) : Presenter<*> {
+    private fun spawnPresenter(clazz: Class<*>, parent: ViewGroup?) : Presenter {
         val constructor = constructors[clazz] ?: throw IllegalStateException("No constructor registered for $clazz")
         val presenter = constructor.invoke(this, parent)
         lifecycleLog("Spawned presenter for $clazz: $presenter")
@@ -57,7 +57,7 @@ open class ContextDelegate(override val activity: Activity) : PresenterContext {
     }
 
     //Destroy and tear down presenter
-    private fun killPresenter(presenter: Presenter<*>) {
+    private fun killPresenter(presenter: Presenter) {
         if (presenter.isAttached) throw IllegalStateException("Killing an attached presenter $presenter")
         presenter.performDestroy()
         freePresenters.remove(presenter)

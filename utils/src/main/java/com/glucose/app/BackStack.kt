@@ -69,7 +69,7 @@ open class BackStack(
         }
     }
 
-    fun push(clazz: Class<out Presenter<*>>, arguments: Bundle = Bundle()) {
+    fun push(clazz: Class<out Presenter>, arguments: Bundle = Bundle()) {
         Observable.fromCallable {
             group.add(container, clazz, arguments)
         }.postAction(group).asResult().subscribe {
@@ -106,7 +106,7 @@ open class BackStack(
 }
 
 class BackStackEntry(
-        val clazz: Class<out Presenter<*>>,
+        val clazz: Class<out Presenter>,
         val arguments: Bundle = Bundle()
 ) : Parcelable {
     override fun writeToParcel(p0: Parcel, p1: Int) {
@@ -119,7 +119,7 @@ class BackStackEntry(
     companion object {
         @JvmField val CREATOR = object : Parcelable.Creator<BackStackEntry> {
             override fun createFromParcel(p0: Parcel): BackStackEntry = BackStackEntry(
-                    Class.forName(p0.readString()) as Class<out Presenter<*>>, p0.readBundle()
+                    Class.forName(p0.readString()) as Class<out Presenter>, p0.readBundle()
             )
             override fun newArray(p0: Int): Array<out BackStackEntry?> = kotlin.arrayOfNulls(p0)
         }

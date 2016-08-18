@@ -12,15 +12,15 @@ open class PresenterActivity : Activity(), PresenterContext {
 
     override val activity: Activity = this
 
-    override fun <P : Presenter<*>> register(clazz: Class<P>, factory: (PresenterContext, ViewGroup?) -> P) {
+    override fun <P : Presenter> register(clazz: Class<P>, factory: (PresenterContext, ViewGroup?) -> P) {
         contextDelegate.register(clazz, factory)
     }
 
-    override fun <P : Presenter<*>> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
+    override fun <P : Presenter> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         return contextDelegate.obtain(clazz, parent)
     }
 
-    override fun recycle(presenter: Presenter<*>) {
+    override fun recycle(presenter: Presenter) {
         contextDelegate.recycle(presenter)
     }
 

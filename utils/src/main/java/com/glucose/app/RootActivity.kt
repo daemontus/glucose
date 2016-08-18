@@ -9,10 +9,10 @@ import kotlin.properties.Delegates
 //TODO: Merge this with ContextDelegate - or at least refactor it into some primitive PresenterGroup
 abstract class RootActivity : PresenterActivity() {
 
-    abstract val rootPresenter: Class<out Presenter<*>>
+    abstract val rootPresenter: Class<out Presenter>
     val rootArguments: Bundle = Bundle()
 
-    private var root: Presenter<*> by Delegates.notNull()
+    private var root: Presenter by Delegates.notNull()
     private var frame: FrameLayout by Delegates.notNull()
 
     private var started = false

@@ -32,13 +32,13 @@ fun lifecycleLog(message: String) {
     }
 }
 
-fun Presenter<*>.lifecycleLog(message: String) {
+fun Presenter.lifecycleLog(message: String) {
     if (BuildConfig.DEBUG) {
         Log.d("LIFECYCLE[$this]: $message")
     }
 }
 
-fun <T> Observable<T>.postAction(presenter: Presenter<*>): Observable<T>
+fun <T> Observable<T>.postAction(presenter: Presenter): Observable<T>
      = presenter.post(this)
 
 fun mainThread() = Looper.myLooper() == Looper.getMainLooper()

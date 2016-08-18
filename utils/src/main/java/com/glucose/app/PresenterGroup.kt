@@ -37,9 +37,9 @@ import java.util.*
  * TODO: This group can't handle configuration changes (it will recreate the whole tree) - either fix this or make a better subclass
  * TODO: Split this into an internal abstract group that handles basic stuff, stateless group that can do advanced actions, but can't remember shit and stateful that works like fragment manager.
  */
-open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter<Ctx>(view, context) {
+open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: PresenterContext) : Presenter(view, context) {
 
-    private val children = ArrayList<Presenter<*>>()
+    private val children = ArrayList<Presenter>()
 
     private val transitionSubject = PublishSubject.create<Observable<Result<Any, Throwable>>>()
 
@@ -124,14 +124,14 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
     /**
      * Obtain new presenter and attach it to a ViewGroup with given id.
      */
-    fun <P: Presenter<*>> add(
+    fun <P: Presenter> add(
             @IdRes id: Int, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P = add(findView<ViewGroup>(id), clazz, arguments)
 
     /**
      * Obtain new presenter and attach it to a ViewGroup.
      */
-    fun <P: Presenter<*>> add(
+    fun <P: Presenter> add(
             parent: ViewGroup, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P = attach(parent, ctx.obtain(clazz, parent), arguments)
 
@@ -141,7 +141,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      * Warning: It is recommended to use add/remove instead of attach/detach when possible
      * in order to avoid leaked Presenters.
      */
-    fun <P: Presenter<*>> attach(
+    fun <P: Presenter> attach(
             parent: ViewGroup, presenter: P, arguments: Bundle = Bundle()
     ): P {
         if (!presenter.isAlive) throw IllegalStateException("Adding presenter that hasn't been created properly")
@@ -161,7 +161,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      * Warning: It is recommended to use add/remove instead of attach/detach when possible
      * in order to avoid leaked Presenters.
      */
-    fun <P: Presenter<*>> detach(presenter: P): P {
+    fun <P: Presenter> detach(presenter: P): P {
         if (!presenter.isAlive) throw IllegalStateException("Removing presenter that hasn't been created properly")
         if (!presenter.isAttached) throw IllegalStateException("Removing presenter that hasn't been attached properly")
         if (presenter !in children) throw IllegalStateException("Removing presenter that isn't attached to ${this@PresenterGroup}")
@@ -179,7 +179,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      * Detach all presenters that satisfy a specific predicate.
      * TODO: This is not good, if would be much better if this could somehow be an observable
      */
-    fun detachAll(predicate: (Presenter<*>) -> Boolean): List<Presenter<*>> {
+    fun detachAll(predicate: (Presenter) -> Boolean): List<Presenter> {
         val victims = children.filter(predicate)
         victims.forEach { detach(it) }
         return victims
@@ -188,7 +188,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
     /**
      * Detach and recycle a presenter.
      */
-    fun remove(presenter: Presenter<*>): Unit {
+    fun remove(presenter: Presenter): Unit {
         return ctx.recycle(detach(presenter))
     }
 
@@ -197,7 +197,7 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
      *
      * Transition result contains number of recycled presenters.
      */
-    fun removeAll(predicate: (Presenter<*>) -> Boolean): Int {
+    fun removeAll(predicate: (Presenter) -> Boolean): Int {
         return detachAll(predicate).map { ctx.recycle(it) }.count()
     }
 
@@ -221,17 +221,17 @@ open class PresenterGroup<out Ctx: PresenterContext>(view: View, context: Presen
 
     // ============================ Child retrieval ================================================
 
-    val presenters: List<Presenter<*>>
+    val presenters: List<Presenter>
         get() = children.toList()
 
-    fun <P: Presenter<*>> findPresentersByClass(clazz: Class<P>): List<P> {
+    fun <P: Presenter> findPresentersByClass(clazz: Class<P>): List<P> {
         return presenters.filter { it.javaClass == clazz }.map {
             @Suppress("UNCHECKED_CAST") //Safe due to filter
             (it as P)
         }
     }
 
-    fun <P: Presenter<*>> findPresenterByClass(clazz: Class<P>): P {
+    fun <P: Presenter> findPresenterByClass(clazz: Class<P>): P {
         val r = findPresentersByClass(clazz)
         if (r.size == 0) throw IllegalStateException("So presenter for $clazz")
         if (r.size > 1) throw IllegalStateException("More then one presenter for $clazz")
