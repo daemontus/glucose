@@ -6,15 +6,16 @@ import android.os.Bundle
 import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
+import rx.subjects.PublishSubject
+import rx.Observable
 import java.util.*
 
 /**
- * TODO: Decide how to handle state and IDs - If the layout has an Id, but the presenter does not, should we save it? (Probably make laoyut and presenter have same id if possible)
- * TODO: Ensure that someone is not running transitions outside of the execution context.
- * TODO: Somehow we have to make sure that if transaction fails but presenter is obtained, it is recycled
- * TODO: Give option to execute transition immediately instead of waiting for a next slot? (So that we can render something without waiting)
- * TODO: This group can't handle configuration changes (it will recreate the whole tree) - either fix this or make a better subclass
- * TODO: Split this into an internal abstract group that handles basic stuff, stateless group that can do advanced actions, but can't remember shit and stateful that works like fragment manager.
+ * WARNING: Currently, if the [PresenterLayout] has an ID, but the [Presenter] inside doesn't,
+ * the presenter will be restored, but with no arguments! This might be a bit confusing (-.-)
+ *
+ * TODO: Polish those try-catch blocks.
+ * TODO: Prevent presenter leaks in case of errors where possible.
  */
 open class PresenterGroup : Presenter {
 
@@ -34,10 +35,12 @@ open class PresenterGroup : Presenter {
         super.onAttach(arguments)
         val childIds = arguments.getIntArray(CHILDREN_ID_KEY)
         val childClasses = arguments.getStringArray(CHILDREN_CLASS_KEY)
-        for ((id, className) in childIds.zip(childClasses)) {
-            val layout = findOptionalView<PresenterLayout>(id)
-            if (layout != null) {
-                add(layout, Class.forName(className) as Class<Presenter>)
+        if (childIds != null && childClasses != null) {
+            for ((id, className) in childIds.zip(childClasses)) {
+                val layout = findOptionalView<PresenterLayout>(id)
+                if (layout != null) {
+                    add(layout, Class.forName(className) as Class<Presenter>)
+                }
             }
         }
     }
@@ -68,7 +71,7 @@ open class PresenterGroup : Presenter {
 
     override fun onDetach() {
         //TODO: Action processing should probably stop here - but how?
-        children.forEach {
+        children.toList().forEach {
             remove(it)
         }
         children.clear()
@@ -89,6 +92,7 @@ open class PresenterGroup : Presenter {
         children.forEach {
             it.onConfigurationChanged(newConfig)
         }
+        //Now that the whole subtree is done, update super and restore the rest
         super.onConfigurationChanged(newConfig)
         for ((layout, clazz) in savedState) {
             add(layout, clazz)
@@ -104,12 +108,9 @@ open class PresenterGroup : Presenter {
 
     override fun onSaveInstanceState(out: Bundle) {
         super.onSaveInstanceState(out)
-        val presenters = this.presenters.filter {
-            (it.view.parent as View).id != View.NO_ID
-        }
-        out.putIntArray(CHILDREN_ID_KEY, presenters.map {
-            (it.view.parent as View).id
-        }.toIntArray())
+        val parentViews = presenters.map { it.view.parent as View }
+        val presenters = parentViews.filter { it.id != View.NO_ID }
+        out.putIntArray(CHILDREN_ID_KEY, presenters.map { it.id }.toIntArray())
         out.putStringArray(CHILDREN_CLASS_KEY, presenters.map { it.javaClass.name }.toTypedArray())
     }
 
@@ -121,6 +122,12 @@ open class PresenterGroup : Presenter {
     }
 
     // ========================== Children manipulation ============================================
+
+    private val childAdded: PublishSubject<Presenter> = PublishSubject.create()
+    private val childRemoved: PublishSubject<Class<out Presenter>> = PublishSubject.create()
+
+    val onChildAdd: Observable<Presenter> = childAdded
+    val onChildRemoved: Observable<Class<out Presenter>> = childRemoved
 
     /**
      * Obtain new presenter and attach it to a ViewGroup with given id.
@@ -136,12 +143,21 @@ open class PresenterGroup : Presenter {
             parent: PresenterLayout, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P {
         val presenter = ctx.attach(clazz, arguments, parent.id)
-        parent.addView(presenter.view)
-        children.add(presenter)
-        if (isStarted) presenter.performStart()
-        if (isResumed) presenter.performResume()
-        transitionLog("Attached $presenter")
-        return presenter
+        try {
+            parent.addView(presenter.view)
+            children.add(presenter)
+            if (isStarted) presenter.performStart()
+            if (isResumed) presenter.performResume()
+            transitionLog("Attached $presenter")
+            childAdded.onNext(presenter)
+            return presenter
+        } catch (e: Exception) {
+            if (isResumed) presenter.performPause()
+            if (isStarted) presenter.performStop()
+            parent.removeView(presenter.view)
+            ctx.detach(presenter)
+            throw e
+        }
     }
 
     /**
@@ -157,6 +173,7 @@ open class PresenterGroup : Presenter {
         parent.removeView(presenter.view)
         children.remove(presenter)
         transitionLog("Detached $presenter")
+        childRemoved.onNext(presenter.javaClass)
         ctx.detach(presenter)
     }
 

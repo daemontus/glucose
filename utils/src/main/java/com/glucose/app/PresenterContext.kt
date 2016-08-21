@@ -47,16 +47,22 @@ class PresenterContext(
      */
     fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle(), @IdRes id: Int = View.NO_ID): P {
         val instance = factory.obtain(presenter)
-        val finalId = if (id == View.NO_ID) instance.id else id
-        val savedState = if (finalId == View.NO_ID) null else {
-            presenterStates?.get(id)
+        try {
+            val finalId = if (id == View.NO_ID) instance.id else id
+            val savedState = if (finalId == View.NO_ID) null else {
+                presenterStates?.get(id)
+            }
+            if (savedState != null) {
+                arguments.putAll(savedState)
+            }
+            arguments.putInt("id", finalId)
+            instance.performAttach(arguments)
+            return instance
+        } catch (e: Exception) {
+            if (instance.isAttached) instance.performDetach()
+            factory.recycle(instance)
+            throw e
         }
-        if (savedState != null) {
-            arguments.putAll(savedState)
-        }
-        arguments.putInt("id", finalId)
-        instance.performAttach(arguments)
-        return instance
     }
 
     /**

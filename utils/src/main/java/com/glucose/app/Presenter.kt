@@ -19,6 +19,7 @@ import rx.Observer
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
+import rx.subjects.UnicastSubject
 import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
@@ -272,11 +273,12 @@ open class Presenter(
      *
      * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
      * TODO: Can we make this into an operator? :) Why not?
+     * TODO: Post immediate - like Post, but doesn't require subscription (uses unicast subject instead)
      */
 
     //New subject is created when presenter is attached.
     //If presenter is not attached, actionSubject should be null.
-    private var actionSubject = PublishSubject.create<Pair<Observable<*>, PublishSubject<*>>>()
+    private var actionSubject = PublishSubject.create<Pair<Observable<*>, UnicastSubject<*>>>()
     private var actionSubscription: Subscription? = null
     private var pendingActions = ArrayList<Observer<*>>()
 
@@ -285,7 +287,9 @@ open class Presenter(
         return Observable.defer {
             //defer ensures that the action is not queued until subscribed to
             actionSubject?.let { queue ->
-                val proxy = PublishSubject.create<R>()
+                //PublishSubject can't be used here, because the action might execute
+                //before onNext returns and subscriber will get proxy only after that.
+                val proxy = UnicastSubject.create<R>()
                 pendingActions.add(proxy)
                 queue.onNext(action
                         .doOnEach(proxy)

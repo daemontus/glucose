@@ -3,6 +3,9 @@ package com.glucose.app
 import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
+import android.support.annotation.IdRes
+import android.support.annotation.LayoutRes
+import android.view.View
 import android.view.ViewGroup
 import com.github.daemontus.egholm.functional.Result
 import com.github.daemontus.egholm.functional.Result.Ok
@@ -14,92 +17,79 @@ import java.util.*
 //TODO: We need a notification about what is currently on top of the stack
 //TODO: It would be best if we could gently move the presenters somewhere away (pause/stop them)
 open class BackStack(
-        private val bottom: BackStackEntry, private val container: ViewGroup,
-        private val group: PresenterGroup<*>
-) : InstanceState(group) {
+        context: PresenterContext,
+        @LayoutRes layout: Int,
+        @IdRes private val container: Int,
+        private val root: BackStackEntry
+) : PresenterGroup(context, layout) {
 
-    private val backStack = ArrayList<BackStackEntry>()
+    private val backStack by InstanceState<ArrayList<BackStackEntry>>(
+            { key ->
+                this.getParcelableArrayList(key) ?: (ArrayList<BackStackEntry>().apply {
+                    this@InstanceState.putParcelableArrayList(key, this)    //if we are creating it, we have to put it there!
+                })
+            }, Bundle::putParcelableArrayList)
 
-    init {
-        //TODO: Turns out Subject subscriptions are toxic,
-        //so we really want to do the initial setup in attach
+    private val liveStack = ArrayList<Presenter>()
 
-        //PresenterGroup will recursively detach all children when detached.
-        //Therefore we have to restore the backStack upon every attachment.
-        /*val repopulateStack = {
-            //It has to be a single transition because:
-            //a) To guarantee ordering (what if user pushes some buttons?!)
-            //b) Back pressure will drop parts of the back stack if it is too big
-            group.enqueueTransition(Observable.from(
-                    backStack.map { entry ->
-                        group.newTransition()
-                                .map { it.add(container, entry.clazz, entry.arguments) }
-                    }
-            ).onBackpressureBuffer(backStack.size+1L).concatMap { it.toObservable() })
+    override fun onAttach(arguments: Bundle) {
+        Log.d("Attaching BackStack")
+        super.onAttach(arguments)   //restore state
+        if (backStack.isEmpty()) {
+            Log.d("Stack is empty, add ")
+            backStack.add(root)
         }
-        group.lifecycleEvents.doOnSubscribe {
-            //we are not getting a notification then...
-            if (group.isAttached) repopulateStack()
-        }.filter {
-            it == LifecycleEvent.ATTACH
-        }
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    repopulateStack()
-                }*/
-    }
-
-    override fun onCreate(instanceState: Bundle?) {
-        backStack.addAll(instanceState?.getParcelableArrayList<BackStackEntry>(key) ?: listOf(bottom))
-        Log.d("Back stack after create: $backStack")
-    }
-
-    override fun onSaveInstanceState(output: Bundle) {
-        output.putParcelableArrayList(key, backStack)
-    }
-
-    fun onAttach() {
         Observable.from(backStack.map { entry ->
             Observable.fromCallable {
-                group.add(container, entry.clazz, entry.arguments)
+                Log.d("Adding: ${entry.clazz}")
+                add(container, entry.clazz, entry.arguments)
             }
-        }).onBackpressureBuffer(backStack.size+1L).concatMap { it.postAction(group) }.asResult()
+        }).onBackpressureBuffer(backStack.size+1L).concatMap { it.postAction(this) }.asResult()
                 .subscribe {
-            Log.d("State restore: $it")
+                    if (it is Result.Ok) {
+                        liveStack.add(it.ok)
+                    }
+                    Log.d("State restore: $it")
         }
+    }
+
+    override fun onBackPressed(): Boolean {
+        return pop() || super.onBackPressed()
     }
 
     fun push(clazz: Class<out Presenter>, arguments: Bundle = Bundle()) {
         Observable.fromCallable {
-            group.add(container, clazz, arguments)
-        }.postAction(group).asResult().subscribe {
+            add(container, clazz, arguments)
+        }.postAction(this).asResult().subscribe {
+            Log.d("Push result: $it")
             when (it) {
                 is Ok -> {
                     Log.d("Pushed: $it")
                     backStack.add(BackStackEntry(clazz, arguments))
+                    liveStack.add(it.ok)
                 }
                 is Error -> Log.e("Problem pushing: $it")
             }
         }
     }
 
-    fun canGoBack(): Boolean = backStack.size > 1
-
     fun pop(): Boolean {
-        if (backStack.size < 2) return false
+        if (liveStack.size < 2) return false
         Observable.fromCallable {
-            if (backStack.size > 1) {
-                val victimEntry = backStack.last()
-                backStack.remove(victimEntry)
+            if (liveStack.size > 1) {
                 //if there is no such entry, somebody has been tempering with the back stack
                 //and the transition will fail
-                val victim = group.presenters.last {
-                    it.javaClass == victimEntry.clazz && it.view.parent == container
+                val victim = liveStack.last()
+                liveStack.remove(victim)
+                val entry = backStack.last()
+                backStack.remove(entry)
+                remove(victim)
+                Log.d("Popping ${victim.javaClass}")
+                if (entry.clazz != victim.javaClass) {
+                    throw IllegalStateException("Back stack corrupted: $backStack vs. $liveStack")
                 }
-                Log.d("Popping ${victimEntry.clazz}")
-                group.remove(victim)
             }
-        }
+        }.postAction(this).asResult().subscribe { Log.d("Popped: $it") }
         return true
     }
 
