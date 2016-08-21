@@ -25,8 +25,6 @@ open class BackStack(
         private val root: BackStackEntry
 ) : PresenterGroup(context, layout) {
 
-    override val id: Int = R.id.action_bar
-
     private val liveStack = ArrayList<Presenter>()
 
     //Note: Live stack will be repopulated from state info. Hurray!
