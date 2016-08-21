@@ -118,7 +118,7 @@ open class Presenter(
             return field
         }
 
-    val id: Int
+    open val id: Int
         get() = if (this.isAttached) {
             arguments.getInt("id", View.NO_ID)
         } else View.NO_ID
@@ -155,6 +155,7 @@ open class Presenter(
 
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
+        this.arguments = arguments
         state = State.ATTACHED
         lifecycleEventSubject.onNext(LifecycleEvent.ATTACH)
         startProcessingActions()
@@ -182,7 +183,8 @@ open class Presenter(
         }
     }
 
-    protected open fun onSaveInstanceState(out: Bundle) {
+    //TODO: Maybe Protected?
+    open fun onSaveInstanceState(out: Bundle) {
         out.putAll(arguments)   //make a copy of the current state
     }
 

@@ -5,6 +5,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
+import android.support.v7.appcompat.R
 import android.view.View
 import android.view.ViewGroup
 import com.github.daemontus.egholm.functional.Result
@@ -14,6 +15,7 @@ import com.glucose.Log
 import rx.Observable
 import java.util.*
 
+//TODO: More strict BackStack contract - What about other layouts? What happens if I do my own modifications? Etc. Etc.
 //TODO: We need a notification about what is currently on top of the stack
 //TODO: It would be best if we could gently move the presenters somewhere away (pause/stop them)
 open class BackStack(
@@ -23,34 +25,36 @@ open class BackStack(
         private val root: BackStackEntry
 ) : PresenterGroup(context, layout) {
 
-    private val backStack by InstanceState<ArrayList<BackStackEntry>>(
-            { key ->
-                this.getParcelableArrayList(key) ?: (ArrayList<BackStackEntry>().apply {
-                    this@InstanceState.putParcelableArrayList(key, this)    //if we are creating it, we have to put it there!
-                })
-            }, Bundle::putParcelableArrayList)
+    override val id: Int = R.id.action_bar
 
     private val liveStack = ArrayList<Presenter>()
 
-    override fun onAttach(arguments: Bundle) {
-        Log.d("Attaching BackStack")
-        super.onAttach(arguments)   //restore state
-        if (backStack.isEmpty()) {
-            Log.d("Stack is empty, add ")
-            backStack.add(root)
-        }
-        Observable.from(backStack.map { entry ->
-            Observable.fromCallable {
-                Log.d("Adding: ${entry.clazz}")
-                add(container, entry.clazz, entry.arguments)
+    //Note: Live stack will be repopulated from state info. Hurray!
+
+    init {
+        onChildAdd.subscribe {
+            if ((it.view.parent as View).id == container) {
+                Log.d("Add to live stack: $it")
+                liveStack.add(it)
             }
-        }).onBackpressureBuffer(backStack.size+1L).concatMap { it.postAction(this) }.asResult()
-                .subscribe {
-                    if (it is Result.Ok) {
-                        liveStack.add(it.ok)
-                    }
-                    Log.d("State restore: $it")
         }
+    }
+
+    override fun onAttach(arguments: Bundle) {
+        super.onAttach(arguments)
+        if (liveStack.isEmpty()) {
+            push(root.clazz, root.arguments)
+        }
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        Log.d("Detaching back stack")
+    }
+
+    override fun onSaveInstanceState(out: Bundle) {
+        super.onSaveInstanceState(out)
+        Log.d("Saving state! ${out.keySet().toSet()}")
     }
 
     override fun onBackPressed(): Boolean {
@@ -62,14 +66,6 @@ open class BackStack(
             add(container, clazz, arguments)
         }.postAction(this).asResult().subscribe {
             Log.d("Push result: $it")
-            when (it) {
-                is Ok -> {
-                    Log.d("Pushed: $it")
-                    backStack.add(BackStackEntry(clazz, arguments))
-                    liveStack.add(it.ok)
-                }
-                is Error -> Log.e("Problem pushing: $it")
-            }
         }
     }
 
@@ -81,13 +77,8 @@ open class BackStack(
                 //and the transition will fail
                 val victim = liveStack.last()
                 liveStack.remove(victim)
-                val entry = backStack.last()
-                backStack.remove(entry)
                 remove(victim)
                 Log.d("Popping ${victim.javaClass}")
-                if (entry.clazz != victim.javaClass) {
-                    throw IllegalStateException("Back stack corrupted: $backStack vs. $liveStack")
-                }
             }
         }.postAction(this).asResult().subscribe { Log.d("Popped: $it") }
         return true

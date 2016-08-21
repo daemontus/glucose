@@ -6,13 +6,18 @@ import android.os.Bundle
 import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
+import com.glucose.Log
 import rx.subjects.PublishSubject
 import rx.Observable
 import java.util.*
 
 /**
  * WARNING: Currently, if the [PresenterLayout] has an ID, but the [Presenter] inside doesn't,
- * the presenter will be restored, but with no arguments! This might be a bit confusing (-.-)
+ * the presenter will be restored even with it's state (but not recursively, unless similar situation occurs)
+ *
+ * Note: All children are restored synchronously when attaching. In case of a deep hierarchy,
+ * this can cause frame drops. To avoid this, we have to introduce some mechanism to
+ * "break the chain".
  *
  * TODO: Polish those try-catch blocks.
  * TODO: Prevent presenter leaks in case of errors where possible.
@@ -22,6 +27,7 @@ open class PresenterGroup : Presenter {
     companion object {
         val CHILDREN_ID_KEY = "glucose:presenter_children_ids"
         val CHILDREN_CLASS_KEY = "glucose:presenter_children_classes"
+        val CHILDREN_STATE_KEY = "glucose:presenter_children_state"
     }
 
     constructor(context: PresenterContext, view: View) : super(context, view)
@@ -35,11 +41,16 @@ open class PresenterGroup : Presenter {
         super.onAttach(arguments)
         val childIds = arguments.getIntArray(CHILDREN_ID_KEY)
         val childClasses = arguments.getStringArray(CHILDREN_CLASS_KEY)
+        val childStates = arguments.getParcelableArrayList<Bundle>(CHILDREN_STATE_KEY)
         if (childIds != null && childClasses != null) {
-            for ((id, className) in childIds.zip(childClasses)) {
+            for (i in childIds.indices) {
+                val id = childIds[i]
+                val className = childClasses[i]
+                val state = childStates[i]
                 val layout = findOptionalView<PresenterLayout>(id)
                 if (layout != null) {
-                    add(layout, Class.forName(className) as Class<Presenter>)
+                    Log.d("Restored $className in $id")
+                    add(layout, Class.forName(className) as Class<Presenter>, state)
                 }
             }
         }
@@ -108,10 +119,14 @@ open class PresenterGroup : Presenter {
 
     override fun onSaveInstanceState(out: Bundle) {
         super.onSaveInstanceState(out)
-        val parentViews = presenters.map { it.view.parent as View }
-        val presenters = parentViews.filter { it.id != View.NO_ID }
-        out.putIntArray(CHILDREN_ID_KEY, presenters.map { it.id }.toIntArray())
+        val presenters = presenters.filter { (it.view.parent as View).id != View.NO_ID }
+        out.putIntArray(CHILDREN_ID_KEY, presenters.map { (it.view.parent as View).id }.toIntArray())
         out.putStringArray(CHILDREN_CLASS_KEY, presenters.map { it.javaClass.name }.toTypedArray())
+        out.putParcelableArrayList(CHILDREN_STATE_KEY, ArrayList(presenters.map {
+            val state = Bundle()
+            it.onSaveInstanceState(state)
+            state
+        }))
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
@@ -126,6 +141,7 @@ open class PresenterGroup : Presenter {
     private val childAdded: PublishSubject<Presenter> = PublishSubject.create()
     private val childRemoved: PublishSubject<Class<out Presenter>> = PublishSubject.create()
 
+    //TODO: Can we somehow make sure this does not execute after detach?
     val onChildAdd: Observable<Presenter> = childAdded
     val onChildRemoved: Observable<Class<out Presenter>> = childRemoved
 

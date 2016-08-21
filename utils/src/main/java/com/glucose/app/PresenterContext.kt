@@ -10,6 +10,7 @@ import android.support.annotation.IdRes
 import android.support.annotation.MainThread
 import android.util.SparseArray
 import android.view.View
+import com.glucose.Log
 import kotlin.properties.Delegates
 
 
@@ -50,9 +51,12 @@ class PresenterContext(
         try {
             val finalId = if (id == View.NO_ID) instance.id else id
             val savedState = if (finalId == View.NO_ID) null else {
-                presenterStates?.get(id)
+                presenterStates?.get(finalId)
             }
+            Log.d("Attach: $presenter with $finalId")
             if (savedState != null) {
+                Log.d("Saved state: ${savedState.keySet().toList()}")
+                Log.d("Stack: ${savedState.get("backStack")}")
                 arguments.putAll(savedState)
             }
             arguments.putInt("id", finalId)
@@ -79,9 +83,12 @@ class PresenterContext(
      * The caller should add returned view to the view hierarchy before the view state is restored.
      */
     fun onCreate(savedInstanceState: Bundle?): View {
+        Log.d("Starting onCreate")
         presenterStates = savedInstanceState?.getSparseParcelableArray<Bundle>(STATE_KEY)
+        Log.d("Restored state: ${presenterStates?.keyAt(0)}")
         root = attach(rootPresenter, rootArguments, rootId) //should recreate the whole tree
-        presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
+        Log.d("Finished onCreate")
+        //presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
         return root.view
     }
 
