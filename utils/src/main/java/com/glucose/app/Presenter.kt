@@ -282,7 +282,6 @@ open class Presenter(
      * on the main thread, so that synchronisation is not needed.
      *
      * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
-     * TODO: Can we make this into an operator? :) Why not?
      */
 
     private var actionSubject = PublishSubject.create<Pair<Observable<*>, ReplaySubject<*>>>()
@@ -290,6 +289,15 @@ open class Presenter(
     //If presenter is not attached, actionSubscription should be null.
     private var actionSubscription: Subscription? = null
     private var pendingActions = ArrayList<Observer<*>>()
+
+    /**
+     * Use this to post actions using the compose operator.
+     */
+    fun <R> asAction() = Observable.Transformer<R, R> { post(it) }
+    /**
+     * Use this to post immediate actions using the compose operator.
+     */
+    fun <R> asImmediateAction() = Observable.Transformer<R, R> { postImmediate(it) }
 
     @AnyThread
     fun <R> post(action: Observable<R>): Observable<R> {
