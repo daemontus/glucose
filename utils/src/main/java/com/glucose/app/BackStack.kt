@@ -13,21 +13,32 @@ import com.github.daemontus.egholm.functional.Result.Ok
 import com.github.daemontus.egholm.functional.error
 import com.glucose.Log
 import rx.Observable
+import rx.Single
 import java.util.*
 
-//TODO: More strict BackStack contract - What about other layouts? What happens if I do my own modifications? Etc. Etc.
-//TODO: We need a notification about what is currently on top of the stack
-//TODO: It would be best if we could gently move the presenters somewhere away (pause/stop them)
+/**
+ * BackStack assumes that no one else is changing the contents of
+ * [container]. Otherwise, the contract is broken and the behavior is undefined.
+ * (It shouldn't crash, but it can get stuck, etc.)
+ *
+ * TODO: Make a version of stack that can stop/detach presenters while they are not visible, saving resources.
+ */
 open class BackStack(
         context: PresenterContext,
         @LayoutRes layout: Int,
         @IdRes private val container: Int,
-        private val root: BackStackEntry
+        private val bottom: Class<out Presenter>,
+        private val bottomArguments: Bundle = Bundle()
 ) : PresenterGroup(context, layout) {
+
+    //Note: Live stack will be repopulated from state info. Hurray!
 
     private val liveStack = ArrayList<Presenter>()
 
-    //Note: Live stack will be repopulated from state info. Hurray!
+    /**
+     * An unmodifiable view of the Presenter stack managed by this group.
+     */
+    val stack: List<Presenter> = Collections.unmodifiableList(liveStack)
 
     init {
         onChildAdd.subscribe {
@@ -40,31 +51,20 @@ open class BackStack(
 
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
-        if (liveStack.isEmpty()) {
-            push(root.clazz, root.arguments)
+        if (liveStack.isEmpty()) {  //add bottom element if empty
+            push(bottom, bottomArguments)
         }
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        Log.d("Detaching back stack")
-    }
-
-    override fun onSaveInstanceState(out: Bundle) {
-        super.onSaveInstanceState(out)
-        Log.d("Saving state! ${out.keySet().toSet()}")
     }
 
     override fun onBackPressed(): Boolean {
         return pop() || super.onBackPressed()
     }
 
-    fun push(clazz: Class<out Presenter>, arguments: Bundle = Bundle()) {
-        Observable.fromCallable {
+    fun <R: Presenter> push(clazz: Class<R>, arguments: Bundle = Bundle()): Observable<R> {
+        return Observable.fromCallable {
+            Log.d("Pushing: $clazz")
             add(container, clazz, arguments)
-        }.postAction(this).asResult().subscribe {
-            Log.d("Push result: $it")
-        }
+        }.postActionImmediate(this)
     }
 
     fun pop(): Boolean {
@@ -74,33 +74,12 @@ open class BackStack(
                 //if there is no such entry, somebody has been tempering with the back stack
                 //and the transition will fail
                 val victim = liveStack.last()
-                liveStack.remove(victim)
-                remove(victim)
                 Log.d("Popping ${victim.javaClass}")
+                liveStack.removeAt(liveStack.size - 1)
+                remove(victim)
             }
-        }.postAction(this).asResult().subscribe { Log.d("Popped: $it") }
+        }.postActionImmediate(this)
         return true
     }
 
-}
-
-class BackStackEntry(
-        val clazz: Class<out Presenter>,
-        val arguments: Bundle = Bundle()
-) : Parcelable {
-    override fun writeToParcel(p0: Parcel, p1: Int) {
-        p0.writeString(clazz.name)
-        p0.writeBundle(arguments)
-    }
-
-    override fun describeContents(): Int = 0
-
-    companion object {
-        @JvmField val CREATOR = object : Parcelable.Creator<BackStackEntry> {
-            override fun createFromParcel(p0: Parcel): BackStackEntry = BackStackEntry(
-                    Class.forName(p0.readString()) as Class<out Presenter>, p0.readBundle()
-            )
-            override fun newArray(p0: Int): Array<out BackStackEntry?> = kotlin.arrayOfNulls(p0)
-        }
-    }
 }
