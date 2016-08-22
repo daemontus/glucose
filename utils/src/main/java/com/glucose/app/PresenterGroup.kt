@@ -164,7 +164,7 @@ open class PresenterGroup : Presenter {
             children.add(presenter)
             if (isStarted) presenter.performStart()
             if (isResumed) presenter.performResume()
-            transitionLog("Attached $presenter")
+            actionLog("Attached $presenter")
             childAdded.onNext(presenter)
             return presenter
         } catch (e: Exception) {
@@ -188,7 +188,7 @@ open class PresenterGroup : Presenter {
         val parent = presenter.view.parent as PresenterLayout
         parent.removeView(presenter.view)
         children.remove(presenter)
-        transitionLog("Detached $presenter")
+        actionLog("Detached $presenter")
         childRemoved.onNext(presenter.javaClass)
         ctx.detach(presenter)
     }

@@ -20,7 +20,7 @@ fun <R> Observable<Result<R, Throwable>>.unwrap(): Observable<R>
         is Result.Error -> throw it.error
     } }
 
-fun transitionLog(message: String) {
+fun actionLog(message: String) {
     if (BuildConfig.DEBUG) {
         Log.d("TRANSITION: $message")
     }
@@ -40,5 +40,8 @@ fun Presenter.lifecycleLog(message: String) {
 
 fun <T> Observable<T>.postAction(presenter: Presenter): Observable<T>
      = presenter.post(this)
+
+fun <T> Observable<T>.postActionImmediate(presenter: Presenter): Observable<T>
+    = presenter.postImmediate(this)
 
 fun mainThread() = Looper.myLooper() == Looper.getMainLooper()

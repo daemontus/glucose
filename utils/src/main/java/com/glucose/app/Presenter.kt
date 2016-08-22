@@ -19,7 +19,7 @@ import rx.Observer
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
-import rx.subjects.UnicastSubject
+import rx.subjects.ReplaySubject
 import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
@@ -173,8 +173,16 @@ open class Presenter(
         lifecycleEventSubject.onNext(LifecycleEvent.RESUME)
     }
 
+    /**
+     * Notification that the Presenter should move to the previous state.
+     * @return false if presenter can't go back, true if it just did
+     */
     open fun onBackPressed(): Boolean = false
 
+    /**
+     * Save state of this [Presenter] and all it's children into a container,
+     * assuming they have an ID set.
+     */
     open fun saveHierarchyState(container: SparseArray<Bundle>) {
         if (id != View.NO_ID) {
             val out = Bundle()
@@ -183,7 +191,9 @@ open class Presenter(
         }
     }
 
-    //TODO: Maybe Protected?
+    /**
+     * Save state of this [Presenter] into a given Bundle.
+     */
     open fun onSaveInstanceState(out: Bundle) {
         out.putAll(arguments)   //make a copy of the current state
     }
@@ -265,22 +275,19 @@ open class Presenter(
      * behaviour should be parametrised. (If you want to submit a big number of
      * actions at once, use concatMap with backpressure buffer)
      *
-     * Performance note: To ensure that the action is executed only once, the results
-     * of each action are cached. Therefore if you want to avoid excessive memory usage,
-     * avoid actions that emit high amount of items. Future note: Maybe just make it into a
-     * unicast subject and be done with it.
+     * Note: All actions are started on the main thread! (Unless the action is configured
+     * otherwise)
      *
      * Implementation note: Everything regarding actions in this class should be happening
      * on the main thread, so that synchronisation is not needed.
      *
      * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
      * TODO: Can we make this into an operator? :) Why not?
-     * TODO: Post immediate - like Post, but doesn't require subscription (uses unicast subject instead)
      */
 
-    //New subject is created when presenter is attached.
-    //If presenter is not attached, actionSubject should be null.
-    private var actionSubject = PublishSubject.create<Pair<Observable<*>, UnicastSubject<*>>>()
+    private var actionSubject = PublishSubject.create<Pair<Observable<*>, ReplaySubject<*>>>()
+    //New subscription is created when presenter is attached.
+    //If presenter is not attached, actionSubscription should be null.
     private var actionSubscription: Subscription? = null
     private var pendingActions = ArrayList<Observer<*>>()
 
@@ -288,25 +295,41 @@ open class Presenter(
     fun <R> post(action: Observable<R>): Observable<R> {
         return Observable.defer {
             //defer ensures that the action is not queued until subscribed to
-            actionSubject?.let { queue ->
-                //PublishSubject can't be used here, because the action might execute
-                //before onNext returns and subscriber will get proxy only after that.
-                val proxy = UnicastSubject.create<R>()
-                pendingActions.add(proxy)
-                queue.onNext(action
-                        .doOnEach(proxy)
-                        .doOnTerminate {
-                            removeProxy(proxy)
-                        } to proxy
-                )
-                proxy
-            } ?: Observable.error<R>(   //fail fast if presenter isn't attached
-                    IllegalStateException("Action dropped because presenter is not attached.")
-            )
+            enqueueAction(action)
         }.subscribeOn(AndroidSchedulers.mainThread())   //ensure action is started on main thread
-        //ensures that the action is queued only when first subscribed to and all
-        //future subscriptions are served from the cache
-        .cache()
+    }
+
+    @AnyThread
+    fun <R> postImmediate(action: Observable<R>): Observable<R> {
+        return if (mainThread()) {
+            enqueueAction(action)
+        } else {
+            val result = post(action)
+            result.asResult().subscribe()   //force silent execution
+            result
+        }
+
+    }
+
+    @MainThread
+    private fun <R> enqueueAction(action: Observable<R>): Observable<R> {
+        return actionSubject?.let { queue ->
+            //PublishSubject can't be used here, because the action might execute
+            //before onNext returns and subscriber will get proxy only after that.
+            //UnicastSubject might be more efficient, but I'm not sure how will it
+            //handle multiple subscriptions, so let's just play it safe.
+            val proxy = ReplaySubject.create<R>()
+            pendingActions.add(proxy)
+            queue.onNext(action
+                    .doOnEach(proxy)
+                    .doOnTerminate {
+                        removeProxy(proxy)
+                    } to proxy
+            )
+            proxy
+        } ?: Observable.error<R>(   //fail fast if presenter isn't attached
+                LifecycleException("Action dropped because presenter is not attached.")
+        )
     }
 
     /**
@@ -320,8 +343,8 @@ open class Presenter(
             removeProxy(it.second)
         }.map { it.first.asResult() }).subscribe({
             when (it) {
-                is Result.Ok<*,*> -> transitionLog("Action produced an item")
-                is Result.Error<*,*> -> transitionLog("Action error: ${it.error}")
+                is Result.Ok<*,*> -> actionLog("Action produced an item")
+                is Result.Error<*,*> -> actionLog("Action error: ${it.error}")
             }
         }, {
             Log.e("Something went wrong in the action mechanism", it)
@@ -351,7 +374,7 @@ open class Presenter(
         actionSubscription = null
         pendingActions.forEach {
             it.onError(
-                    IllegalStateException("Action dropped because presenter is not attached.")
+                    LifecycleException("Action dropped because presenter is not attached.")
             )
         }
         pendingActions.clear()
