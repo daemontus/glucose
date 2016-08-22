@@ -229,7 +229,7 @@ open class Presenter(
     open val canChangeConfiguration = true
 
     open fun onConfigurationChanged(newConfig: Configuration) {
-        ctx.factory.onConfigurationChange(newConfig)
+        ctx.factory.cleanUpBeforeConfigChange()
         if (!canChangeConfiguration) {
             throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
         }

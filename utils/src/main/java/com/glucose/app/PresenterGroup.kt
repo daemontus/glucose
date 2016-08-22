@@ -159,21 +159,13 @@ open class PresenterGroup : Presenter {
             parent: PresenterLayout, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P {
         val presenter = ctx.attach(clazz, arguments, parent.id)
-        try {
-            parent.addView(presenter.view)
-            children.add(presenter)
-            if (isStarted) presenter.performStart()
-            if (isResumed) presenter.performResume()
-            actionLog("Attached $presenter")
-            childAdded.onNext(presenter)
-            return presenter
-        } catch (e: Exception) {
-            if (isResumed) presenter.performPause()
-            if (isStarted) presenter.performStop()
-            parent.removeView(presenter.view)
-            ctx.detach(presenter)
-            throw e
-        }
+        parent.addView(presenter.view)
+        children.add(presenter)
+        if (isStarted) presenter.performStart()
+        if (isResumed) presenter.performResume()
+        actionLog("Attached $presenter")
+        childAdded.onNext(presenter)
+        return presenter
     }
 
     /**

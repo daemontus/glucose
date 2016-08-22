@@ -92,11 +92,15 @@ open class PresenterFactory(private val context: PresenterContext) {
      * (Attached are notified through the tree)
      */
     fun onConfigurationChange(newConfig: Configuration) {
+        cleanUpBeforeConfigChange()
+        freePresenters.forEach { it.onConfigurationChanged(newConfig) }
+    }
+
+    internal fun cleanUpBeforeConfigChange() {
         //kill presenters that can't handle config change
         freePresenters.filter { !it.canChangeConfiguration }.forEach {
             killPresenter(it)
         }
-        freePresenters.forEach { it.onConfigurationChanged(newConfig) }
     }
 
 }

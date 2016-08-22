@@ -1,19 +1,11 @@
 package com.glucose.app
 
 import android.os.Bundle
-import android.os.Parcel
-import android.os.Parcelable
 import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
-import android.support.v7.appcompat.R
 import android.view.View
-import android.view.ViewGroup
-import com.github.daemontus.egholm.functional.Result
-import com.github.daemontus.egholm.functional.Result.Ok
-import com.github.daemontus.egholm.functional.error
 import com.glucose.Log
 import rx.Observable
-import rx.Single
 import java.util.*
 
 /**

@@ -48,25 +48,16 @@ class PresenterContext(
      */
     fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle(), @IdRes id: Int = View.NO_ID): P {
         val instance = factory.obtain(presenter)
-        try {
-            val finalId = if (id == View.NO_ID) instance.id else id
-            val savedState = if (finalId == View.NO_ID) null else {
-                presenterStates?.get(finalId)
-            }
-            Log.d("Attach: $presenter with $finalId")
-            if (savedState != null) {
-                Log.d("Saved state: ${savedState.keySet().toList()}")
-                Log.d("Stack: ${savedState.get("backStack")}")
-                arguments.putAll(savedState)
-            }
-            arguments.putInt("id", finalId)
-            instance.performAttach(arguments)
-            return instance
-        } catch (e: Exception) {
-            if (instance.isAttached) instance.performDetach()
-            factory.recycle(instance)
-            throw e
+        val finalId = if (id == View.NO_ID) instance.id else id
+        val savedState = if (finalId == View.NO_ID) null else {
+            presenterStates?.get(finalId)
         }
+        if (savedState != null) {
+            arguments.putAll(savedState)
+        }
+        arguments.putInt("id", finalId)
+        instance.performAttach(arguments)
+        return instance
     }
 
     /**
@@ -83,11 +74,8 @@ class PresenterContext(
      * The caller should add returned view to the view hierarchy before the view state is restored.
      */
     fun onCreate(savedInstanceState: Bundle?): View {
-        Log.d("Starting onCreate")
         presenterStates = savedInstanceState?.getSparseParcelableArray<Bundle>(STATE_KEY)
-        Log.d("Restored state: ${presenterStates?.keyAt(0)}")
         root = attach(rootPresenter, rootArguments, rootId) //should recreate the whole tree
-        Log.d("Finished onCreate")
         //presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
         return root.view
     }
