@@ -308,49 +308,4 @@ open class Presenter(
         State.ALIVE -> throw IllegalStateException("$state does not have an opening event")
     }
 
-    // =========================== Argument related utility functions ==============================
-
-    //TODO: Make more, actually use InstanceState and move it to the file there.
-    private class OptionalArgumentDelegate<out T: Any>(
-            private val key: String,
-            private val default: T?,
-            private val getter: (Bundle, String) -> T?
-    ) : ReadOnlyProperty<Presenter, T?> {
-        override fun getValue(thisRef: Presenter, property: KProperty<*>): T? = getter(thisRef.arguments, key) ?: default
-    }
-
-    private class ArgumentDelegate<out T: Any>(
-    private val key: String,
-    private val default: T?,
-    private val getter: (Bundle, String) -> T?
-    ) : ReadOnlyProperty<Presenter, T> {
-        override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-                = getter(thisRef.arguments, key) ?: default ?: throw IllegalStateException("Missing argument $key")
-    }
-
-    protected fun stringArgumentOptional(key: String, default: String? = null): ReadOnlyProperty<Presenter, String?>
-            = OptionalArgumentDelegate(key, default, { b, k -> b.getString(k) })
-
-    protected fun stringArgument(key: String, default: String? = null): ReadOnlyProperty<Presenter, String>
-            = ArgumentDelegate(key, default, { b, k -> b.getString(k) })
-
-    protected fun intArgumentOptional(key: String, default: Int? = null): ReadOnlyProperty<Presenter, Int?>
-            = OptionalArgumentDelegate(key, default, { b, k -> b.getInt(k) })
-
-    protected fun intArgument(key: String, default: Int? = null): ReadOnlyProperty<Presenter, Int>
-            = ArgumentDelegate(key, default, { b, k -> b.getInt(k) })
-
-    protected fun longArgumentOptional(key: String, default: Long? = null): ReadOnlyProperty<Presenter, Long?>
-            = OptionalArgumentDelegate(key, default, { b, k -> b.getLong(k) })
-
-    protected fun longArgument(key: String, default: Long? = null): ReadOnlyProperty<Presenter, Long>
-            = ArgumentDelegate(key, default, { b, k -> b.getLong(k) })
-
-    protected fun <T: Parcelable> parcelableArgumentOptional(key: String, default: T? = null): ReadOnlyProperty<Presenter, T?>
-            = OptionalArgumentDelegate(key, default, { b, k -> b.getParcelable(k) })
-
-    protected fun <T: Parcelable> parcelableArgument(key: String, default: T? = null): ReadOnlyProperty<Presenter, T>
-            = ArgumentDelegate(key, default, { b, k -> b.getParcelable(k) })
-
-    //TODO: Get rid of arguments and make them part of the state instead! That way the whole presenter can be serialized!
 }
