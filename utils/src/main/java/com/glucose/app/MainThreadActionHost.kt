@@ -23,7 +23,7 @@ import java.util.*
  *  - Upon action termination, it is cleaned up and next action is started.
  *  - Upon unsubscribe from active action, it is cleaned up and next action is started.
  */
-class MainThreadActionHost : ActionHost {
+internal class MainThreadActionHost : ActionHost {
 
     @AnyThread
     override fun <R> post(action: Observable<R>): Observable<R> {
@@ -101,7 +101,7 @@ class MainThreadActionHost : ActionHost {
      * Mark this [ActionHost] as ready to process actions.
      */
     @MainThread
-    fun startProcessingActions() {
+    internal fun startProcessingActions() {
         if (!mainThread()) throw IllegalStateException("Not on main thread. Something is wrong!")
         if (active) throw IllegalStateException("This host is already started.")
         active = true
@@ -113,7 +113,7 @@ class MainThreadActionHost : ActionHost {
      * (When this method returns, no action is being executed)
      */
     @MainThread
-    fun stopProcessingActions() {
+    internal fun stopProcessingActions() {
         if (!mainThread()) throw IllegalStateException("Not on main thread. Something is wrong!")
         if (!active) throw IllegalStateException("This host isn't started.")
         active = false

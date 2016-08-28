@@ -4,25 +4,14 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Parcelable
-import android.support.annotation.AnyThread
 import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
-import android.support.annotation.MainThread
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
-import com.github.daemontus.egholm.functional.Result
-import com.glucose.Log
 import rx.Observable
-import rx.Observer
 import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
-import rx.subjects.ReplaySubject
-import java.util.*
-import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KProperty
 
 
 /**
