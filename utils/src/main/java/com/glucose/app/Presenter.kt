@@ -29,9 +29,9 @@ import kotlin.reflect.KProperty
  * Presenter is responsible for a single, possibly modular part of UI.
  * Presenter should be completely isolated in terms of state from it's parent
  * (therefore it doesn't even have a reference to it), however, it can access
- * global data by means of a PresenterContext.
+ * global data by means of a [PresenterContext].
  *
- * Presenter is responsible for managing it's child Presenters (if any) and relationships
+ * Presenter is responsible for managing it's child Presenters and relationships
  * between them (see [PresenterGroup]).
  *
  * Presenter lifecycle is similar to that of an [Activity], but instead of the
@@ -67,7 +67,7 @@ import kotlin.reflect.KProperty
  */
 open class Presenter(
         context: PresenterContext, val view: View
-) : LifecycleProvider {
+) : LifecycleProvider, ActionHost {
 
     /**
      * Create a Presenter with view initialized from layout resource.
@@ -130,7 +130,10 @@ open class Presenter(
     }
 
     internal fun performAttach(arguments: Bundle)
-            = assertLifecycleChange(State.ALIVE, State.ATTACHED) { onAttach(arguments) }
+            = assertLifecycleChange(State.ALIVE, State.ATTACHED) {
+        onAttach(arguments)
+        actionHost.startProcessingActions()
+    }
 
     internal fun performStart()
             = assertLifecycleChange(State.ATTACHED, State.STARTED) { onStart() }
@@ -145,7 +148,10 @@ open class Presenter(
             = assertLifecycleChange(State.STARTED, State.ATTACHED) { onStop() }
 
     internal fun performDetach()
-            = assertLifecycleChange(State.ATTACHED, State.ALIVE) { onDetach() }
+            = assertLifecycleChange(State.ATTACHED, State.ALIVE) {
+        actionHost.stopProcessingActions()
+        onDetach()
+    }
 
     internal fun performDestroy()
             = assertLifecycleChange(State.ALIVE, State.DESTROYED) { onDestroy() }
@@ -158,7 +164,6 @@ open class Presenter(
         this.arguments = arguments
         state = State.ATTACHED
         lifecycleEventSubject.onNext(LifecycleEvent.ATTACH)
-        startProcessingActions()
     }
 
     protected open fun onStart() {
@@ -213,14 +218,12 @@ open class Presenter(
     }
 
     protected open fun onDetach() {
-        stopProcessingActions()
         lifecycleEventSubject.onNext(LifecycleEvent.DETACH)
         state = State.ALIVE
         lifecycleLog("onDetach")
     }
 
     protected open fun onDestroy() {
-        destroyActionQueue()
         lifecycleEventSubject.onNext(LifecycleEvent.DESTROY)
         state = State.DESTROYED
         lifecycleLog("onDestroy")
@@ -243,158 +246,9 @@ open class Presenter(
 
     // ================================= Action loop ===============================================
 
-    /**
-     *
-     * Actions provide a way to serialize execution that is related to a specific Presenter
-     * while making sure that the main thread is not blocked if the action needs to
-     * perform some long running task while making sure that other actions will wait for
-     * the current one to finish.
-     *
-     * Action is represented by an observable that can emmit any number of items.
-     * User does not subscribe to the observable directly. Instead, he gives it to the
-     * Presenter which will return a proxy observable emitting items as soon as the action
-     * is executed.
-     *
-     * When the user subscribes to this proxy, the action is executed or put in the execution
-     * queue if there already is a running action.
-     *
-     * Presenter will start executing actions as soon as it becomes attached to the
-     * main structure.
-     *
-     * If the Presenter is not attached when the Action should be executed, the proxy observable
-     * will emit an exception.
-     * If the Presenter is being detached while an Action is running, the
-     * action observable is unsubscribed and the proxy observable will receive an exception
-     * plus unspecified number of items previously emitted by the observable.
-     *
-     * Except for this, the proxy observable should exactly mirror the behaviour of the
-     * original action observable (including errors, un-subscribing, etc.).
-     *
-     * Backpressure note: When the number of pending actions becomes too big (usually more than 3),
-     * they will be dropped (Proxy will return an error). In future implementation, this
-     * behaviour should be parametrised. (If you want to submit a big number of
-     * actions at once, use concatMap with backpressure buffer)
-     *
-     * Note: All actions are started on the main thread! (Unless the action is configured
-     * otherwise)
-     *
-     * Implementation note: Everything regarding actions in this class should be happening
-     * on the main thread, so that synchronisation is not needed.
-     *
-     * TODO: What should happen if I post a proxy as an action? (Right now - deadlock)
-     */
+    private val actionHost = MainThreadActionHost()
 
-    private var actionSubject = PublishSubject.create<Pair<Observable<*>, ReplaySubject<*>>>()
-    //New subscription is created when presenter is attached.
-    //If presenter is not attached, actionSubscription should be null.
-    private var actionSubscription: Subscription? = null
-    private var pendingActions = ArrayList<Observer<*>>()
-
-    /**
-     * Use this to post actions using the compose operator.
-     */
-    fun <R> asAction() = Observable.Transformer<R, R> { post(it) }
-    /**
-     * Use this to post immediate actions using the compose operator.
-     */
-    fun <R> asImmediateAction() = Observable.Transformer<R, R> { postImmediate(it) }
-
-    @AnyThread
-    fun <R> post(action: Observable<R>): Observable<R> {
-        return Observable.defer {
-            //defer ensures that the action is not queued until subscribed to
-            enqueueAction(action)
-        }.subscribeOn(AndroidSchedulers.mainThread())   //ensure action is started on main thread
-    }
-
-    @AnyThread
-    fun <R> postImmediate(action: Observable<R>): Observable<R> {
-        return if (mainThread()) {
-            enqueueAction(action)
-        } else {
-            val result = post(action)
-            result.asResult().subscribe()   //force silent execution
-            result
-        }
-
-    }
-
-    @MainThread
-    private fun <R> enqueueAction(action: Observable<R>): Observable<R> {
-        return actionSubject?.let { queue ->
-            //PublishSubject can't be used here, because the action might execute
-            //before onNext returns and subscriber will get proxy only after that.
-            //UnicastSubject might be more efficient, but I'm not sure how will it
-            //handle multiple subscriptions, so let's just play it safe.
-            val proxy = ReplaySubject.create<R>()
-            pendingActions.add(proxy)
-            queue.onNext(action
-                    .doOnEach(proxy)
-                    .doOnTerminate {
-                        removeProxy(proxy)
-                    } to proxy
-            )
-            proxy
-        } ?: Observable.error<R>(   //fail fast if presenter isn't attached
-                LifecycleException("Action dropped because presenter is not attached.")
-        )
-    }
-
-    /**
-     * Create a subscription that will process actions and
-     * handle possible backpressure and errors.
-     */
-    @MainThread
-    private fun startProcessingActions() {
-        actionSubscription = Observable.concat(actionSubject.onBackpressureDrop {
-            it.second.onError(IllegalStateException("Action dropped due to backpressure"))
-            removeProxy(it.second)
-        }.map { it.first.asResult() }).subscribe({
-            when (it) {
-                is Result.Ok<*,*> -> actionLog("Action produced an item")
-                is Result.Error<*,*> -> actionLog("Action error: ${it.error}")
-            }
-        }, {
-            Log.e("Something went wrong in the action mechanism", it)
-        })
-    }
-
-    /**
-     * Safely remove proxy from the pendingActions list.
-     */
-    @AnyThread
-    private fun removeProxy(proxy: Observer<*>) {
-        if (mainThread()) {
-            pendingActions.remove(proxy)
-        } else {
-            view.post {
-                pendingActions.remove(proxy)
-            }
-        }
-    }
-
-    /**
-     * Stop processing actions and notify unfinished actions with errors.
-     */
-    @MainThread
-    private fun stopProcessingActions() {
-        actionSubscription?.unsubscribe()
-        actionSubscription = null
-        pendingActions.forEach {
-            it.onError(
-                    LifecycleException("Action dropped because presenter is not attached.")
-            )
-        }
-        pendingActions.clear()
-    }
-
-    /**
-     * Clean up after the action mechanism.
-     */
-    @MainThread
-    private fun destroyActionQueue() {
-        actionSubject.onCompleted()
-    }
+    override fun <R> post(action: Observable<R>): Observable<R> = actionHost.post(action)
 
     // ============================ View related helper functions ==================================
 

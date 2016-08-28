@@ -1,7 +1,8 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.app.Activity
 import android.app.Application
+import com.glucose.app.Presenter
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
