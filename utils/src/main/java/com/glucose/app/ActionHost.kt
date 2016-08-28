@@ -2,7 +2,6 @@ package com.glucose.app
 
 import android.support.annotation.AnyThread
 import rx.Observable
-import rx.exceptions.MissingBackpressureException
 
 
 /**

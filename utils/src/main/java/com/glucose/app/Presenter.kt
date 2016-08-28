@@ -62,7 +62,15 @@ import kotlin.reflect.KProperty
  * Presenter can always be placed only in the [PresenterLayout] - this is mainly to simplify
  * the reuse (All them layout params).
  *
- **
+ * ### Presenter as [ActionHost]
+ *
+ * Each presenter can be used as an [ActionHost]. Internally, it uses [MainThreadActionHost]
+ * so that each action is executed on main thread by default. Action execution is started after
+ * the call to [onAttach] (to ensure that all state has been restored) and stopped
+ * before the call to [onDetach] (to ensure state isn't changing any more). Actions posted
+ * outside of this window are thrown away with an error.
+ *
+ * @see [ActionHost]
  * TODO: Handle onRequestPermissionResult.
  */
 open class Presenter(
@@ -126,7 +134,7 @@ open class Presenter(
     private fun assertLifecycleChange(from: State, to: State, transition: () -> Unit) {
         if (state != from) throw IllegalStateException("Something is wrong with the lifecycle!")
         transition()
-        if (state != to) throw IllegalStateException("Something is wrong with the lifecycle!")
+        if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
     internal fun performAttach(arguments: Bundle)

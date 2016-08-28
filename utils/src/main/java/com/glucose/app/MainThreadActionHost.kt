@@ -98,8 +98,7 @@ class MainThreadActionHost : ActionHost {
     }
 
     /**
-     * Create a subscription that will process actions and
-     * handle possible backpressure and errors.
+     * Mark this [ActionHost] as ready to process actions.
      */
     @MainThread
     fun startProcessingActions() {
@@ -123,6 +122,9 @@ class MainThreadActionHost : ActionHost {
             if (!proxy.hasCompleted() && !proxy.hasThrowable()) {
                 proxy.onError(PrematureTerminationException("ActionHost is shutting down."))
             }
+        }
+        pendingActions.forEach {
+            it.second.onError(CannotExecuteException("ActionHost is shutting down."))
         }
         pendingActions.clear()
     }
