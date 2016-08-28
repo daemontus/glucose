@@ -38,10 +38,4 @@ fun Presenter.lifecycleLog(message: String) {
     }
 }
 
-fun <T> Observable<T>.postAction(presenter: Presenter): Observable<T>
-     = presenter.post(this)
-
-fun <T> Observable<T>.postActionImmediate(presenter: Presenter): Observable<T>
-    = presenter.postImmediate(this)
-
 fun mainThread() = Looper.myLooper() == Looper.getMainLooper()
