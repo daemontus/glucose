@@ -7,6 +7,10 @@ import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
 import com.glucose.Log
+import com.glucose.app.presenter.isAlive
+import com.glucose.app.presenter.isAttached
+import com.glucose.app.presenter.isResumed
+import com.glucose.app.presenter.isStarted
 import rx.subjects.PublishSubject
 import rx.Observable
 import java.util.*
@@ -132,7 +136,7 @@ open class PresenterGroup : Presenter {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         super.onActivityResult(requestCode, resultCode, data)
         children.forEach {
-            it.performActivityResult(requestCode, resultCode, data)
+            it.onActivityResult(requestCode, resultCode, data)
         }
     }
 

@@ -10,7 +10,8 @@ import android.support.annotation.IdRes
 import android.support.annotation.MainThread
 import android.util.SparseArray
 import android.view.View
-import com.glucose.Log
+import com.glucose.app.presenter.isResumed
+import com.glucose.app.presenter.isStarted
 import kotlin.properties.Delegates
 
 
@@ -139,7 +140,7 @@ class PresenterContext(
     }
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        root.performActivityResult(requestCode, resultCode, data)
+        root.onActivityResult(requestCode, resultCode, data)
     }
 
     fun onTrimMemory(level: Int) {

@@ -60,6 +60,12 @@ interface ActionHost {
     @AnyThread
     fun <R> post(action: Observable<R>): Observable<R>
 
+    /**
+     * A more Kotlin friendly variant of the Transformer pattern.
+     */
+    @AnyThread
+    fun <R> Observable<R>.postToThis(): Observable<R> = this@ActionHost.post(this)
+
 }
 
 /**

@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import com.github.daemontus.egholm.functional.Result
 import com.glucose.Log
 import com.glucose.app.*
+import com.glucose.app.presenter.LifecycleEvent
+import com.glucose.app.presenter.until
 import com.jakewharton.rxbinding.view.clicks
 
 class PresenterActivity : RootActivity(RootPresenter::class.java)

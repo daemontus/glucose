@@ -2,6 +2,7 @@ package com.glucose.app
 
 import android.content.res.Configuration
 import android.support.annotation.MainThread
+import com.glucose.app.presenter.isAttached
 import java.lang.reflect.Constructor
 import java.util.*
 

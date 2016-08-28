@@ -9,10 +9,15 @@ import android.support.annotation.LayoutRes
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
+import com.glucose.app.presenter.Lifecycle
+import com.glucose.app.presenter.LifecycleHost
+import com.glucose.app.presenter.isAttached
+import com.glucose.app.presenter.isDestroyed
 import rx.Observable
-import rx.Subscription
 import rx.subjects.PublishSubject
+import java.util.*
 
+import com.glucose.app.presenter.Lifecycle.State.*
 
 /**
  * Presenter is responsible for a single, possibly modular part of UI.
@@ -60,11 +65,12 @@ import rx.subjects.PublishSubject
  * outside of this window are thrown away with an error.
  *
  * @see [ActionHost]
+ * @see [LifecycleHost]
  * TODO: Handle onRequestPermissionResult.
  */
 open class Presenter(
         context: PresenterContext, val view: View
-) : LifecycleProvider, ActionHost {
+) : LifecycleHost, ActionHost {
 
     /**
      * Create a Presenter with view initialized from layout resource.
@@ -72,33 +78,6 @@ open class Presenter(
     constructor(context: PresenterContext, @LayoutRes layout: Int) : this(
             context, LayoutInflater.from(context.activity).inflate(layout, PresenterLayout(context.activity), false)
     )
-
-    // ============================= Lifecycle and Context =========================================
-
-    enum class State {
-        DESTROYED, ALIVE, ATTACHED, STARTED, RESUMED
-    }
-
-    private val lifecycleEventSubject = PublishSubject.create<LifecycleEvent>()
-    override val lifecycleEvents: Observable<LifecycleEvent> = lifecycleEventSubject
-
-    var state: State = State.ALIVE
-        private set
-
-    val isAlive: Boolean
-        get() = state >= State.ALIVE
-
-    val isAttached: Boolean
-        get() = state >= State.ATTACHED
-
-    val isStarted: Boolean
-        get() = state >= State.STARTED
-
-    val isResumed: Boolean
-        get() = state >= State.RESUMED
-
-    val isDestroyed: Boolean
-        get() = state == State.DESTROYED
 
     var arguments: Bundle = Bundle()
         private set
@@ -120,64 +99,127 @@ open class Presenter(
             arguments.getInt("id", View.NO_ID)
         } else View.NO_ID
 
-    private fun assertLifecycleChange(from: State, to: State, transition: () -> Unit) {
+    /******************** Methods driving the lifecycle of this Presenter. ************************/
+
+    private inline fun assertLifecycleChange(
+            from: Lifecycle.State, to: Lifecycle.State, transition: () -> Unit
+    ) {
         if (state != from) throw IllegalStateException("Something is wrong with the lifecycle!")
         transition()
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle)
-            = assertLifecycleChange(State.ALIVE, State.ATTACHED) {
+    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
         onAttach(arguments)
         actionHost.startProcessingActions()
     }
 
-    internal fun performStart()
-            = assertLifecycleChange(State.ATTACHED, State.STARTED) { onStart() }
+    internal fun performStart() = assertLifecycleChange(ATTACHED, STARTED) { onStart() }
 
-    internal fun performResume()
-            = assertLifecycleChange(State.STARTED, State.RESUMED) { onResume() }
+    internal fun performResume() = assertLifecycleChange(STARTED, RESUMED) { onResume() }
 
-    internal fun performPause()
-            = assertLifecycleChange(State.RESUMED, State.STARTED) { onPause() }
+    internal fun performPause() = assertLifecycleChange(RESUMED, STARTED) { onPause() }
 
-    internal fun performStop()
-            = assertLifecycleChange(State.STARTED, State.ATTACHED) { onStop() }
+    internal fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
 
-    internal fun performDetach()
-            = assertLifecycleChange(State.ATTACHED, State.ALIVE) {
+    internal fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
         actionHost.stopProcessingActions()
         onDetach()
     }
 
-    internal fun performDestroy()
-            = assertLifecycleChange(State.ALIVE, State.DESTROYED) { onDestroy() }
-
-    internal fun performActivityResult(requestCode: Int, resultCode: Int, data: Intent)
-            = onActivityResult(requestCode, resultCode, data)
+    internal fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
 
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
         this.arguments = arguments
-        state = State.ATTACHED
-        lifecycleEventSubject.onNext(LifecycleEvent.ATTACH)
+        myState = ATTACHED
+        onLifecycleEvent(Lifecycle.Event.ATTACH)
     }
 
+    /**
+     * @see Activity.onStart
+     */
     protected open fun onStart() {
         lifecycleLog("onStart")
-        state = State.STARTED
-        lifecycleEventSubject.onNext(LifecycleEvent.START)
+        myState = STARTED
+        onLifecycleEvent(Lifecycle.Event.START)
     }
 
+    /**
+     * @see Activity.onResume
+     */
     protected open fun onResume() {
         lifecycleLog("onResume")
-        state = State.RESUMED
-        lifecycleEventSubject.onNext(LifecycleEvent.RESUME)
+        myState = RESUMED
+        onLifecycleEvent(Lifecycle.Event.RESUME)
+    }
+
+    /**
+     * @see Activity.onPause
+     */
+    protected open fun onPause() {
+        onLifecycleEvent(Lifecycle.Event.PAUSE)
+        myState = STARTED
+        lifecycleLog("onPause")
+    }
+
+    /**
+     * @see Activity.onStop
+     */
+    protected open fun onStop() {
+        onLifecycleEvent(Lifecycle.Event.STOP)
+        myState = ATTACHED
+        lifecycleLog("onStop")
+    }
+
+    protected open fun onDetach() {
+        onLifecycleEvent(Lifecycle.Event.DETACH)
+        myState = ALIVE
+        lifecycleLog("onDetach")
+    }
+
+    /**
+     * @see Activity.onDestroy
+     */
+    protected open fun onDestroy() {
+        onLifecycleEvent(Lifecycle.Event.DESTROY)
+        myState = DESTROYED
+        lifecycleLog("onDestroy")
+    }
+
+    open val canChangeConfiguration = true
+
+    /**
+     * Called when this presenter changes configuration.
+     *
+     * Won't be called if [canChangeConfiguration] is false - instead, presenter
+     * will be recreated.
+     *
+     * @see canChangeConfiguration
+     * @see Activity.onConfigurationChanged
+     */
+    open fun onConfigurationChanged(newConfig: Configuration) {
+        ctx.factory.cleanUpBeforeConfigChange()
+        if (!canChangeConfiguration) {
+            throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
+        }
+        lifecycleLog("onConfigurationChanged")
+    }
+
+    /**
+     * Notification to all attached presenters that activity has returned a result.
+     *
+     * @see Activity.onActivityResult
+     */
+    open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+        lifecycleLog("onActivityResult $resultCode for request $requestCode")
     }
 
     /**
      * Notification that the Presenter should move to the previous state.
-     * @return false if presenter can't go back, true if it just did
+     * @return false if presenter can't go back, true if it successfully moved back.
+     *
+     * @see Activity.onBackPressed
      */
     open fun onBackPressed(): Boolean = false
 
@@ -200,51 +242,55 @@ open class Presenter(
         out.putAll(arguments)   //make a copy of the current state
     }
 
+    /**
+     * Notification that system memory is running low.
+     *
+     * @see Activity.onTrimMemory
+     */
     open fun onTrimMemory(level: Int) {}
 
-    protected open fun onPause() {
-        lifecycleEventSubject.onNext(LifecycleEvent.PAUSE)
-        state = State.STARTED
-        lifecycleLog("onPause")
+    /******************** [LifecycleHost] implementation ******************************************/
+
+    private val lifecycleEventSubject = PublishSubject.create<Lifecycle.Event>()
+    override val lifecycleEvents: Observable<Lifecycle.Event> = lifecycleEventSubject
+
+    private var myState: Lifecycle.State = Lifecycle.State.ALIVE
+    override val state: Lifecycle.State
+        get() = myState
+
+    private val lifecycleCallbacks = ArrayList<Pair<Lifecycle.Event, () -> Unit>>()
+
+    /**
+     * @see [LifecycleHost.addEventCallback]
+     */
+    override fun addEventCallback(event: Lifecycle.Event, callback: () -> Unit) {
+        lifecycleCallbacks.add(event to callback)
     }
 
-    protected open fun onStop() {
-        lifecycleEventSubject.onNext(LifecycleEvent.STOP)
-        state = State.ATTACHED
-        lifecycleLog("onStop")
+    /**
+     * @see [LifecycleHost.removeEventCallback]
+     */
+    override fun removeEventCallback(event: Lifecycle.Event, callback: () -> Unit): Boolean {
+        return lifecycleCallbacks.remove(event to callback)
     }
 
-    protected open fun onDetach() {
-        lifecycleEventSubject.onNext(LifecycleEvent.DETACH)
-        state = State.ALIVE
-        lifecycleLog("onDetach")
+    /**
+     * Ensures callbacks and notifications regarding a Lifecycle event are dispatched.
+     */
+    private fun onLifecycleEvent(event: Lifecycle.Event) {
+        val victims = lifecycleCallbacks.filter { it.first == event }
+        lifecycleCallbacks.removeAll(victims)
+        victims.forEach { it.second.invoke() }
+        lifecycleEventSubject.onNext(event)
     }
 
-    protected open fun onDestroy() {
-        lifecycleEventSubject.onNext(LifecycleEvent.DESTROY)
-        state = State.DESTROYED
-        lifecycleLog("onDestroy")
-    }
-
-    open val canChangeConfiguration = true
-
-    open fun onConfigurationChanged(newConfig: Configuration) {
-        ctx.factory.cleanUpBeforeConfigChange()
-        if (!canChangeConfiguration) {
-            throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
-        }
-        lifecycleLog("onConfigurationChanged")
-        lifecycleEventSubject.onNext(LifecycleEvent.CONFIG_CHANGE)
-    }
-
-    protected open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        lifecycleLog("onActivityResult $resultCode for request $requestCode")
-    }
-
-    // ================================= Action loop ===============================================
+    /******************** [ActionHost] implementation *********************************************/
 
     private val actionHost = MainThreadActionHost()
 
+    /**
+     * @see [ActionHost.post]
+     */
     override fun <R> post(action: Observable<R>): Observable<R> = actionHost.post(action)
 
     // ============================ View related helper functions ==================================
@@ -254,47 +300,5 @@ open class Presenter(
 
     @Suppress("UNCHECKED_CAST")
     fun <V: View> findOptionalView(@IdRes viewId: Int): V? = view.findViewById(viewId) as V?
-
-    // ============================ Observable helper functions ====================================
-
-    private fun getClosingEvent() = when (state) {
-        State.ALIVE -> LifecycleEvent.DESTROY
-        State.ATTACHED -> LifecycleEvent.DETACH
-        State.STARTED -> LifecycleEvent.STOP
-        State.RESUMED -> LifecycleEvent.PAUSE
-        State.DESTROYED -> throw IllegalStateException("Cannot bind to lifecycle. State: $state")
-    }
-
-    fun <T: Any> Observable<T>.takeUntil(event: LifecycleEvent): Observable<T> {
-        return this.takeUntil(lifecycleEvents.filter { it == event })
-    }
-
-    fun <T: Any> Observable<T>.bindToLifecycle(): Observable<T> {
-        return this.takeUntil(getClosingEvent())
-    }
-
-    fun Subscription.until(event: LifecycleEvent): Subscription {
-        lifecycleEvents.filter { it == event }
-            .first().subscribe { this.unsubscribe() }
-        return this
-    }
-
-    fun Subscription.bindToLifecycle(): Subscription = this.until(getClosingEvent())
-
-    override fun closingEvent(): LifecycleEvent = when (state) {
-        State.ALIVE -> LifecycleEvent.DESTROY
-        State.ATTACHED -> LifecycleEvent.DETACH
-        State.STARTED -> LifecycleEvent.STOP
-        State.RESUMED -> LifecycleEvent.PAUSE
-        State.DESTROYED -> throw IllegalStateException("$state does not have a closing event")
-    }
-
-    override fun startingEvent(): LifecycleEvent = when (state) {
-        State.ATTACHED -> LifecycleEvent.ATTACH
-        State.STARTED -> LifecycleEvent.START
-        State.RESUMED -> LifecycleEvent.RESUME
-        State.DESTROYED -> LifecycleEvent.DESTROY
-        State.ALIVE -> throw IllegalStateException("$state does not have an opening event")
-    }
 
 }
