@@ -9,10 +9,7 @@ import android.support.annotation.LayoutRes
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
-import com.glucose.app.presenter.Lifecycle
-import com.glucose.app.presenter.LifecycleHost
-import com.glucose.app.presenter.isAttached
-import com.glucose.app.presenter.isDestroyed
+import com.glucose.app.presenter.*
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*

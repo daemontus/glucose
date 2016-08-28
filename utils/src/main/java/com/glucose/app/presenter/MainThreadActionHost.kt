@@ -1,8 +1,14 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.support.annotation.AnyThread
 import android.support.annotation.MainThread
 import com.github.daemontus.egholm.functional.Result
+import com.glucose.app.actionLog
+import com.glucose.app.asResult
+import com.glucose.app.mainThread
+import com.glucose.app.presenter.ActionHost
+import com.glucose.app.presenter.CannotExecuteException
+import com.glucose.app.presenter.PrematureTerminationException
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
@@ -90,8 +96,8 @@ internal class MainThreadActionHost : ActionHost {
                     takeNextAction()
                 }.asResult().subscribe {
                     when (it) {
-                        is Result.Ok<*,*> -> actionLog("Action produced an item")
-                        is Result.Error<*,*> -> actionLog("Action error: ${it.error}")
+                        is Result.Ok<*, *> -> actionLog("Action produced an item")
+                        is Result.Error<*, *> -> actionLog("Action error: ${it.error}")
                     }
             }
         }

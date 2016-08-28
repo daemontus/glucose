@@ -1,4 +1,4 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.support.annotation.AnyThread
 import rx.Observable
