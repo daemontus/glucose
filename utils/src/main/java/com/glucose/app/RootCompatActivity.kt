@@ -1,19 +1,19 @@
 package com.glucose.app
 
-import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.view.ViewGroup
 import kotlin.properties.Delegates
 
 /**
  * An activity that is connected to a [PresenterContext] and has exactly one root [Presenter].
  */
-abstract class RootActivity(
+abstract class RootCompatActivity(
         rootPresenter: Class<out Presenter>,
         rootArguments: Bundle = Bundle()
-) : Activity() {
+) : AppCompatActivity() {
 
     private val presenterContext = PresenterContext(this, rootPresenter, rootArguments)
 

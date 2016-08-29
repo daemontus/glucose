@@ -3,7 +3,6 @@ package com.glucose.app
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Parcelable
 import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
 import android.util.SparseArray
