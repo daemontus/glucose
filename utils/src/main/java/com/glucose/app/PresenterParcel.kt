@@ -4,6 +4,9 @@ import android.os.Bundle
 import android.os.Parcel
 import android.os.Parcelable
 
+/**
+ * A parcelable representation of a [Presenter]s state.
+ */
 data class PresenterParcel(
         val clazz: String,
         val state: Bundle

@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import kotlin.properties.Delegates
 
 /**
@@ -16,11 +18,11 @@ abstract class RootActivity(
 
     private val presenterContext = PresenterContext(this, rootPresenter, rootArguments)
 
-    private var rootView: PresenterLayout by Delegates.notNull()
+    private var rootView: ViewGroup by Delegates.notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        rootView = PresenterLayout(this)
+        rootView = FrameLayout(this)
         rootView.addView(presenterContext.onCreate(savedInstanceState))
         setContentView(rootView)
     }

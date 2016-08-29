@@ -7,10 +7,9 @@ import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.Log
 import com.glucose.app.presenter.*
-import rx.subjects.PublishSubject
 import rx.Observable
+import rx.subjects.PublishSubject
 import java.util.*
 
 /**
@@ -38,7 +37,7 @@ open class PresenterGroup : Presenter {
             for (i in 0 until savedChildren.size()) {
                 val parentId = savedChildren.keyAt(i)
                 val child = savedChildren.valueAt(i)
-                findOptionalView<PresenterLayout>(parentId)?.let { parent ->
+                findOptionalView<ViewGroup>(parentId)?.let { parent ->
                     add(parentId, Class.forName(child.clazz) as Class<Presenter>, child.state)
                 }
             }
@@ -87,13 +86,13 @@ open class PresenterGroup : Presenter {
                 val tree: Bundle,
                 val map: SparseArray<Bundle>
         )
-        val childStates = ArrayList<Pair<PresenterLayout, ChildState>>()
+        val childStates = ArrayList<Pair<ViewGroup, ChildState>>()
         for (presenter in children) {
             if (!presenter.canChangeConfiguration) {
                 val map = SparseArray<Bundle>()
                 val tree = presenter.saveHierarchyState(map)
                 childStates.add(Pair(
-                        presenter.view.parent as PresenterLayout,
+                        presenter.view.parent as ViewGroup,
                         ChildState(presenter.javaClass, tree, map)
                 ))
                 remove(presenter)
@@ -159,13 +158,13 @@ open class PresenterGroup : Presenter {
      */
     fun <P: Presenter> add(
             @IdRes id: Int, clazz: Class<P>, arguments: Bundle = Bundle()
-    ): P = add(findView<PresenterLayout>(id), clazz, arguments)
+    ): P = add(findView<ViewGroup>(id), clazz, arguments)
 
     /**
      * Obtain new presenter and attach it to a ViewGroup.
      */
     fun <P: Presenter> add(
-            parent: PresenterLayout, clazz: Class<P>, arguments: Bundle = Bundle()
+            parent: ViewGroup, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P {
         val presenter = ctx.attach(clazz, arguments)
         parent.addView(presenter.view)
@@ -186,7 +185,7 @@ open class PresenterGroup : Presenter {
         if (presenter !in children) throw IllegalStateException("Removing presenter that isn't attached to ${this@PresenterGroup}")
         if (isResumed) presenter.performPause()
         if (isStarted) presenter.performStop()
-        val parent = presenter.view.parent as PresenterLayout
+        val parent = presenter.view.parent as ViewGroup
         parent.removeView(presenter.view)
         children.remove(presenter)
         actionLog("Detached $presenter")

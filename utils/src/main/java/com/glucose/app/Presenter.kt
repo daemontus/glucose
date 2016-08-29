@@ -8,6 +8,8 @@ import android.support.annotation.LayoutRes
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
 import rx.Observable
@@ -55,8 +57,8 @@ import java.util.*
  * and recreate it from saved state. From the point of view of the detached presenter,
  * it is as if the activity was shut down and now is being restored from saved state.
  *
- * Presenter can always be placed only in the [PresenterLayout] - this is mainly to simplify
- * the reuse (All them layout params).
+ * Presenter can be placed in any [ViewGroup], so you shouldn't assume that the
+ * root view has any particular [ViewGroup.LayoutParams].
  *
  * ### Presenter as [ActionHost]
  *
@@ -82,7 +84,7 @@ open class Presenter(
      * Create a Presenter with view initialized from layout resource.
      */
     constructor(context: PresenterContext, @LayoutRes layout: Int) : this(
-            context, LayoutInflater.from(context.activity).inflate(layout, PresenterLayout(context.activity), false)
+            context, LayoutInflater.from(context.activity).inflate(layout, FrameLayout(context.activity), false)
     )
 
     var arguments: Bundle = Bundle()
