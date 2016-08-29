@@ -26,9 +26,7 @@ import java.util.*
 open class PresenterGroup : Presenter {
 
     companion object {
-        val CHILDREN_ID_KEY = "glucose:presenter_children_ids"
-        val CHILDREN_CLASS_KEY = "glucose:presenter_children_classes"
-        val CHILDREN_STATE_KEY = "glucose:presenter_children_state"
+        val CHILDREN_KEY = "glucose:presenter_children"
     }
 
     constructor(context: PresenterContext, view: View) : super(context, view)
@@ -40,20 +38,17 @@ open class PresenterGroup : Presenter {
 
     override fun onAttach(arguments: Bundle, isFresh: Boolean) {
         super.onAttach(arguments, isFresh)
-        val childIds = arguments.getIntArray(CHILDREN_ID_KEY)
-        val childClasses = arguments.getStringArray(CHILDREN_CLASS_KEY)
-        val childStates = arguments.getParcelableArrayList<Bundle>(CHILDREN_STATE_KEY)
-        if (childIds != null && childClasses != null) {
-            for (i in childIds.indices) {
-                val id = childIds[i]
-                val className = childClasses[i]
-                val state = childStates[i]
-                val layout = findOptionalView<PresenterLayout>(id)
-                if (layout != null) {
-                    Log.d("Restored $className in $id")
-                    add(layout, Class.forName(className) as Class<Presenter>, state)
+        if (!isFresh) {
+            val savedChildren = arguments.getSparseParcelableArray<PresenterParcel>(CHILDREN_KEY)
+            for (i in 0 until savedChildren.size()) {
+                val parentId = savedChildren.keyAt(i)
+                val child = savedChildren.valueAt(i)
+                findOptionalView<PresenterLayout>(parentId)?.let { parent ->
+                    add(parentId, Class.forName(child.clazz) as Class<Presenter>, child.state)
                 }
             }
+            //this should ensure that children that were not restored will be garbage collected
+            arguments.remove(CHILDREN_KEY)
         }
     }
 
@@ -68,7 +63,9 @@ open class PresenterGroup : Presenter {
     }
 
     override fun onBackPressed(): Boolean {
-        return children.fold(false, { wentBack, child -> wentBack || child.onBackPressed() }) || super.onBackPressed()
+        return children.fold(false, {
+            wentBack, child -> wentBack || child.onBackPressed()
+        }) || super.onBackPressed()
     }
 
     override fun onPause() {
@@ -82,7 +79,6 @@ open class PresenterGroup : Presenter {
     }
 
     override fun onDetach() {
-        //TODO: Action processing should probably stop here - but how?
         children.toList().forEach {
             remove(it)
         }
@@ -111,23 +107,24 @@ open class PresenterGroup : Presenter {
         }
     }
 
-    override fun saveHierarchyState(container: SparseArray<Bundle>) {
-        super.saveHierarchyState(container)
-        presenters.forEach {
-            it.saveHierarchyState(container)
+    override fun saveHierarchyState(container: SparseArray<Bundle>): Bundle {
+        val myState = super.saveHierarchyState(container)
+        val childrenMap = SparseArray<PresenterParcel>()
+        children.forEach {
+            //We have to call it on all children, because even if we drop this bundle, some
+            //deeper child might save itself to the container
+            val childState = PresenterParcel(
+                    it.javaClass.name, it.saveHierarchyState(container)
+            )
+            if (it.view.parent is View) {
+                val parent = it.view.parent as View
+                if (parent.id != View.NO_ID) {
+                    childrenMap.put(parent.id, childState)
+                }
+            }
         }
-    }
-
-    override fun onSaveInstanceState(out: Bundle) {
-        super.onSaveInstanceState(out)
-        val presenters = presenters.filter { (it.view.parent as View).id != View.NO_ID }
-        out.putIntArray(CHILDREN_ID_KEY, presenters.map { (it.view.parent as View).id }.toIntArray())
-        out.putStringArray(CHILDREN_CLASS_KEY, presenters.map { it.javaClass.name }.toTypedArray())
-        out.putParcelableArrayList(CHILDREN_STATE_KEY, ArrayList(presenters.map {
-            val state = Bundle()
-            it.onSaveInstanceState(state)
-            state
-        }))
+        myState.putSparseParcelableArray(CHILDREN_KEY, childrenMap)
+        return myState
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {

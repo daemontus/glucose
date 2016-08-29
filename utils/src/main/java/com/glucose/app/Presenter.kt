@@ -223,18 +223,27 @@ open class Presenter(
     open fun onBackPressed(): Boolean = false
 
     /**
-     * Save state of this [Presenter] and all it's children into a container,
-     * assuming they have an ID set.
+     * Save state of this [Presenter] and all it's children.
+     *
+     * Given container holds a flattened id <-> state "map" and returned
+     * bundle holds a state tree. This means that child bundles can be
+     * present twice - once if their parent view has an ID and second time
+     * if they have an ID.
      */
-    open fun saveHierarchyState(container: SparseArray<Bundle>) {
+    open fun saveHierarchyState(container: SparseArray<Bundle>): Bundle {
+        val state = Bundle()
+        onSaveInstanceState(state)
         if (id != View.NO_ID) {
-            val out = Bundle()
-            onSaveInstanceState(out)
-            container.put(id, out)
+            container.setValueAt(id, state)
         }
+        return state
     }
 
     /**
+     * Save the state of this [Presenter] (without children) into a bundle.
+     *
+     * For more info about state preservation, see class description.
+     *
      * @see Activity.onSaveInstanceState
      */
     open fun onSaveInstanceState(out: Bundle) {
