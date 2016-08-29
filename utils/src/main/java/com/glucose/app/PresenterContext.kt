@@ -9,6 +9,7 @@ import android.os.Parcelable
 import android.support.annotation.MainThread
 import android.util.SparseArray
 import android.view.View
+import android.view.ViewParent
 import com.glucose.app.presenter.getId
 import com.glucose.app.presenter.isResumed
 import com.glucose.app.presenter.isStarted
@@ -47,7 +48,7 @@ class PresenterContext(
      *
      * Arguments are based on the saved state and provided data.
      */
-    fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle()): P {
+    fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle(), parent: ViewParent? = null): P {
         val instance = factory.obtain(presenter)
         val id = arguments.getId()
         if (id != View.NO_ID) {

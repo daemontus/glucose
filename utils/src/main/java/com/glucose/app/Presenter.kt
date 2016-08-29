@@ -9,7 +9,6 @@ import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
 import rx.Observable
@@ -56,6 +55,11 @@ import java.util.*
  * - if [canChangeConfiguration] is false, presenters parent has to detach it
  * and recreate it from saved state. From the point of view of the detached presenter,
  * it is as if the activity was shut down and now is being restored from saved state.
+ * - if there are multiple presenters in one host view and some can change configuration and
+ * some can't, automatic configuration restore might change their order (recreated
+ * presenters are added to the back). To prevent this, either handle those separately
+ * in your code, or create a wrapper layout with it's own id that will identify
+ * the position where the presenter should be restored.
  *
  * Presenter can be placed in any [ViewGroup], so you shouldn't assume that the
  * root view has any particular [ViewGroup.LayoutParams].
@@ -80,11 +84,12 @@ open class Presenter(
     companion object {
         @JvmField val IS_RESTORED_KEY = "glucose:is_restored"
     }
+
     /**
      * Create a Presenter with view initialized from layout resource.
      */
-    constructor(context: PresenterContext, @LayoutRes layout: Int) : this(
-            context, LayoutInflater.from(context.activity).inflate(layout, FrameLayout(context.activity), false)
+    constructor(context: PresenterContext, @LayoutRes layout: Int, parent: ViewGroup?) : this(
+            context, LayoutInflater.from(context.activity).inflate(layout, parent, false)
     )
 
     var arguments: Bundle = Bundle()
