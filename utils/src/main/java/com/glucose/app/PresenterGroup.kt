@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
+import android.view.ViewGroup
 import com.glucose.Log
 import com.glucose.app.presenter.*
 import rx.subjects.PublishSubject
@@ -13,15 +14,9 @@ import rx.Observable
 import java.util.*
 
 /**
- * WARNING: Currently, if the [PresenterLayout] has an ID, but the [Presenter] inside doesn't,
- * the presenter will be restored even with it's state (but not recursively, unless similar situation occurs)
- *
  * Note: All children are restored synchronously when attaching. In case of a deep hierarchy,
  * this can cause frame drops. To avoid this, we have to introduce some mechanism to
  * "break the chain".
- *
- * TODO: Polish those try-catch blocks.
- * TODO: Prevent presenter leaks in case of errors where possible.
  */
 open class PresenterGroup : Presenter {
 
@@ -86,21 +81,33 @@ open class PresenterGroup : Presenter {
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        //child state is saved inside the global state array in the context
-        val savedState = ArrayList<Pair<PresenterLayout, Class<Presenter>>>()
+        //TODO: This mechanism might change order of views in containers if config change occurs
+        class ChildState(
+                val clazz: Class<out Presenter>,
+                val tree: Bundle,
+                val map: SparseArray<Bundle>
+        )
+        val childStates = ArrayList<Pair<PresenterLayout, ChildState>>()
         for (presenter in children) {
             if (!presenter.canChangeConfiguration) {
-                savedState.add(presenter.view.parent as PresenterLayout to presenter.javaClass)
+                val map = SparseArray<Bundle>()
+                val tree = presenter.saveHierarchyState(map)
+                childStates.add(Pair(
+                        presenter.view.parent as PresenterLayout,
+                        ChildState(presenter.javaClass, tree, map)
+                ))
                 remove(presenter)
             }
         }
         children.forEach {
             it.onConfigurationChanged(newConfig)
         }
-        //Now that the whole subtree is done, update super and restore the rest
+        //Now that the whole subtree is done, clear factory and instantiate saved presenters
         super.onConfigurationChanged(newConfig)
-        for ((layout, clazz) in savedState) {
-            add(layout, clazz)
+        for ((layout, state) in childStates) {
+            ctx.presenterStates = state.map
+            add(layout, state.clazz, state.tree)
+            ctx.presenterStates = null
         }
     }
 

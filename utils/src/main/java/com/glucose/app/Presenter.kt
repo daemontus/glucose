@@ -30,23 +30,30 @@ import java.util.*
  * - Presenter is always connected to it's view, however, this view is only connected to the
  * view hierarchy after [onAttach] (and before [onStart]).
  * - Similarly, presenter's view is detached from the hierarchy before [onDetach], but after [onStop].
- * - Presenter is identified by it's [id]. If the user does not override the ID getter, the
- * id is assumed to be given in the argument bundle.
- * - Similar to views, ID is used to identify presenters when saving/restoring state, so
- * a presenter without an ID won't have it's state saved and in case of an ID clash, the
- * behavior is undefined.
- * - The existence of a child will be saved only if the parent has an ID and the [PresenterLayout]
- * the child is in also has an ID.
+ * - Presenter is identified by it's [id]. Id is provided as part of [arguments].
  * - Presenter can use [canChangeConfiguration] to indicate if it wants to be recreated or if
  * it will handle a configuration change on it's own.
- * - In case of a configuration change, presenter's parent should save it's state and recreate if,
- * or notify it about the change (depending on the presenter)
+ * - In case of a configuration change, presenter's parent should save it's state and recreate it,
+ * or notify it about the change.
  * - Default implementation for [onBackPressed] will traverse the presenter hierarchy and stop as
  * soon as one of the presenters returns true (hence only the first presenter will actually
  * do a step back).
- * - On the other hand, [onActivityResult] is delivered to all presenters in the hierarchy.
- * (This might be changed later on with a better mechanism as soon as the permissions are
- * also solved)
+ * - On the other hand, [onActivityResult] and [onRequestPermissionsResult] is delivered to all
+ * presenters in the hierarchy.
+ *
+ * Presenter state:
+ * - Root is always saved.
+ * - To identify argument bundles that were restored from saved state, use [isRestored]
+ * - To guarantee that the presenter is recreated properly, make sure it's host view
+ * has a unique ID and it's parent group's state is saved.
+ * - If presenter's host view doesn't have an ID and the presenter does, it's state will
+ * still be saved, but it won't be recreated automatically.
+ *
+ * Configuration changes (assuming the activity can change configuration):
+ * - if [canChangeConfiguration] is marked as true, presenter will be just notified
+ * - if [canChangeConfiguration] is false, presenters parent has to detach it
+ * and recreate it from saved state. From the point of view of the detached presenter,
+ * it is as if the activity was shut down and now is being restored from saved state.
  *
  * Presenter can always be placed only in the [PresenterLayout] - this is mainly to simplify
  * the reuse (All them layout params).
@@ -63,16 +70,12 @@ import java.util.*
  * @see [LifecycleHost]
  * TODO: Consider removing references to view and context after destroy to ease GC.
  * (But all context and view related stuff would have to be delegated so that these can be released too)
- * TODO: Re-thing the state restore procedure - can we somehow drop the data we don't need while keeping the latest state?
- * Idea: First construct the state tree and then flatten it based on IDs that you deliver inside each state.
- * That way each bundle is present only once, but with two references.
  */
 open class Presenter(
         context: PresenterContext, val view: View
 ) : LifecycleHost, ActionHost {
 
     companion object {
-        @JvmField val ID_KEY = "glucose:id"
         @JvmField val IS_RESTORED_KEY = "glucose:is_restored"
     }
     /**
@@ -97,7 +100,7 @@ open class Presenter(
             return field
         }
 
-    open val id: Int
+    val id: Int
         get() = if (this.isAttached) {
             arguments.getId()
         } else View.NO_ID
@@ -203,10 +206,10 @@ open class Presenter(
      * @see Activity.onConfigurationChanged
      */
     open fun onConfigurationChanged(newConfig: Configuration) {
-        ctx.factory.cleanUpBeforeConfigChange()
         if (!canChangeConfiguration) {
             throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
         }
+        ctx.factory.cleanUpBeforeConfigChange()
         lifecycleLog("onConfigurationChanged")
     }
 

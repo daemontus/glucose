@@ -40,7 +40,7 @@ class PresenterContext(
     var root: Presenter by Delegates.notNull()
 
     //temporary storage for state array while the hierarchy is being restored
-    private var presenterStates: SparseArray<Bundle>? = null
+    internal var presenterStates: SparseArray<Bundle>? = null
 
     /**
      * Obtain new presenter instance and attach it to this context by assigning it arguments.

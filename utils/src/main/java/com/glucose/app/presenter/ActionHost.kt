@@ -2,6 +2,7 @@ package com.glucose.app.presenter
 
 import android.support.annotation.AnyThread
 import rx.Observable
+import com.glucose.app.Presenter
 
 
 /**

@@ -3,9 +3,7 @@ package com.glucose.app
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.annotation.IdRes
 import android.support.v7.app.AppCompatActivity
-import android.view.View
 import kotlin.properties.Delegates
 
 /**
@@ -13,11 +11,10 @@ import kotlin.properties.Delegates
  */
 abstract class RootActivity(
         rootPresenter: Class<out Presenter>,
-        rootArguments: Bundle = Bundle(),
-        @IdRes rootId: Int = View.NO_ID
+        rootArguments: Bundle = Bundle()
 ) : AppCompatActivity() {
 
-    private val presenterContext = PresenterContext(this, rootPresenter, rootArguments, rootId)
+    private val presenterContext = PresenterContext(this, rootPresenter, rootArguments)
 
     private var rootView: PresenterLayout by Delegates.notNull()
 
