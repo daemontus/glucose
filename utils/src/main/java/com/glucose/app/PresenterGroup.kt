@@ -7,10 +7,7 @@ import android.support.annotation.IdRes
 import android.util.SparseArray
 import android.view.View
 import com.glucose.Log
-import com.glucose.app.presenter.isAlive
-import com.glucose.app.presenter.isAttached
-import com.glucose.app.presenter.isResumed
-import com.glucose.app.presenter.isStarted
+import com.glucose.app.presenter.*
 import rx.subjects.PublishSubject
 import rx.Observable
 import java.util.*
@@ -41,8 +38,8 @@ open class PresenterGroup : Presenter {
 
     // ============================ Children and Lifecycle =============================
 
-    override fun onAttach(arguments: Bundle) {
-        super.onAttach(arguments)
+    override fun onAttach(arguments: Bundle, isFresh: Boolean) {
+        super.onAttach(arguments, isFresh)
         val childIds = arguments.getIntArray(CHILDREN_ID_KEY)
         val childClasses = arguments.getStringArray(CHILDREN_CLASS_KEY)
         val childStates = arguments.getParcelableArrayList<Bundle>(CHILDREN_STATE_KEY)
@@ -137,6 +134,13 @@ open class PresenterGroup : Presenter {
         super.onActivityResult(requestCode, resultCode, data)
         children.forEach {
             it.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        children.forEach {
+            it.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 

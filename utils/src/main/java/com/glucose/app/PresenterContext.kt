@@ -57,7 +57,7 @@ class PresenterContext(
             arguments.putAll(savedState)
         }
         arguments.putInt("id", finalId)
-        instance.performAttach(arguments)
+        instance.performAttach(arguments, savedState != null)
         return instance
     }
 
@@ -152,6 +152,10 @@ class PresenterContext(
         val container = SparseArray<Bundle>()
         root.saveHierarchyState(container)
         state.putSparseParcelableArray(STATE_KEY, container)
+    }
+
+    fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        root.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
 }

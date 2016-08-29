@@ -77,5 +77,10 @@ abstract class RootActivity(
         super.onSaveInstanceState(outState)
         presenterContext.onSaveInstanceState(outState)
     }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        presenterContext.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
 }
 

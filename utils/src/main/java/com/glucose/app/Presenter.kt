@@ -4,17 +4,15 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.annotation.IdRes
 import android.support.annotation.LayoutRes
 import android.util.SparseArray
 import android.view.LayoutInflater
 import android.view.View
 import com.glucose.app.presenter.*
+import com.glucose.app.presenter.Lifecycle.State.*
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*
-
-import com.glucose.app.presenter.Lifecycle.State.*
 
 /**
  * Presenter is responsible for a single, possibly modular part of UI.
@@ -63,7 +61,11 @@ import com.glucose.app.presenter.Lifecycle.State.*
  *
  * @see [ActionHost]
  * @see [LifecycleHost]
- * TODO: Handle onRequestPermissionResult.
+ * TODO: Consider removing references to view and context after destroy to ease GC.
+ * (But all context and view related stuff would have to be delegated so that these can be released too)
+ * TODO: Re-thing the state restore procedure - can we somehow drop the data we don't need while keeping the latest state?
+ * Idea: First construct the state tree and then flatten it based on IDs that you deliver inside each state.
+ * That way each bundle is present only once, but with two references.
  */
 open class Presenter(
         context: PresenterContext, val view: View
@@ -106,8 +108,8 @@ open class Presenter(
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
-        onAttach(arguments)
+    internal fun performAttach(arguments: Bundle, isFresh: Boolean) = assertLifecycleChange(ALIVE, ATTACHED) {
+        onAttach(arguments, isFresh)
         actionHost.startProcessingActions()
     }
 
@@ -126,8 +128,8 @@ open class Presenter(
 
     internal fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
 
-    protected open fun onAttach(arguments: Bundle) {
-        lifecycleLog("onAttach")
+    protected open fun onAttach(arguments: Bundle, isFresh: Boolean) {
+        lifecycleLog("onAttach: $isFresh")
         this.arguments = arguments
         myState = ATTACHED
         onLifecycleEvent(Lifecycle.Event.ATTACH)
@@ -233,18 +235,23 @@ open class Presenter(
     }
 
     /**
-     * Save state of this [Presenter] into a given Bundle.
+     * @see Activity.onSaveInstanceState
      */
     open fun onSaveInstanceState(out: Bundle) {
         out.putAll(arguments)   //make a copy of the current state
     }
 
     /**
-     * Notification that system memory is running low.
-     *
      * @see Activity.onTrimMemory
      */
     open fun onTrimMemory(level: Int) {}
+
+    /**
+     * @see Activity.onRequestPermissionsResult
+     */
+    open fun onRequestPermissionsResult(
+            requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) { }
 
     /******************** [LifecycleHost] implementation ******************************************/
 
@@ -289,13 +296,5 @@ open class Presenter(
      * @see [ActionHost.post]
      */
     override fun <R> post(action: Observable<R>): Observable<R> = actionHost.post(action)
-
-    // ============================ View related helper functions ==================================
-
-    @Suppress("UNCHECKED_CAST")
-    fun <V: View> findView(@IdRes viewId: Int): V = view.findViewById(viewId) as V
-
-    @Suppress("UNCHECKED_CAST")
-    fun <V: View> findOptionalView(@IdRes viewId: Int): V? = view.findViewById(viewId) as V?
 
 }
