@@ -201,7 +201,16 @@ open class Presenter(
         lifecycleLog("onDestroy")
     }
 
+    /**
+     * True if this presenter can handle a configuration change.
+     */
     open val canChangeConfiguration = true
+
+    /**
+     * True if this presenter can be used again after being recycled.
+     * If false, it is guaranteed to be attached only once.
+     */
+    open val canBeReused = true
 
     /**
      * Called when this presenter changes configuration.

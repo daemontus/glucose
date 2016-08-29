@@ -2,24 +2,34 @@ package com.glucose.app
 
 import android.content.res.Configuration
 import android.support.annotation.MainThread
+import android.view.ViewGroup
 import com.glucose.app.presenter.isAttached
-import java.lang.reflect.Constructor
 import java.util.*
 
 
 /**
  * A class responsible for creating and caching presenters.
  *
- * It relies on reflection when creating new Presenters.
+ * PresenterFactory first looks for a registered constructor (see [register]).
+ * If no such constructor exists, it will try to find a constructor
+ * with two parameters ([PresenterContext], [ViewGroup]?) using reflection.
+ * If no such constructor is found, it will throw an [IllegalStateException].
  *
- * #futurework: Allow different caching strategies (nothing, max. 3, etc.)
+ * PresenterFactory will try to cache detached [Presenter] instances. To
+ * ensure this mechanism works properly, it relies on [PresenterContext]
+ * to provide appropriate callbacks for detached presenters. To prevent this
+ * behavior, use [Presenter.canBeReused].
+ *
+ * PresenterFactory retains references to all created presenters
+ * and at the time of destruction checks if all of them were properly
+ * detached. This way you can detect leaked presenters.
  *
  * @see PresenterContext
  */
 @MainThread
 open class PresenterFactory(private val context: PresenterContext) {
 
-    private val constructors = HashMap<Class<*>, Constructor<out Presenter>>()
+    private val constructors = HashMap<Class<*>, (PresenterContext, ViewGroup?) -> Presenter>()
 
     private val allPresenters = ArrayList<Presenter>()
     private val freePresenters = ArrayList<Presenter>()
@@ -27,15 +37,22 @@ open class PresenterFactory(private val context: PresenterContext) {
     private var destroyed = false
 
     /**
+     * Explicitly register a constructor that will be used to create presenter of this class.
+     */
+    fun <P : Presenter> register(clazz: Class<P>, constructor: (PresenterContext, ViewGroup?) -> P) {
+        constructors[clazz] = constructor
+    }
+
+    /**
      * Create or reuse a Presenter instance.
      */
-    fun <P : Presenter> obtain(clazz: Class<out P>): P {
+    fun <P : Presenter> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
         if (destroyed) throw IllegalStateException("Cannot request Presenters after onDestroy")
         val found = freePresenters.find { it.javaClass == clazz }
-                ?: spawnPresenter(clazz)
+                ?: spawnPresenter(clazz, parent)
         freePresenters.remove(found)
         lifecycleLog("Obtained presenter $found")
-        // Cast to P is safe assuming reflection does not fail
+        // Cast to P is safe assuming no one gave us a fake constructor
         @Suppress("UNCHECKED_CAST")
         return found as P
     }
@@ -44,21 +61,30 @@ open class PresenterFactory(private val context: PresenterContext) {
      * Mark Presenter instance as ready for reuse
      */
     fun recycle(presenter: Presenter) {
+        if (destroyed) throw IllegalStateException("Cannot recycle Presenters after onDestroy")
         if (presenter !in allPresenters) throw IllegalStateException("$presenter is not managed by $this but by ${presenter.ctx}")
         if (presenter.isAttached) throw IllegalStateException("$presenter is still attached")
-        freePresenters.add(presenter)
-        lifecycleLog("Recycled $presenter")
+        if (presenter.canBeReused) {
+            freePresenters.add(presenter)
+            lifecycleLog("Recycled $presenter")
+        } else {
+            killPresenter(presenter)
+        }
     }
 
-    //Create a new presenter using reflection
-    private fun spawnPresenter(clazz: Class<out Presenter>) : Presenter {
+    //Create a new presenter using provided constructor or reflection
+    private fun spawnPresenter(clazz: Class<out Presenter>, parent: ViewGroup?) : Presenter {
         val presenter = constructors.getOrPut(clazz) {
             try {
-                clazz.getConstructor(PresenterContext::class.java)
+                val constructor = clazz.getConstructor(PresenterContext::class.java, ViewGroup::class.java)
+                object : (PresenterContext, ViewGroup?) -> Presenter {
+                    override fun invoke(p1: PresenterContext, p2: ViewGroup?): Presenter
+                            = constructor.newInstance(p1, p2)
+                }
             } catch (e: Exception) {
                 throw IllegalStateException("No constructor taking PresenterContext found for ${clazz.name}", e)
             }
-        }.newInstance(context)
+        }.invoke(context, parent)
         lifecycleLog("Spawned presenter for $clazz: $presenter")
         allPresenters.add(presenter)
         return presenter

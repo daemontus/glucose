@@ -83,26 +83,23 @@ open class PresenterGroup : Presenter {
         super.onDetach()
     }
 
+    /**
+     * Config change is a little complex thanks to Presenter caching.
+     * First, as we go down the tree, we detach all presenters that can't handle
+     * configuration change. Every time we hit a leaf, we have to clear the factory
+     * to make sure that the detached presenters won't get reused (This is done by each Presenter
+     * in super). Then as we go up, we restore the presenters using the state saved on the
+     * way down.
+     */
     override fun onConfigurationChanged(newConfig: Configuration) {
         //Note: This mechanism might change order of views in containers.
         //This is intended behavior as managing it here would likely
         //cause even more confusion.
-        class ChildState(
-                val clazz: Class<out Presenter>,
-                val tree: Bundle,
-                val map: SparseArray<Bundle>,
-                val viewState: SparseArray<Parcelable>
-        )
         val childStates = ArrayList<Pair<Int, ChildState>>()
         for (presenter in children) {
             if (!presenter.canChangeConfiguration) {
-                val map = SparseArray<Bundle>()
-                val tree = presenter.saveHierarchyState(map)
-                val views = SparseArray<Parcelable>()
-                presenter.view.saveHierarchyState(views)
                 childStates.add(Pair(
-                        (presenter.view.parent as View).id,
-                        ChildState(presenter.javaClass, tree, map, views)
+                        (presenter.view.parent as View).id, presenter.saveWholeState()
                 ))
                 detach(presenter)
             }
@@ -132,6 +129,7 @@ open class PresenterGroup : Presenter {
             if (it.view.parent is View) {
                 val parent = it.view.parent as View
                 if (parent.id != View.NO_ID) {
+                    //technically this should be a tautology, but better check
                     childrenMap.put(parent.id, childState)
                 }
             }

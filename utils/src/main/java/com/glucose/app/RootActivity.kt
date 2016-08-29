@@ -22,9 +22,7 @@ abstract class RootActivity(
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        rootView = FrameLayout(this)
-        rootView.addView(presenterContext.onCreate(savedInstanceState))
-        setContentView(rootView)
+        setContentView(presenterContext.onCreate(savedInstanceState))
     }
 
     override fun onStart() {
