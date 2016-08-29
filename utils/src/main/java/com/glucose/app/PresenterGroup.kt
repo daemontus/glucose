@@ -36,9 +36,9 @@ open class PresenterGroup : Presenter {
 
     // ============================ Children and Lifecycle =============================
 
-    override fun onAttach(arguments: Bundle, isFresh: Boolean) {
-        super.onAttach(arguments, isFresh)
-        if (!isFresh) {
+    override fun onAttach(arguments: Bundle) {
+        super.onAttach(arguments)
+        if (arguments.isRestored()) {
             val savedChildren = arguments.getSparseParcelableArray<PresenterParcel>(CHILDREN_KEY)
             for (i in 0 until savedChildren.size()) {
                 val parentId = savedChildren.keyAt(i)
@@ -82,11 +82,8 @@ open class PresenterGroup : Presenter {
         children.toList().forEach {
             remove(it)
         }
-        children.clear()
         super.onDetach()
     }
-
-    override val canChangeConfiguration: Boolean = true
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         //child state is saved inside the global state array in the context
@@ -163,7 +160,7 @@ open class PresenterGroup : Presenter {
     fun <P: Presenter> add(
             parent: PresenterLayout, clazz: Class<P>, arguments: Bundle = Bundle()
     ): P {
-        val presenter = ctx.attach(clazz, arguments, parent.id)
+        val presenter = ctx.attach(clazz, arguments)
         parent.addView(presenter.view)
         children.add(presenter)
         if (isStarted) presenter.performStart()

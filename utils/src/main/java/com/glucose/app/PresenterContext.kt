@@ -6,10 +6,10 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.annotation.IdRes
 import android.support.annotation.MainThread
 import android.util.SparseArray
 import android.view.View
+import com.glucose.app.presenter.getId
 import com.glucose.app.presenter.isResumed
 import com.glucose.app.presenter.isStarted
 import kotlin.properties.Delegates
@@ -28,12 +28,12 @@ import kotlin.properties.Delegates
 class PresenterContext(
         val activity: Activity,
         private val rootPresenter: Class<out Presenter>,
-        private val rootArguments: Bundle = Bundle(),
-        private @IdRes val rootId: Int = View.NO_ID
+        private val rootArguments: Bundle = Bundle()
 ) {
 
     companion object {
-        val STATE_KEY = "glucose:presenter_hierarchy"
+        val HIERARCHY_TREE_KEY = "glucose:presenter_hierarchy:tree"
+        val HIERARCHY_MAP_KEY = "glucose:presenter_hierarchy:map"
     }
 
     val factory = PresenterFactory(this)
@@ -47,17 +47,15 @@ class PresenterContext(
      *
      * Arguments are based on the saved state and provided data.
      */
-    fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle(), @IdRes id: Int = View.NO_ID): P {
+    fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle()): P {
         val instance = factory.obtain(presenter)
-        val finalId = if (id == View.NO_ID) instance.id else id
-        val savedState = if (finalId == View.NO_ID) null else {
-            presenterStates?.get(finalId)
+        val id = arguments.getId()
+        if (id != View.NO_ID) {
+            presenterStates?.get(id)?.let { savedState ->
+                arguments.putAll(savedState)
+            }
         }
-        if (savedState != null) {
-            arguments.putAll(savedState)
-        }
-        arguments.putInt("id", finalId)
-        instance.performAttach(arguments, savedState != null)
+        instance.performAttach(arguments)
         return instance
     }
 
@@ -75,9 +73,14 @@ class PresenterContext(
      * The caller should add returned view to the view hierarchy before the view state is restored.
      */
     fun onCreate(savedInstanceState: Bundle?): View {
-        presenterStates = savedInstanceState?.getSparseParcelableArray<Bundle>(STATE_KEY)
-        root = attach(rootPresenter, rootArguments, rootId) //should recreate the whole tree
-        //presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
+        presenterStates = savedInstanceState?.getSparseParcelableArray(HIERARCHY_MAP_KEY)
+        val stateTree = savedInstanceState?.getParcelable<Bundle>(HIERARCHY_TREE_KEY)
+        val arguments = if (stateTree == null) rootArguments else Bundle().apply {
+            this.putAll(rootArguments)
+            this.putAll(stateTree)
+        }
+        root = attach(rootPresenter, arguments) //should recreate the whole tree
+        presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
         return root.view
     }
 
@@ -131,7 +134,7 @@ class PresenterContext(
             if (started) root.performStop()
             detach(root)
             factory.onConfigurationChange(newConfig)
-            root = attach(rootPresenter, rootArguments, rootId)
+            root = attach(rootPresenter, rootArguments)
             if (started) root.performStart()
             if (resumed) root.performResume()
         }
@@ -149,9 +152,12 @@ class PresenterContext(
     }
 
     fun onSaveInstanceState(state: Bundle) {
-        val container = SparseArray<Bundle>()
-        root.saveHierarchyState(container)
-        state.putSparseParcelableArray(STATE_KEY, container)
+        //Note: This will still consume 2x more space in the state bundle
+        //thanks to the way parcelables work. Maybe we can do something better in the future.
+        val map = SparseArray<Bundle>()
+        val tree = root.saveHierarchyState(map)
+        state.putSparseParcelableArray(HIERARCHY_MAP_KEY, map)
+        state.putParcelable(HIERARCHY_TREE_KEY, tree)
     }
 
     fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

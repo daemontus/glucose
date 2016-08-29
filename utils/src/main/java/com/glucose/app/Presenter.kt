@@ -71,6 +71,10 @@ open class Presenter(
         context: PresenterContext, val view: View
 ) : LifecycleHost, ActionHost {
 
+    companion object {
+        @JvmField val ID_KEY = "glucose:id"
+        @JvmField val IS_RESTORED_KEY = "glucose:is_restored"
+    }
     /**
      * Create a Presenter with view initialized from layout resource.
      */
@@ -95,7 +99,7 @@ open class Presenter(
 
     open val id: Int
         get() = if (this.isAttached) {
-            arguments.getInt("id", View.NO_ID)
+            arguments.getId()
         } else View.NO_ID
 
     /******************** Methods driving the lifecycle of this Presenter. ************************/
@@ -108,8 +112,8 @@ open class Presenter(
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle, isFresh: Boolean) = assertLifecycleChange(ALIVE, ATTACHED) {
-        onAttach(arguments, isFresh)
+    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
+        onAttach(arguments)
         actionHost.startProcessingActions()
     }
 
@@ -128,8 +132,8 @@ open class Presenter(
 
     internal fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
 
-    protected open fun onAttach(arguments: Bundle, isFresh: Boolean) {
-        lifecycleLog("onAttach: $isFresh")
+    protected open fun onAttach(arguments: Bundle) {
+        lifecycleLog("onAttach")
         this.arguments = arguments
         myState = ATTACHED
         onLifecycleEvent(Lifecycle.Event.ATTACH)
@@ -174,6 +178,7 @@ open class Presenter(
     protected open fun onDetach() {
         onLifecycleEvent(Lifecycle.Event.DETACH)
         myState = ALIVE
+        arguments = Bundle()    //drop old arguments
         lifecycleLog("onDetach")
     }
 
@@ -248,6 +253,7 @@ open class Presenter(
      */
     open fun onSaveInstanceState(out: Bundle) {
         out.putAll(arguments)   //make a copy of the current state
+        out.setRestored(true)
     }
 
     /**

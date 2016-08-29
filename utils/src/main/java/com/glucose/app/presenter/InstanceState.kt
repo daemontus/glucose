@@ -2,10 +2,16 @@ package com.glucose.app.presenter
 
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.View
 import com.glucose.app.Presenter
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
+
+fun Bundle.getId() = this.getInt(Presenter::id.name, View.NO_ID)
+fun Bundle.isRestored() = this.getBoolean(Presenter.IS_RESTORED_KEY, false)
+fun Bundle.setId(id: Int) = this.putInt(Presenter::id.name, id)
+fun Bundle.setRestored(restored: Boolean) = this.putBoolean(Presenter.IS_RESTORED_KEY, restored)
 
 class InstanceArgument<out T>(
         private val getter: Bundle.(String) -> T
