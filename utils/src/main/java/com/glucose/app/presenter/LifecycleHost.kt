@@ -231,7 +231,37 @@ inline fun <T> Observable<T>.whileIn(
     }
 }
 
+/**
+ * @see whileIn
+ */
+@MainThread
+inline fun <T> Observable<T>.whileAlive(
+        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
+) : Subscription? = this.whileIn(host, Lifecycle.State.ALIVE, subscribe)
 
+/**
+ * @see whileIn
+ */
+@MainThread
+inline fun <T> Observable<T>.whileAttached(
+        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
+) : Subscription? = this.whileIn(host, Lifecycle.State.ATTACHED, subscribe)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+inline fun <T> Observable<T>.whileStarted(
+        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
+) : Subscription? = this.whileIn(host, Lifecycle.State.STARTED, subscribe)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+inline fun <T> Observable<T>.whileResumed(
+        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
+) : Subscription? = this.whileIn(host, Lifecycle.State.RESUMED, subscribe)
 
 //fun some simple helper functions regarding state
 

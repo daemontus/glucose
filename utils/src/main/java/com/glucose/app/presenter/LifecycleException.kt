@@ -1,4 +1,4 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 open class LifecycleException : Exception {
     constructor() : super()
