@@ -1,7 +1,5 @@
 package com.glucose
 
-import android.util.Log
-
 /**
  * We introduce extra LogLevel class because Android Log level system is a little richer and not
  * exactly type safe.
