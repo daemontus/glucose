@@ -74,8 +74,6 @@ import java.util.*
  *
  * @see [ActionHost]
  * @see [LifecycleHost]
- * TODO: Consider removing references to view and context after destroy to ease GC.
- * (But all context and view related stuff would have to be delegated so that these can be released too)
  */
 open class Presenter(
         context: PresenterContext, val view: View

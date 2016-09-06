@@ -22,21 +22,19 @@ import com.glucose.app.Presenter
  * to this Action. Otherwise it will wait for the previously queued actions to
  * terminate and then subscribes to this Action.
  *
- * The Proxy [Observable] should then exactly mirror the behavior of the Action [Observable]
- * with respect to the delay caused by the unfinished actions. That is including errors
- * and unsubscribe events.
+ * The Proxy [Observable] should then exactly mirror the behavior of the Action [Observable].
+ * That is including errors and unsubscribe events.
  *
- * It is left to the
- * implementation as to how multiple subscriptions to the Proxy [Observable] are handled.
- * However, each [ActionHost] implementation should make sure only one action is active
- * at a time. (So either the results need to be cached, or the action needs to be queued
- * again upon each subscribe)
+ * It is left to the implementation as to how multiple subscriptions to the
+ * Proxy [Observable] are handled. However, each [ActionHost] implementation should make sure
+ * only one action is active at a time. (So either the results need to be cached, or the
+ * action needs to be queued again upon each subscribe)
  *
  * Note that [ActionHost] can choose to refuse any action or terminate it prematurely. In such
  * cases, the proxy observable will be notified with an appropriate exception.
  * This will usually happen when:
  *  - The [ActionHost] has to shut down due to external reasons (such as application shutting down).
- * This will should result in [PrematureTerminationException] if action has been already running or
+ * This will result in [PrematureTerminationException] if action has been already running or
  * [CannotExecuteException] if the action hasn't been subscribed to yet.
  *  - The number of queued actions exceeds maximal supported amount. This should result in the
  *  [CannotExecuteException].

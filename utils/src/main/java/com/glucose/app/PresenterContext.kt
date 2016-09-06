@@ -73,6 +73,7 @@ class PresenterContext(
     // ====================================== Lifecycle ============================================
 
     private var parent: ViewGroup by Delegates.notNull()
+
     /**
      * The caller should add returned view to the view hierarchy before the view state is restored.
      */

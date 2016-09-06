@@ -162,9 +162,17 @@ open class PresenterGroup : Presenter {
     /**
      * Obtain new presenter and add it to this group.
      */
-    fun <P: Presenter> attach(@IdRes parent: Int, presenter: Class<P>, arguments: Bundle = Bundle()): P {
-        val instance = ctx.attach(presenter, arguments, findView<ViewGroup>(parent))
-        add(parent, instance)
+    fun <P: Presenter> attach(@IdRes parent: Int, presenter: Class<P>, arguments: Bundle = Bundle()): P
+        = attach(findView<ViewGroup>(parent), presenter, arguments)
+
+    /**
+     * Obtain new presenter and add it to this group.
+     *
+     * WARNING: If the parent view doesn't have an ID, the presenter won't be restored from state.
+     */
+    fun <P: Presenter> attach(parentView: ViewGroup, presenter: Class<P>, arguments: Bundle = Bundle()): P {
+        val instance = ctx.attach(presenter, arguments, parentView)
+        add(parentView, instance)
         return instance
     }
 
@@ -176,7 +184,19 @@ open class PresenterGroup : Presenter {
      *
      * Typical use case: Moving a presenter between groups without detaching.
      */
-    fun add(@IdRes parent: Int, presenter: Presenter) {
+    fun add(@IdRes parent: Int, presenter: Presenter) = add(findView<ViewGroup>(parent), presenter)
+
+    /**
+     * Add a presenter that is already attached to the same context.
+     *
+     * Incorrect usage of this method may cause presenter leaks and lifecycle
+     * problems. Prefer using [attach] when possible.
+     *
+     * Typical use case: Moving a presenter between groups without detaching.
+     *
+     * WARNING: If the parent does not have an ID, the presenter won't be restored from state.
+     */
+    fun add(parentView: ViewGroup, presenter: Presenter) {
         if (!presenter.isAttached) throw IllegalStateException("$presenter is not attached!")
         if (presenter.view.parent != null) {
             throw IllegalStateException("$presenter view is already added to ${presenter.view.parent}")
@@ -184,7 +204,6 @@ open class PresenterGroup : Presenter {
         if (presenter.ctx != this.ctx) {
             throw IllegalStateException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
         }
-        val parentView = findView<ViewGroup>(parent)
         parentView.addView(presenter.view)
         children.add(presenter)
         if (this.isStarted) presenter.performStart()
@@ -197,7 +216,7 @@ open class PresenterGroup : Presenter {
      * Remove presenter from view hierarchy, but keep it attached to the context.
      *
      * Incorrect usage of this method may cause presenter leaks and lifecycle
-     * problems. Prefere using [detach] when possible.
+     * problems. Prefer using [detach] when possible.
      *
      * Typical use case: Moving a presenter between groups without detaching.
      */
