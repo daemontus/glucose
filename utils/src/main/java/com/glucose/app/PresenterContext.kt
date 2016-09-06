@@ -87,6 +87,7 @@ class PresenterContext(
             this.putAll(stateTree)
         }
         root = attach(rootPresenter, arguments, parent) //should recreate the whole tree
+        parent.addView(root.view)
         presenterStates = null  //forget about the state so that newly attached presenters don't suffer from it.
         return parent
     }
@@ -111,6 +112,7 @@ class PresenterContext(
      * Before calling this, the view should be removed from the main hierarchy.
      */
     fun onDestroy() {
+        parent.removeAllViews()
         detach(root)
         factory.onDestroy()
     }

@@ -35,13 +35,12 @@ open class PresenterGroup : Presenter {
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
         if (arguments.isRestored()) {
-            val savedChildren = arguments.getSparseParcelableArray<PresenterParcel>(CHILDREN_KEY)
-            for (i in 0 until savedChildren.size()) {
-                val parentId = savedChildren.keyAt(i)
-                val child = savedChildren.valueAt(i)
+            val savedChildren = arguments.getParcelableArrayList<PresenterParcel>(CHILDREN_KEY)
+            savedChildren.forEach {
+                val (clazz, state, parentId) = it
                 findOptionalView<ViewGroup>(parentId)?.let { parent ->
                     @Suppress("UNCHECKED_CAST") //Assuming state info is valid, this should work
-                    attach(parentId, Class.forName(child.clazz) as Class<Presenter>, child.state)
+                    attach(parentId, Class.forName(clazz) as Class<Presenter>, state)
                 }
             }
             //this should ensure that children that were not restored will be garbage collected
@@ -77,7 +76,7 @@ open class PresenterGroup : Presenter {
 
     override fun onDetach() {
         children.toList().forEach {
-            remove(it)
+            detach(it)
         }
         super.onDetach()
     }
@@ -89,18 +88,26 @@ open class PresenterGroup : Presenter {
      * to make sure that the detached presenters won't get reused (This is done by each Presenter
      * in super). Then as we go up, we restore the presenters using the state saved on the
      * way down.
+     *
+     * Furthermore, in order to preserve ordering of presenters if there are more in one
+     * group and some need to be recreated, we create an extra replacement view that
+     * takes it's place while other children change configuration.
      */
     override fun onConfigurationChanged(newConfig: Configuration) {
-        //Note: This mechanism might change order of views in containers.
-        //This is intended behavior as managing it here would likely
-        //cause even more confusion.
-        val childStates = ArrayList<Pair<Int, ChildState>>()
+        val childStates = SparseArray<Pair<ViewGroup, ChildState>>()
         for (presenter in children) {
             if (!presenter.canChangeConfiguration) {
-                childStates.add(Pair(
-                        (presenter.view.parent as View).id, presenter.saveWholeState()
-                ))
-                detach(presenter)
+                val parent = presenter.view.parent
+                if (parent is ViewGroup) {
+                    val replacementId = newSyntheticId()
+                    childStates.put(replacementId, Pair(parent, presenter.saveWholeState()))
+                    val index = parent.indexOfChild(presenter.view)
+                    detach(presenter)
+                    parent.addView(View(ctx.activity).apply { this.id = replacementId }, index)
+
+                } else {
+                    detach(presenter)
+                }
             }
         }
         children.forEach {
@@ -108,17 +115,26 @@ open class PresenterGroup : Presenter {
         }
         //Now that the whole subtree is done, clear factory and instantiate saved presenters
         super.onConfigurationChanged(newConfig)
-        for ((layout, state) in childStates) {
-            ctx.presenterStates = state.map
-            val presenter = attach(layout, state.clazz, state.tree)
-            ctx.presenterStates = null
-            presenter.view.restoreHierarchyState(state.viewState)
+        for (i in 0 until childStates.size()) {
+            val id = childStates.keyAt(i)
+            val replacement = findOptionalView<View>(id)
+            if (replacement != null) {
+                val (layout, state) = childStates.valueAt(i)
+                val index = layout.indexOfChild(replacement)
+                layout.removeView(replacement)
+                ctx.presenterStates = state.map
+                val presenter = ctx.attach(state.clazz, arguments, layout)
+                layout.addView(presenter.view, index)
+                addChild(presenter)
+                ctx.presenterStates = null
+                presenter.view.restoreHierarchyState(state.viewState)
+            }
         }
     }
 
     override fun saveHierarchyState(container: SparseArray<Bundle>): Bundle {
         val myState = super.saveHierarchyState(container)
-        val childrenMap = SparseArray<PresenterParcel>()
+        val childrenList = ArrayList<PresenterParcel>()
         children.forEach {
             //We have to call it on all children, because even if we drop this bundle, some
             //deeper child might save itself to the container
@@ -128,12 +144,11 @@ open class PresenterGroup : Presenter {
             if (it.view.parent is View) {
                 val parent = it.view.parent as View
                 if (parent.id != View.NO_ID) {
-                    //technically this should be a tautology, but better check
-                    childrenMap.put(parent.id, childState)
+                    childrenList.add(childState.copy(parentId = parent.id))
                 }
             }
         }
-        myState.putSparseParcelableArray(CHILDREN_KEY, childrenMap)
+        myState.putParcelableArrayList(CHILDREN_KEY, childrenList)
         return myState
     }
 
@@ -205,6 +220,10 @@ open class PresenterGroup : Presenter {
             throw IllegalStateException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
         }
         parentView.addView(presenter.view)
+        addChild(presenter)
+    }
+
+    private fun addChild(presenter: Presenter) {
         children.add(presenter)
         if (this.isStarted) presenter.performStart()
         if (this.isResumed) presenter.performResume()

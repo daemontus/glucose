@@ -196,6 +196,8 @@ fun <T> Observable<T>.takeWhileIn(host: LifecycleHost, state: Lifecycle.State): 
  * @see whileIn
  */
 @MainThread
+//TODO: Subscribe shouldn be an extensions funciton, because it messes with this
+//Can we maybe return a special kind of observable? Where we
 inline fun <T> Observable<T>.until(
         host: LifecycleHost, event: Lifecycle.Event, subscribe: Observable<T>.() -> Subscription
 ): Subscription {

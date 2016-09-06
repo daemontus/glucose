@@ -1,65 +1,72 @@
 package com.github.daemontus.glucose
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.github.daemontus.egholm.functional.Result
 import com.glucose.Log
-import com.glucose.app.*
-import com.glucose.app.presenter.*
+import com.glucose.app.Presenter
+import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterGroup
+import com.glucose.app.RootCompatActivity
+import com.glucose.app.presenter.Lifecycle
+import com.glucose.app.presenter.findView
+import com.glucose.app.presenter.isRestored
+import com.glucose.app.presenter.whileIn
 import com.jakewharton.rxbinding.view.clicks
 
-class PresenterActivity : RootActivity(RootPresenter::class.java)
+class PresenterActivity : RootCompatActivity(RootPresenter::class.java)
 
-class RootPresenter(context: PresenterContext) : PresenterGroup(context, R.layout.presenter_root) {
+class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
 
     init {
         onChildAdd.subscribe { p ->
             if (p is ControlsPresenter) {
                 p.addContent.whileIn(p, Lifecycle.State.ATTACHED) {
                     subscribe {
-                        this@RootPresenter.add(R.id.content, ContentPresenter::class.java)
+                        this@RootPresenter.attach(R.id.content, ContentPresenter::class.java)
                     }
                 }
                 p.addControls.whileIn(p, Lifecycle.State.ATTACHED) {
                     subscribe {
-                        this@RootPresenter.add(R.id.content, ControlsPresenter::class.java)
+                        this@RootPresenter.attach(R.id.content, ControlsPresenter::class.java)
                     }
                 }
                 p.removeAllContent.whileIn(p, Lifecycle.State.ATTACHED) {
                     subscribe {
-                        for (p in presenters) {
-                            this@RootPresenter.remove(p)
+                        for (item in presenters) {
+                            this@RootPresenter.detach(item)
                         }
                     }
                 }
                 p.removeLast.whileIn(p, Lifecycle.State.ATTACHED) {
                     subscribe {
-                        this@RootPresenter.remove(presenters.last())
+                        this@RootPresenter.detach(presenters.last())
                     }
                 }
             }
         }
     }
 
-    override fun onAttach(arguments: Bundle, isFresh: Boolean) {
-        super.onAttach(arguments, isFresh)
-        if (isFresh) {
-            add(R.id.content, ControlsPresenter::class.java)
+    override fun onAttach(arguments: Bundle) {
+        super.onAttach(arguments)
+        if (!arguments.isRestored()) {
+            Log.d("Adding controls!")
+            attach(R.id.content, ControlsPresenter::class.java)
         }
     }
 }
 
-class ContentPresenter(context: PresenterContext) : Presenter(context, R.layout.presenter_1) {
+class ContentPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_1, parent) {
 
 }
 
-class ControlsPresenter(context: PresenterContext) : Presenter(context, R.layout.presenter_2) {
+class ControlsPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_2, parent) {
 
     val addContent = findView<View>(R.id.add_1).clicks()
     val addControls = findView<View>(R.id.add_2).clicks()
     val removeAllContent = findView<View>(R.id.remove_all_content).clicks()
     val removeLast = findView<View>(R.id.remove_last).clicks()
+
+    override val canChangeConfiguration: Boolean = false
 
 }
