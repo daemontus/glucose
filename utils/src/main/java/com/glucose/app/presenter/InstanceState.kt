@@ -14,24 +14,23 @@ fun Bundle.setId(id: Int) = this.putInt(Presenter::id.name, id)
 fun Bundle.setRestored(restored: Boolean) = this.putBoolean(Presenter.IS_RESTORED_KEY, restored)
 
 class InstanceArgument<out T>(
-        private val getter: Bundle.(String) -> T
+        private val bundler: Bundler<T>
 ) : ReadOnlyProperty<Presenter, T> {
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = getter.invoke(thisRef.arguments, property.name)
+            = bundler.getter.invoke(thisRef.arguments, property.name)
 
 }
 
 class InstanceState<T>(
-        private val getter: Bundle.(String) -> T,
-        private val setter: Bundle.(String, T) -> Unit
+        private val bundler: Bundler<T>
 ) : ReadWriteProperty<Presenter, T> {
 
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
-            = setter.invoke(thisRef.arguments, property.name, value)
+            = bundler.setter.invoke(thisRef.arguments, property.name, value)
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = getter.invoke(thisRef.arguments, property.name)
+            = bundler.getter.invoke(thisRef.arguments, property.name)
 
 }
 
@@ -55,10 +54,10 @@ fun <P: Parcelable> parcelableArgument() = InstanceArgument<P>(getWithError {
 fun stringArgument() = InstanceArgument<String>(getWithError(Bundle::getString))
 
 //Primitive
-fun longArgument() = InstanceArgument<Long>(Bundle::getLong)
-fun intArgument() = InstanceArgument<Int>(Bundle::getInt)
-fun floatArgument() = InstanceArgument<Float>(Bundle::getFloat)
-fun doubleArgument() = InstanceArgument<Double>(Bundle::getDouble)
+fun longArgument() = InstanceArgument(longBundler)
+fun intArgument() = InstanceArgument(intBundler)
+fun floatArgument() = InstanceArgument(floatBundler)
+fun doubleArgument() = InstanceArgument(doubleBundler)
 
 /* ====== State (Read write) delegates ====== */
 
