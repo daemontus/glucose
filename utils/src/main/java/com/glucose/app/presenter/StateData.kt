@@ -46,7 +46,7 @@ data class PresenterParcel(
         @Suppress("unused")
         @JvmField val CREATOR: Parcelable.Creator<PresenterParcel> = object : Parcelable.Creator<PresenterParcel> {
             override fun createFromParcel(p0: Parcel): PresenterParcel
-                    = PresenterParcel(p0.readString(), p0.readParcelable(Bundle::class.java.classLoader), p0.readInt())
+                    = PresenterParcel(p0.readString(), p0.readParcelable(PresenterParcel::class.java.classLoader), p0.readInt())
 
             override fun newArray(p0: Int): Array<out PresenterParcel?> = arrayOfNulls(p0)
 
