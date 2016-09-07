@@ -1,1 +1,1 @@
-include ':app', ':core', ':compat'
+include ':app', ':core', ':compat', ':bundle-array', ':bundle-list'

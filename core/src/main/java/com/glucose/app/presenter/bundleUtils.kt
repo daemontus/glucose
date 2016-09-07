@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.SparseArray
 import java.io.Serializable
-import java.util.*
 
 /*
     Bundle interface
@@ -50,9 +49,12 @@ Size	getSize(String key)
 SizeF	getSizeF(String key)
 ArrayList<Integer>	getIntegerArrayList(String key)
 Serializable	getSerializable(String key)
+
  */
 
-
+/**
+ * A key value pair that can be inserted and retrieved from a Bundle.
+ */
 interface Bundler<T> {
     fun getter(bundle: Bundle, key: String): T
     fun setter(bundle: Bundle, key: String, value: T): Unit
@@ -90,6 +92,8 @@ infix fun Bundle.and(bundled: Bundled<*>): Bundle = this.apply {
 fun bundle(bundled: Bundled<*>): Bundle = Bundle().and(bundled)
 
 
+//For more bundlers, see bundle-array and bundle-list
+
 // Primitives
 @JvmField val booleanBundler = object : Bundler<Boolean> {
     override fun getter(bundle: Bundle, key: String): Boolean = bundle.getBoolean(key)
@@ -124,74 +128,20 @@ fun bundle(bundled: Bundled<*>): Bundle = Bundle().and(bundled)
     override fun setter(bundle: Bundle, key: String, value: Short) = bundle.putShort(key, value)
 }
 
-// Primitive Arrays
-@JvmField val booleanArrayBundler = object : Bundler<BooleanArray?> {
-    override fun getter(bundle: Bundle, key: String): BooleanArray? = bundle.getBooleanArray(key)
-    override fun setter(bundle: Bundle, key: String, value: BooleanArray?) = bundle.putBooleanArray(key, value)
-}
-@JvmField val byteArrayBundler = object : Bundler<ByteArray?> {
-    override fun getter(bundle: Bundle, key: String): ByteArray? = bundle.getByteArray(key)
-    override fun setter(bundle: Bundle, key: String, value: ByteArray?) = bundle.putByteArray(key, value)
-}
-@JvmField val charArrayBundler = object : Bundler<CharArray?> {
-    override fun getter(bundle: Bundle, key: String): CharArray? = bundle.getCharArray(key)
-    override fun setter(bundle: Bundle, key: String, value: CharArray?) = bundle.putCharArray(key, value)
-}
-@JvmField val doubleArrayBundler = object : Bundler<DoubleArray?> {
-    override fun getter(bundle: Bundle, key: String): DoubleArray? = bundle.getDoubleArray(key)
-    override fun setter(bundle: Bundle, key: String, value: DoubleArray?) = bundle.putDoubleArray(key, value)
-}
-@JvmField val floatArrayBundler = object : Bundler<FloatArray?> {
-    override fun getter(bundle: Bundle, key: String): FloatArray? = bundle.getFloatArray(key)
-    override fun setter(bundle: Bundle, key: String, value: FloatArray?) = bundle.putFloatArray(key, value)
-}
-@JvmField val intArrayBundler = object : Bundler<IntArray?> {
-    override fun getter(bundle: Bundle, key: String): IntArray? = bundle.getIntArray(key)
-    override fun setter(bundle: Bundle, key: String, value: IntArray?) = bundle.putIntArray(key, value)
-}
-@JvmField val longArrayBundler = object : Bundler<LongArray?> {
-    override fun getter(bundle: Bundle, key: String): LongArray? = bundle.getLongArray(key)
-    override fun setter(bundle: Bundle, key: String, value: LongArray?) = bundle.putLongArray(key, value)
-}
-@JvmField val shortArrayBundler = object : Bundler<ShortArray?> {
-    override fun getter(bundle: Bundle, key: String): ShortArray? = bundle.getShortArray(key)
-    override fun setter(bundle: Bundle, key: String, value: ShortArray?) = bundle.putShortArray(key, value)
-}
-
 // String related
 @JvmField val charSequenceBundler = object : Bundler<CharSequence?> {
     override fun getter(bundle: Bundle, key: String): CharSequence? = bundle.getCharSequence(key)
     override fun setter(bundle: Bundle, key: String, value: CharSequence?) = bundle.putCharSequence(key, value)
 }
-@JvmField val charSequenceArrayBundler = object : Bundler<Array<CharSequence>?> {
-    override fun getter(bundle: Bundle, key: String): Array<CharSequence>? = bundle.getCharSequenceArray(key)
-    override fun setter(bundle: Bundle, key: String, value: Array<CharSequence>?) = bundle.putCharSequenceArray(key, value)
-}
-@JvmField val charSequenceArrayListBundler = object : Bundler<ArrayList<CharSequence>?> {
-    override fun getter(bundle: Bundle, key: String): ArrayList<CharSequence>? = bundle.getCharSequenceArrayList(key)
-    override fun setter(bundle: Bundle, key: String, value: ArrayList<CharSequence>?) = bundle.putCharSequenceArrayList(key, value)
-}
 @JvmField val stringBundler = object : Bundler<String?> {
     override fun getter(bundle: Bundle, key: String): String? = bundle.getString(key)
     override fun setter(bundle: Bundle, key: String, value: String?) = bundle.putString(key, value)
-}
-@JvmField val stringArrayBundler = object : Bundler<Array<String>?> {
-    override fun getter(bundle: Bundle, key: String): Array<String>? = bundle.getStringArray(key)
-    override fun setter(bundle: Bundle, key: String, value: Array<String>?) = bundle.putStringArray(key, value)
-}
-@JvmField val stringArrayListBundler = object : Bundler<ArrayList<String>?> {
-    override fun getter(bundle: Bundle, key: String): ArrayList<String>? = bundle.getStringArrayList(key)
-    override fun setter(bundle: Bundle, key: String, value: ArrayList<String>?) = bundle.putStringArrayList(key, value)
 }
 
 // Special
 @JvmField val bundleBundler = object : Bundler<Bundle?> {
     override fun getter(bundle: Bundle, key: String): Bundle? = bundle.getBundle(key)
     override fun setter(bundle: Bundle, key: String, value: Bundle?) = bundle.putBundle(key, value)
-}
-@JvmField val intArrayListBundler = object : Bundler<ArrayList<Int>?> {
-    override fun getter(bundle: Bundle, key: String): ArrayList<Int>? = bundle.getIntegerArrayList(key)
-    override fun setter(bundle: Bundle, key: String, value: ArrayList<Int>?) = bundle.putIntegerArrayList(key, value)
 }
 @JvmField val serializableBundler = object : Bundler<Serializable?> {
     override fun getter(bundle: Bundle, key: String): Serializable? = bundle.getSerializable(key)
@@ -202,14 +152,6 @@ fun bundle(bundled: Bundled<*>): Bundle = Bundle().and(bundled)
 fun <P: Parcelable> parcelableBundler() = object : Bundler<P?> {
     override fun getter(bundle: Bundle, key: String): P? = bundle.getParcelable(key)
     override fun setter(bundle: Bundle, key: String, value: P?) = bundle.putParcelable(key, value)
-}
-val parcelableArrayBundler = object : Bundler<Array<out Parcelable>?> {
-    override fun getter(bundle: Bundle, key: String): Array<out Parcelable>? = bundle.getParcelableArray(key)
-    override fun setter(bundle: Bundle, key: String, value: Array<out Parcelable>?) = bundle.putParcelableArray(key, value)
-}
-fun <P: Parcelable> parcelableArrayListBundler() = object : Bundler<ArrayList<P>?> {
-    override fun getter(bundle: Bundle, key: String): ArrayList<P>? = bundle.getParcelableArrayList(key)
-    override fun setter(bundle: Bundle, key: String, value: ArrayList<P>?) = bundle.putParcelableArrayList(key, value)
 }
 fun <P: Parcelable> sparseParcelableArrayBundler() = object : Bundler<SparseArray<P>?> {
     override fun getter(bundle: Bundle, key: String): SparseArray<P>? = bundle.getSparseParcelableArray(key)
@@ -229,33 +171,15 @@ infix fun String.with(value: Int): Bundled<Int> = Bundled(this, value, intBundle
 infix fun String.with(value: Long): Bundled<Long> = Bundled(this, value, longBundler)
 infix fun String.with(value: Short): Bundled<Short> = Bundled(this, value, shortBundler)
 
-infix fun String.with(value: BooleanArray?): Bundled<BooleanArray?> = Bundled(this, value, booleanArrayBundler)
-infix fun String.with(value: ByteArray?): Bundled<ByteArray?> = Bundled(this, value, byteArrayBundler)
-infix fun String.with(value: CharArray?): Bundled<CharArray?> = Bundled(this, value, charArrayBundler)
-infix fun String.with(value: DoubleArray?): Bundled<DoubleArray?> = Bundled(this, value, doubleArrayBundler)
-infix fun String.with(value: FloatArray?): Bundled<FloatArray?> = Bundled(this, value, floatArrayBundler)
-infix fun String.with(value: IntArray?): Bundled<IntArray?> = Bundled(this, value, intArrayBundler)
-infix fun String.with(value: LongArray?): Bundled<LongArray?> = Bundled(this, value, longArrayBundler)
-infix fun String.with(value: ShortArray?): Bundled<ShortArray?> = Bundled(this, value, shortArrayBundler)
-
 infix fun String.with(value: CharSequence?): Bundled<CharSequence?> = Bundled(this, value, charSequenceBundler)
-infix fun String.with(value: Array<CharSequence>?): Bundled<Array<CharSequence>?> = Bundled(this, value, charSequenceArrayBundler)
-infix fun String.withCharSequenceList(value: ArrayList<CharSequence>?): Bundled<ArrayList<CharSequence>?> = Bundled(this, value, charSequenceArrayListBundler)
 infix fun String.with(value: String?): Bundled<String?> = Bundled(this, value, stringBundler)
-infix fun String.with(value: Array<String>?): Bundled<Array<String>?> = Bundled(this, value, stringArrayBundler)
-infix fun String.withStringList(value: ArrayList<String>?): Bundled<ArrayList<String>?> = Bundled(this, value, stringArrayListBundler)
-
-
 infix fun String.with(value: Bundle?): Bundled<Bundle?> = Bundled(this, value, bundleBundler)
-infix fun String.withIntList(value: ArrayList<Int>?): Bundled<ArrayList<Int>?> = Bundled(this, value, intArrayListBundler)
 infix fun String.with(value: Serializable?): Bundled<Serializable?> = Bundled(this, value, serializableBundler)
+infix fun <P: Parcelable> String.with(value: SparseArray<P>?): Bundled<SparseArray<P>?> = Bundled(this, value, sparseParcelableArrayBundler<P>())
+infix fun <P: Parcelable> String.with(value: P?): Bundled<P?> = Bundled(this, value, parcelableBundler())
 
 //These objects are not supported on all API levels. Before including them, figure out how to do it safely.
 //infix fun String.with(value: IBinder?): Bundled<IBinder?> = Bundled(this, value, binderBundler)
 //infix fun String.with(value: Size?): Bundled<Size?> = Bundled(this, value, sizeBundler)
 //infix fun String.with(value: SizeF?): Bundled<SizeF?> = Bundled(this, value, sizeFBundler)
 
-infix fun <P: Parcelable> String.with(value: P?): Bundled<P?> = Bundled(this, value, parcelableBundler())
-infix fun <P: Parcelable> String.withParcelableList(value: ArrayList<P>?): Bundled<ArrayList<P>?> = Bundled(this, value, parcelableArrayListBundler<P>())
-infix fun String.with(value: Array<out Parcelable>?): Bundled<Array<out Parcelable>?> = Bundled(this, value, parcelableArrayBundler)
-infix fun <P: Parcelable> String.with(value: SparseArray<P>?): Bundled<SparseArray<P>?> = Bundled(this, value, sparseParcelableArrayBundler<P>())
