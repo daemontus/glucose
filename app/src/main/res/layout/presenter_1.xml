@@ -15,7 +15,7 @@
         android:layout_height="100dp" />
     <TextView
         android:id="@+id/title"
-        style="@style/TextAppearance.AppCompat.Title"
+        style="@android:style/TextAppearance.Material.Title"
         android:text="@string/lorem_ipsum"
         android:layout_toEndOf="@+id/image"
         android:layout_toRightOf="@+id/image"
@@ -25,7 +25,7 @@
         android:layout_height="wrap_content" />
     <TextView
         android:id="@+id/subtitle"
-        style="@style/TextAppearance.AppCompat.Subhead"
+        style="@android:style/TextAppearance.Material.Subhead"
         android:text="@string/lorem_ipsum_long"
         android:layout_toEndOf="@+id/image"
         android:layout_toRightOf="@+id/image"

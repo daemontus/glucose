@@ -5,25 +5,25 @@
     android:layout_height="match_parent">
     <Button
         android:id="@+id/add_1"
-        style="@style/Base.TextAppearance.AppCompat.Widget.Button"
+        style="@android:style/Widget.Material.Button"
         android:text="@string/add_presenter_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/add_2"
-        style="@style/Base.TextAppearance.AppCompat.Widget.Button"
+        style="@android:style/Widget.Material.Button"
         android:text="@string/add_presenter_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/remove_all_content"
-        style="@style/Base.TextAppearance.AppCompat.Widget.Button"
+        style="@android:style/Widget.Material.Button"
         android:text="@string/remove_all_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/remove_last"
-        style="@style/Base.TextAppearance.AppCompat.Widget.Button"
+        style="@android:style/Widget.Material.Button"
         android:text="@string/remove_last"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />

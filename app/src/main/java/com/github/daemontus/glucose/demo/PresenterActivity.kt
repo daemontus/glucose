@@ -4,17 +4,14 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
-import com.glucose.app.PresenterGroup
-import com.glucose.app.RootCompatActivity
+import com.glucose.app.*
 import com.glucose.app.presenter.Lifecycle
 import com.glucose.app.presenter.findView
 import com.glucose.app.presenter.isRestored
 import com.glucose.app.presenter.whileIn
 import com.jakewharton.rxbinding.view.clicks
 
-class PresenterActivity : RootCompatActivity(RootPresenter::class.java)
+class PresenterActivity : RootActivity(RootPresenter::class.java)
 
 class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
 
