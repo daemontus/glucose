@@ -13,7 +13,7 @@ android {
     defaultPublishConfig "release"
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 9
         targetSdkVersion target_sdk
         versionCode version_code
         versionName version

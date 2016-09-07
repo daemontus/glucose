@@ -1,10 +1,7 @@
 package com.glucose.app.presenter
 
 import android.os.Bundle
-import android.os.IBinder
 import android.os.Parcelable
-import android.util.Size
-import android.util.SizeF
 import android.util.SparseArray
 import java.io.Serializable
 import java.util.*
@@ -105,12 +102,13 @@ val stringArrayBundler = Bundler<Array<String>?>(Bundle::getStringArray, Bundle:
 val stringArrayListBundler = Bundler<ArrayList<String>?>(Bundle::getStringArrayList, Bundle::putStringArrayList)
 
 // Special
-val binderBundler = Bundler<IBinder?>(Bundle::getBinder, Bundle::putBinder)
 val bundleBundler = Bundler<Bundle?>(Bundle::getBundle, Bundle::putBundle)
 val intArrayListBundler = Bundler<ArrayList<Int>?>(Bundle::getIntegerArrayList, Bundle::putIntegerArrayList)
 val serializableBundler = Bundler<Serializable?>(Bundle::getSerializable, Bundle::putSerializable)
-val sizeBundler = Bundler<Size?>(Bundle::getSize, Bundle::putSize)
-val sizeFBundler = Bundler<SizeF?>(Bundle::getSizeF, Bundle::putSizeF)
+//These objects are not supported on all API levels. Before including them, figure out how to do it safely.
+//val binderBundler = Bundler<IBinder?>(Bundle::getBinder, Bundle::putBinder)
+//val sizeBundler = Bundler<Size?>(Bundle::getSize, Bundle::putSize)
+//val sizeFBundler = Bundler<SizeF?>(Bundle::getSizeF, Bundle::putSizeF)
 
 // Parcelable
 fun <P: Parcelable> parcelableBundler() = Bundler<P?>({ this.getParcelable(it) }, { k, v -> this.putParcelable(k, v) })
@@ -145,12 +143,13 @@ infix fun String.with(value: String?): Bundled<String?> = Bundled(this, value, s
 infix fun String.with(value: Array<String>?): Bundled<Array<String>?> = Bundled(this, value, stringArrayBundler)
 infix fun String.withStringList(value: ArrayList<String>?): Bundled<ArrayList<String>?> = Bundled(this, value, stringArrayListBundler)
 
-infix fun String.with(value: IBinder?): Bundled<IBinder?> = Bundled(this, value, binderBundler)
+
 infix fun String.with(value: Bundle?): Bundled<Bundle?> = Bundled(this, value, bundleBundler)
 infix fun String.withIntList(value: ArrayList<Int>?): Bundled<ArrayList<Int>?> = Bundled(this, value, intArrayListBundler)
 infix fun String.with(value: Serializable?): Bundled<Serializable?> = Bundled(this, value, serializableBundler)
-infix fun String.with(value: Size?): Bundled<Size?> = Bundled(this, value, sizeBundler)
-infix fun String.with(value: SizeF?): Bundled<SizeF?> = Bundled(this, value, sizeFBundler)
+//infix fun String.with(value: IBinder?): Bundled<IBinder?> = Bundled(this, value, binderBundler)
+//infix fun String.with(value: Size?): Bundled<Size?> = Bundled(this, value, sizeBundler)
+//infix fun String.with(value: SizeF?): Bundled<SizeF?> = Bundled(this, value, sizeFBundler)
 
 infix fun <P: Parcelable> String.with(value: P?): Bundled<P?> = Bundled(this, value, parcelableBundler())
 infix fun <P: Parcelable> String.withParcelableList(value: ArrayList<P>?): Bundled<ArrayList<P>?> = Bundled(this, value, parcelableArrayListBundler<P>())

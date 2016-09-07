@@ -1,8 +1,10 @@
 package com.glucose.app
 
+import android.annotation.TargetApi
 import android.app.Activity
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
 import kotlin.properties.Delegates
@@ -64,6 +66,7 @@ abstract class RootActivity(
         presenterContext.onActivityResult(requestCode, resultCode, data)
     }
 
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         presenterContext.onTrimMemory(level)
@@ -74,6 +77,7 @@ abstract class RootActivity(
         presenterContext.onSaveInstanceState(outState)
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         presenterContext.onRequestPermissionsResult(requestCode, permissions, grantResults)
