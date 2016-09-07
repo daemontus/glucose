@@ -50,9 +50,9 @@ Size	getSize(String key)
 SizeF	getSizeF(String key)
 ArrayList<Integer>	getIntegerArrayList(String key)
 Serializable	getSerializable(String key)
-
-
  */
+
+
 open class Bundler<T>(
         val getter: Bundle.(String) -> T,
         val setter: Bundle.(String, T) -> Unit
@@ -62,15 +62,32 @@ class Bundled<T>(val key: String, val value: T, val bundler: Bundler<T>) {
     fun put(bundle: Bundle) = bundler.setter.invoke(bundle, key, value)
 }
 
-infix fun Bundled<*>.and(other: Bundled<*>) = Bundle().apply {
+/**
+ * Use this function to create a bundle from multiple key-value pairs.
+ *
+ * Example: ("key1" with 10) and ("key2" with 20)
+ */
+infix fun Bundled<*>.and(other: Bundled<*>): Bundle = Bundle().apply {
     this@and.put(this)
     other.put(this)
 }
 
+/**
+ * Use this function to append data to an existing bundle.
+ *
+ * Example: Bundle().and("key" with 15)
+ */
 infix fun Bundle.and(bundled: Bundled<*>): Bundle = this.apply {
     bundled.put(this)
 
 }
+
+/**
+ * Use this to build a bundle if you only have one key-value pair.
+ *
+ * Example: bundle("key" with 10)
+ */
+fun bundle(bundled: Bundled<*>): Bundle = Bundle().and(bundled)
 
 
 // Primitives
