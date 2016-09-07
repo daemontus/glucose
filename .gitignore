@@ -34,3 +34,6 @@ captures/
 # Idea project files
 .idea
 *.iml
+
+# Oh, OS X...
+.DS_Store
