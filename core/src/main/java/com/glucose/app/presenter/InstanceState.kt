@@ -23,7 +23,7 @@ class Argument<out T>(
 ) : ReadOnlyProperty<Presenter, T> {
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = bundler.getter.invoke(thisRef.arguments, property.name)
+            = bundler.getter(thisRef.arguments, property.name)
 
 }
 
@@ -31,7 +31,7 @@ class RequiredArgument<out T>(
         private val bundler: Bundler<T?>
 ) : ReadOnlyProperty<Presenter, T> {
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = bundler.getter.invoke(thisRef.arguments, property.name) ?:
+            = bundler.getter(thisRef.arguments, property.name) ?:
             throw KotlinNullPointerException("Missing required argument for ${property.name}")
 }
 
@@ -40,10 +40,10 @@ class State<T>(
 ) : ReadWriteProperty<Presenter, T> {
 
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
-            = bundler.setter.invoke(thisRef.arguments, property.name, value)
+            = bundler.setter(thisRef.arguments, property.name, value)
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = bundler.getter.invoke(thisRef.arguments, property.name)
+            = bundler.getter(thisRef.arguments, property.name)
 
 }
 
@@ -51,10 +51,10 @@ class RequiredState<T>(
         private val bundler: Bundler<T?>
 ) : ReadWriteProperty<Presenter, T> {
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
-            = bundler.setter.invoke(thisRef.arguments, property.name, value)
+            = bundler.setter(thisRef.arguments, property.name, value)
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = bundler.getter.invoke(thisRef.arguments, property.name) ?:
+            = bundler.getter(thisRef.arguments, property.name) ?:
             throw KotlinNullPointerException("Missing required state for ${property.name}")
 
 }
