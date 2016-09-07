@@ -10,7 +10,7 @@
         android:id="@+id/image"
         android:layout_marginRight="16dp"
         android:layout_marginEnd="16dp"
-        android:src="@color/green_c600"
+        android:src="#004400"
         android:layout_width="100dp"
         android:layout_height="100dp" />
     <TextView

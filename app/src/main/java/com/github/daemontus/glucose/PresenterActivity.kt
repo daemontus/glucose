@@ -1,9 +1,9 @@
 package com.github.daemontus.glucose
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.Log
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterContext
 import com.glucose.app.PresenterGroup
@@ -50,7 +50,7 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
         if (!arguments.isRestored()) {
-            Log.d("Adding controls!")
+            Log.d("foo", "Adding controls!")
             attach(R.id.content, ControlsPresenter::class.java)
         }
     }
