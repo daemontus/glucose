@@ -1,1 +1,1 @@
-include ':app', ':glucose'
+include ':app', ':glucose', ':glucose-compat'

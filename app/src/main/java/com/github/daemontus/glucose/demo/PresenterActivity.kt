@@ -1,4 +1,4 @@
-package com.github.daemontus.glucose
+package com.github.daemontus.glucose.demo
 
 import android.os.Bundle
 import android.util.Log

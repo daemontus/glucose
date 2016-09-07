@@ -2,7 +2,7 @@ package com.glucose.app
 
 import android.os.Looper
 import com.github.daemontus.Result
-import com.github.daemontus.glucose.utils.BuildConfig
+import com.github.daemontus.glucose.BuildConfig
 import rx.Observable
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicInteger
