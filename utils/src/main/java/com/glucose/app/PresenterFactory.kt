@@ -3,6 +3,7 @@ package com.glucose.app
 import android.content.res.Configuration
 import android.support.annotation.MainThread
 import android.view.ViewGroup
+import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.isAttached
 import java.util.*
 
@@ -47,7 +48,7 @@ open class PresenterFactory(private val context: PresenterContext) {
      * Create or reuse a Presenter instance.
      */
     fun <P : Presenter> obtain(clazz: Class<out P>, parent: ViewGroup?): P {
-        if (destroyed) throw IllegalStateException("Cannot request Presenters after onDestroy")
+        if (destroyed) throw LifecycleException("Cannot request Presenters after onDestroy")
         val found = freePresenters.find { it.javaClass == clazz }
                 ?: spawnPresenter(clazz, parent)
         freePresenters.remove(found)
@@ -61,9 +62,9 @@ open class PresenterFactory(private val context: PresenterContext) {
      * Mark Presenter instance as ready for reuse
      */
     fun recycle(presenter: Presenter) {
-        if (destroyed) throw IllegalStateException("Cannot recycle Presenters after onDestroy")
-        if (presenter !in allPresenters) throw IllegalStateException("$presenter is not managed by $this but by ${presenter.ctx}")
-        if (presenter.isAttached) throw IllegalStateException("$presenter is still attached")
+        if (destroyed) throw LifecycleException("Cannot recycle Presenters after onDestroy")
+        if (presenter !in allPresenters) throw LifecycleException("$presenter is not managed by $this but by ${presenter.ctx}")
+        if (presenter.isAttached) throw LifecycleException("$presenter is still attached")
         if (presenter.canBeReused) {
             freePresenters.add(presenter)
             lifecycleLog("Recycled $presenter")
@@ -82,7 +83,7 @@ open class PresenterFactory(private val context: PresenterContext) {
                             = constructor.newInstance(p1, p2)
                 }
             } catch (e: Exception) {
-                throw IllegalStateException("No constructor taking PresenterContext found for ${clazz.name}", e)
+                throw LifecycleException("No constructor taking PresenterContext found for ${clazz.name}", e)
             }
         }.invoke(context, parent)
         lifecycleLog("Spawned presenter for $clazz: $presenter")
@@ -92,7 +93,7 @@ open class PresenterFactory(private val context: PresenterContext) {
 
     //Destroy and tear down presenter
     private fun killPresenter(presenter: Presenter) {
-        if (presenter.isAttached) throw IllegalStateException("Killing an attached presenter $presenter")
+        if (presenter.isAttached) throw LifecycleException("Killing an attached presenter $presenter")
         presenter.performDestroy()
         freePresenters.remove(presenter)
         allPresenters.remove(presenter)

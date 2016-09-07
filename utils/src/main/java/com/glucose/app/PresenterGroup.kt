@@ -214,10 +214,10 @@ open class PresenterGroup : Presenter {
     fun add(parentView: ViewGroup, presenter: Presenter) {
         if (!presenter.isAttached) throw IllegalStateException("$presenter is not attached!")
         if (presenter.view.parent != null) {
-            throw IllegalStateException("$presenter view is already added to ${presenter.view.parent}")
+            throw LifecycleException("$presenter view is already added to ${presenter.view.parent}")
         }
         if (presenter.ctx != this.ctx) {
-            throw IllegalStateException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
+            throw LifecycleException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
         }
         parentView.addView(presenter.view)
         addChild(presenter)
@@ -240,7 +240,7 @@ open class PresenterGroup : Presenter {
      * Typical use case: Moving a presenter between groups without detaching.
      */
     fun remove(presenter: Presenter): Presenter {
-        if (presenter !in children) throw IllegalStateException("Removing presenter that isn't attached to ${this@PresenterGroup}")
+        if (presenter !in children) throw LifecycleException("Removing presenter that isn't attached to ${this@PresenterGroup}")
         if (isResumed) presenter.performPause()
         if (isStarted) presenter.performStop()
         children.remove(presenter)
