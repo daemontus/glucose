@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
+import com.glucose.util.lifecycleLog
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*

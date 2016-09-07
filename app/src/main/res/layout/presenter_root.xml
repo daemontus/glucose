@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
-    android:background="#eecccc"
+    android:id="@+id/root_container"
+    android:background="@color/grey_c200"
     android:layout_height="match_parent">
-<LinearLayout
-    android:id="@+id/content"
-    android:animateLayoutChanges="true"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-</ScrollView>
+
+    <com.github.daemontus.glucose.demo.presentation.util.MultiStateButton
+        android:id="@+id/start_action_button"
+        android:layout_gravity="start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <com.github.daemontus.glucose.demo.presentation.util.MultiStateButton
+        android:id="@+id/end_action_button"
+        android:layout_gravity="end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</FrameLayout>

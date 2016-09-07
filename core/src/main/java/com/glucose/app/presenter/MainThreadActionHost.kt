@@ -3,9 +3,9 @@ package com.glucose.app.presenter
 import android.support.annotation.AnyThread
 import android.support.annotation.MainThread
 import com.github.daemontus.Result
-import com.glucose.app.actionLog
-import com.glucose.app.asResult
-import com.glucose.app.mainThread
+import com.glucose.util.actionLog
+import com.glucose.util.asResult
+import com.glucose.util.mainThread
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers

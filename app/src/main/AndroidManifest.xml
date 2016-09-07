@@ -9,14 +9,14 @@
     <uses-permission android:name="android.permission.READ_SMS" />
 
     <application
-        android:name=".App"
+        android:name=".presentation.App"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".PresenterActivity">
+        <activity android:name=".presentation.PresenterActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

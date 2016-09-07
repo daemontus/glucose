@@ -9,6 +9,8 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
+import com.glucose.util.lifecycleLog
+import com.glucose.util.newSyntheticId
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*
