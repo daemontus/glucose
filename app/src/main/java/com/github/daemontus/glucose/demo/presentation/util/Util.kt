@@ -1,6 +1,9 @@
 package com.github.daemontus.glucose.demo.presentation.util
 
+import android.app.Activity
+import android.graphics.Rect
 import android.view.ViewPropertyAnimator
+import android.view.Window
 import rx.Observable
 import rx.subjects.UnicastSubject
 
@@ -14,10 +17,10 @@ object Duration {
 }
 
 
-fun <T> Observable<T>.finishAnimation(animator: ViewPropertyAnimator): Observable<T> {
+inline fun <T> Observable<T>.finishAnimation(crossinline animator: (T) -> ViewPropertyAnimator): Observable<T> {
     return this.delay {
         val proxy = UnicastSubject.create<Unit>()
-        animator.withEndAction {
+        animator(it).withEndAction {
             proxy.onNext(Unit)
         }
         proxy

@@ -41,7 +41,7 @@ class MultiStateButton : FrameLayout {
                     val child = getChildAt(0)
                     child.animate()
                             .alpha(0f)
-                            .setDuration(Duration.LEAVE)
+                            .setDuration(Duration.LEAVE_FAST)
                             .setInterpolator(FastOutLinearInInterpolator())
                             .withEndAction {
                                 removeView(child)

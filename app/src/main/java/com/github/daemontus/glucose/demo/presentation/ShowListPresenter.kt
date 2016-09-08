@@ -37,7 +37,6 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
         super.onAttach(arguments)
         repository.getShows().observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                Timber.d("Got shows: $it")
                 showList.adapter = ShowAdapter(it, ctx.activity, showClickSubject)
             }
     }
@@ -71,7 +70,11 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
                 item = show
 
                 title.text = show.name
-                Glide.with(context).load(show.imageUrl).centerCrop().into(image)
+                Glide.with(context)
+                        .load(show.imageUrl)
+                        .placeholder(R.color.colorPrimaryDark)
+                        .error(R.color.colorPrimaryDark)
+                        .centerCrop().into(image)
             }
 
             init {

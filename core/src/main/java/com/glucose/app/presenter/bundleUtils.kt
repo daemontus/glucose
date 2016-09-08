@@ -3,7 +3,10 @@ package com.glucose.app.presenter
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.SparseArray
+import com.glucose.app.Presenter
 import java.io.Serializable
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty1
 
 /*
     Bundle interface

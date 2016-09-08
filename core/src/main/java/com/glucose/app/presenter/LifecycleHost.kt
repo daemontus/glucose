@@ -3,8 +3,12 @@ package com.glucose.app.presenter
 import android.support.annotation.AnyThread
 import android.support.annotation.MainThread
 import rx.Observable
+import rx.Observer
+import rx.Subscriber
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
+import rx.functions.Action0
+import rx.functions.Action1
 
 object Lifecycle {
 
@@ -121,16 +125,14 @@ interface LifecycleHost {
     /**
      * @see [until]
      */
-    fun <T> Observable<T>.until(
-            event: Lifecycle.Event, subscribe: Observable<T>.() -> Subscription
-    ) : Subscription = this.until(this@LifecycleHost, event, subscribe)
+    fun Subscription.until(event: Lifecycle.Event) : Subscription
+            = this.until(this@LifecycleHost, event)
 
     /**
      * @see [whileIn]
      */
-    fun <T> Observable<T>.whileIn(
-            state: Lifecycle.State, subscribe: Observable<T>.() -> Subscription
-    ) : Subscription? = this.whileIn(this@LifecycleHost, state, subscribe)
+    fun <T> Observable<T>.whileIn(state: Lifecycle.State) : BoundSubscription<T>
+            = this.whileIn(this@LifecycleHost, state)
 
 }
 
@@ -196,16 +198,13 @@ fun <T> Observable<T>.takeWhileIn(host: LifecycleHost, state: Lifecycle.State): 
  * @see whileIn
  */
 @MainThread
-//TODO: Subscribe shouldn be an extensions funciton, because it messes with this
-//Can we maybe return a special kind of observable? Where we
-inline fun <T> Observable<T>.until(
-        host: LifecycleHost, event: Lifecycle.Event, subscribe: Observable<T>.() -> Subscription
+fun Subscription.until(
+        host: LifecycleHost, event: Lifecycle.Event
 ): Subscription {
-    val s = subscribe.invoke(this)
     host.addEventCallback(event) {
-        if (!s.isUnsubscribed) s.unsubscribe()
+        if (!this.isUnsubscribed) this.unsubscribe()
     }
-    return s
+    return this
 }
 
 /**
@@ -223,47 +222,61 @@ inline fun <T> Observable<T>.until(
  * @see until
  */
 @MainThread
-inline fun <T> Observable<T>.whileIn(
-        host: LifecycleHost, state: Lifecycle.State, subscribe: Observable<T>.() -> Subscription
-): Subscription? {
-    return if (host.state >= state) {
-        this.until(host, state.closingEvent(), subscribe)
-    } else {
-        null
+fun <T> Observable<T>.whileIn(host: LifecycleHost, state: Lifecycle.State): BoundSubscription<T>
+        = BoundSubscription(this, state, host)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+fun <T> Observable<T>.whileAlive(host: LifecycleHost) : BoundSubscription<T>
+        = this.whileIn(host, Lifecycle.State.ALIVE)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+fun <T> Observable<T>.whileAttached(host: LifecycleHost) : BoundSubscription<T>
+        = this.whileIn(host, Lifecycle.State.ATTACHED)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+fun <T> Observable<T>.whileStarted(host: LifecycleHost) : BoundSubscription<T>
+        = this.whileIn(host, Lifecycle.State.STARTED)
+
+/**
+ * @see whileIn
+ */
+@MainThread
+fun <T> Observable<T>.whileResumed(host: LifecycleHost) : BoundSubscription<T>
+        = this.whileIn(host, Lifecycle.State.RESUMED)
+
+class BoundSubscription<out T>(
+        private val observable: Observable<T>,
+        private val state: Lifecycle.State,
+        private val host: LifecycleHost
+) {
+
+    fun subscribe(): Subscription?
+            = checkState { observable.subscribe() }
+    fun subscribe(onNext: (T) -> Unit): Subscription?
+            = checkState { observable.subscribe(onNext) }
+    fun subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit): Subscription?
+            = checkState { observable.subscribe(onNext, onError) }
+    fun subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit, onCompleted: () -> Unit)
+            = checkState { observable.subscribe(onNext, onError, onCompleted) }
+    fun subscribe(observer: Observer<in T>): Subscription?
+            = checkState { observable.subscribe(observer) }
+    fun subscribe(subscriber: Subscriber<in T>): Subscription?
+            = checkState { observable.subscribe(subscriber) }
+
+    private inline fun checkState(andDo: () -> Subscription): Subscription? {
+        return if (host.state >= state) andDo().until(host, state.closingEvent()) else null
     }
+
 }
-
-/**
- * @see whileIn
- */
-@MainThread
-inline fun <T> Observable<T>.whileAlive(
-        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
-) : Subscription? = this.whileIn(host, Lifecycle.State.ALIVE, subscribe)
-
-/**
- * @see whileIn
- */
-@MainThread
-inline fun <T> Observable<T>.whileAttached(
-        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
-) : Subscription? = this.whileIn(host, Lifecycle.State.ATTACHED, subscribe)
-
-/**
- * @see whileIn
- */
-@MainThread
-inline fun <T> Observable<T>.whileStarted(
-        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
-) : Subscription? = this.whileIn(host, Lifecycle.State.STARTED, subscribe)
-
-/**
- * @see whileIn
- */
-@MainThread
-inline fun <T> Observable<T>.whileResumed(
-        host: LifecycleHost, subscribe: Observable<T>.() -> Subscription
-) : Subscription? = this.whileIn(host, Lifecycle.State.RESUMED, subscribe)
 
 //fun some simple helper functions regarding state
 
