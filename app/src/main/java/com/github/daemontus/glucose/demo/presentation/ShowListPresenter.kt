@@ -9,7 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-//import com.bumptech.glide.Glide
+import com.bumptech.glide.Glide
 import com.github.daemontus.glucose.demo.R
 import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
@@ -56,7 +56,6 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
                 = ShowHolder(LayoutInflater.from(ctx).inflate(R.layout.item_show, parent, false), clickObserver)
 
         override fun getItemCount(): Int {
-            Timber.d("Get item count: ${items.size}")
             return items.size
         }
 
@@ -72,7 +71,7 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
                 item = show
 
                 title.text = show.name
-//                Glide.with(context).load(show.imageUrl).centerCrop().into(image)
+                Glide.with(context).load(show.imageUrl).centerCrop().into(image)
             }
 
             init {
