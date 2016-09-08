@@ -1,10 +1,8 @@
 package com.github.daemontus.glucose.demo.domain
 
-import com.github.daemontus.glucose.demo.data.Series
-import com.github.daemontus.glucose.demo.data.Show
-import com.github.daemontus.glucose.demo.data.series
-import com.github.daemontus.glucose.demo.data.showList
+import com.github.daemontus.glucose.demo.data.*
 import rx.Observable
+import java.util.*
 
 class ShowRepository {
 
@@ -18,6 +16,15 @@ class ShowRepository {
 
     fun getSeriesByShow(show: Show): Observable<List<Series>> {
         return Observable.just(series[show]!!)
+    }
+
+    fun getEpisodesBySeriesId(seriesId: Long): Observable<List<Episode>> {
+        return Observable.just(generateEpisodes(seriesId))
+    }
+
+    private fun generateEpisodes(seriesId: Long): List<Episode> {
+        val count = ((seriesId.hashCode() + 13) * 31 % 17) + 2
+        return (1..count).map { Episode("Episode $it", Date(Random().nextLong() % System.currentTimeMillis())) }
     }
 
 }
