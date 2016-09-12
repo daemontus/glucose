@@ -14,6 +14,7 @@
         app:aspectRatioWidth="16"
         app:aspectRatioHeight="10"
         app:fixedDimension="width"
+        android:background="@color/colorAccent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 

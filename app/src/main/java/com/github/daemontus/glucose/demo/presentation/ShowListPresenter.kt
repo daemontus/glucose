@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.bumptech.glide.Glide
 import com.github.daemontus.glucose.demo.R
 import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
@@ -20,7 +19,6 @@ import com.jakewharton.rxbinding.view.clicks
 import rx.Observer
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
-import timber.log.Timber
 
 class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
     : Presenter(context, R.layout.presenter_show_list, parent) {
@@ -48,7 +46,7 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
     ) : RecyclerView.Adapter<ShowAdapter.ShowHolder>() {
 
         override fun onBindViewHolder(holder: ShowHolder, position: Int) {
-            holder.render(items[position], ctx)
+            holder.render(items[position])
         }
 
         override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ShowHolder
@@ -66,15 +64,10 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
 
             private var item: Show? = null
 
-            fun render(show: Show, context: Context) {
+            fun render(show: Show) {
                 item = show
 
                 title.text = show.name
-                Glide.with(context)
-                        .load(show.imageUrl)
-                        .placeholder(R.color.colorPrimaryDark)
-                        .error(R.color.colorPrimaryDark)
-                        .centerCrop().into(image)
             }
 
             init {

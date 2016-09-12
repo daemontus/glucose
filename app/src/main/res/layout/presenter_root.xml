@@ -18,10 +18,4 @@
         android:layout_width="@dimen/action_bar_height"
         android:layout_height="@dimen/action_bar_height"/>
 
-    <com.github.daemontus.glucose.demo.presentation.util.MultiStateButton
-        android:id="@+id/end_action_button"
-        android:layout_gravity="end"
-        android:layout_width="@dimen/action_bar_height"
-        android:layout_height="@dimen/action_bar_height"/>
-
 </FrameLayout>

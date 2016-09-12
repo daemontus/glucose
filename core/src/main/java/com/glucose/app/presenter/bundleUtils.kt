@@ -3,10 +3,7 @@ package com.glucose.app.presenter
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.SparseArray
-import com.glucose.app.Presenter
 import java.io.Serializable
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty1
 
 /*
     Bundle interface
@@ -63,6 +60,10 @@ interface Bundler<T> {
     fun setter(bundle: Bundle, key: String, value: T): Unit
 }
 
+interface NativeBundler<T> : Bundler<T> {
+    fun getter(bundle: Bundle, key: String, default: T): T
+}
+
 class Bundled<T>(val key: String, val value: T, val bundler: Bundler<T>) {
     fun put(bundle: Bundle) = bundler.setter(bundle, key, value)
 }
@@ -98,35 +99,43 @@ fun bundle(bundled: Bundled<*>): Bundle = Bundle().and(bundled)
 //For more bundlers, see bundle-array and bundle-list
 
 // Primitives
-@JvmField val booleanBundler = object : Bundler<Boolean> {
+@JvmField val booleanBundler = object : NativeBundler<Boolean> {
+    override fun getter(bundle: Bundle, key: String, default: Boolean): Boolean = bundle.getBoolean(key, default)
     override fun getter(bundle: Bundle, key: String): Boolean = bundle.getBoolean(key)
     override fun setter(bundle: Bundle, key: String, value: Boolean) = bundle.putBoolean(key, value)
 }
-@JvmField val byteBundler = object : Bundler<Byte> {
+@JvmField val byteBundler = object : NativeBundler<Byte> {
+    override fun getter(bundle: Bundle, key: String, default: Byte): Byte = bundle.getByte(key, default)
     override fun getter(bundle: Bundle, key: String): Byte = bundle.getByte(key)
     override fun setter(bundle: Bundle, key: String, value: Byte) = bundle.putByte(key, value)
 }
-@JvmField val charBundler = object : Bundler<Char> {
+@JvmField val charBundler = object : NativeBundler<Char> {
+    override fun getter(bundle: Bundle, key: String, default: Char): Char = bundle.getChar(key, default)
     override fun getter(bundle: Bundle, key: String): Char = bundle.getChar(key)
     override fun setter(bundle: Bundle, key: String, value: Char) = bundle.putChar(key, value)
 }
-@JvmField val doubleBundler = object : Bundler<Double> {
+@JvmField val doubleBundler = object : NativeBundler<Double> {
+    override fun getter(bundle: Bundle, key: String, default: Double): Double = bundle.getDouble(key, default)
     override fun getter(bundle: Bundle, key: String): Double = bundle.getDouble(key)
     override fun setter(bundle: Bundle, key: String, value: Double) = bundle.putDouble(key, value)
 }
-@JvmField val floatBundler = object : Bundler<Float> {
+@JvmField val floatBundler = object : NativeBundler<Float> {
+    override fun getter(bundle: Bundle, key: String, default: Float): Float = bundle.getFloat(key, default)
     override fun getter(bundle: Bundle, key: String): Float = bundle.getFloat(key)
     override fun setter(bundle: Bundle, key: String, value: Float) = bundle.putFloat(key, value)
 }
-@JvmField val intBundler = object : Bundler<Int> {
+@JvmField val intBundler = object : NativeBundler<Int> {
+    override fun getter(bundle: Bundle, key: String, default: Int): Int = bundle.getInt(key, default)
     override fun getter(bundle: Bundle, key: String): Int = bundle.getInt(key)
     override fun setter(bundle: Bundle, key: String, value: Int) = bundle.putInt(key, value)
 }
-@JvmField val longBundler = object : Bundler<Long> {
+@JvmField val longBundler = object : NativeBundler<Long> {
+    override fun getter(bundle: Bundle, key: String, default: Long): Long = bundle.getLong(key, default)
     override fun getter(bundle: Bundle, key: String): Long = bundle.getLong(key)
     override fun setter(bundle: Bundle, key: String, value: Long) = bundle.putLong(key, value)
 }
-@JvmField val shortBundler = object : Bundler<Short> {
+@JvmField val shortBundler = object : NativeBundler<Short> {
+    override fun getter(bundle: Bundle, key: String, default: Short): Short = bundle.getShort(key, default)
     override fun getter(bundle: Bundle, key: String): Short = bundle.getShort(key)
     override fun setter(bundle: Bundle, key: String, value: Short) = bundle.putShort(key, value)
 }

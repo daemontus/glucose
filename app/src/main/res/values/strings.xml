@@ -2,4 +2,6 @@
     <string name="app_name">Glucose Demo</string>
 
     <string name="cd_back_button">Back button</string>
+    <string name="edit_text_with_id">EditText with id:</string>
+    <string name="edit_text_without_id">EditText without id:</string>
 </resources>

@@ -16,7 +16,6 @@ import com.glucose.app.PresenterContext
 import com.glucose.app.PresenterGroup
 import com.glucose.app.presenter.*
 import rx.android.schedulers.AndroidSchedulers
-import timber.log.Timber
 
 class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
 
@@ -47,7 +46,6 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
     }
 
     override fun onDetach() {
-        Timber.d("Remaining children: $presenters")
         pager.adapter = null
         showTitle.text = ""
         super.onDetach()
@@ -71,9 +69,9 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
         private val presenters = arrayOfNulls<Presenter?>(series.size)
 
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
-            Timber.d("Create item: $position")
             val child = presenter.attach(container, SeriesPresenter::class.java,
-                    bundle(SeriesPresenter::seriesId.name with series[position].seriesId)
+                    (SeriesPresenter::seriesId.name with series[position].seriesId) and
+                            (Presenter::canRecreateFromState.name with false)
             )
             presenters[position]?.let { presenter.detach(it) }
             presenters[position] = child
@@ -81,7 +79,6 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
         }
 
         override fun destroyItem(container: ViewGroup, position: Int, `object`: Any?) {
-            Timber.d("Destroy item: $position")
             presenters[position]?.let { presenter.detach(it) }
             presenters[position] = null
             container.removeView(`object` as View)

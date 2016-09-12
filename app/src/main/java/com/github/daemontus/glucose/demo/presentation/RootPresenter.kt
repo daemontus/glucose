@@ -29,8 +29,6 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
         }
     }
 
-    val endButton = findView<MultiStateButton>(R.id.end_action_button)
-
     init {
 
         Observable.merge(this.onChildAdd, this.onChildRemove)
@@ -40,17 +38,32 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
                     startButton.state = if (presenters.size <= 1) null else startButton.backButtonState
                 }
 
-        this.onChildAdd.subscribe {
+        this.onChildAddRecursive.subscribe {
+            when (it) {
+                is ShowListPresenter -> {
+                    it.showClickSubject
+                            .whileAttached(it)
+                            .subscribe {
+                                this.pushWithReveal(
+                                        ShowDetailPresenter::class.java,
+                                        (ShowDetailPresenter::showId.name with it.id)
+                                                and (Presenter::id.name with it.id.toInt())
+                                )
+                            }
+                }
+                is SeriesPresenter -> {
+                    it.episodeClicks
+                            .whileAttached(it)
+                            .subscribe {
+                                this.pushWithReveal(
+                                        EpisodeDetailPresenter::class.java,
+                                        (Presenter::id.name with R.id.episode_detail) and
+                                                (EpisodeDetailPresenter::episodeName.name with it.name)
+                                )
+                            }
+                }
+            }
             if (it is ShowListPresenter) {
-                it.showClickSubject
-                    .whileAttached(it)
-                    .subscribe {
-                        this.pushWithReveal(
-                                ShowDetailPresenter::class.java,
-                                (ShowDetailPresenter::showId.name with it.id)
-                                        and (Presenter::id.name with it.id.toInt())
-                        )
-                    }
             }
         }
     }
