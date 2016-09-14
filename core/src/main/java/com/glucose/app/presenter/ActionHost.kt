@@ -23,12 +23,11 @@ import com.glucose.app.Presenter
  * terminate and then subscribes to this Action.
  *
  * The Proxy [Observable] should then exactly mirror the behavior of the Action [Observable].
- * That is including errors and unsubscribe events.
+ * (Including errors and unsubscribe events.)
  *
  * It is left to the implementation as to how multiple subscriptions to the
  * Proxy [Observable] are handled. However, each [ActionHost] implementation should make sure
- * only one action is active at a time. (So either the results need to be cached, or the
- * action needs to be queued again upon each subscribe)
+ * only one action is active at a time.
  *
  * Note that [ActionHost] can choose to refuse any action or terminate it prematurely. In such
  * cases, the proxy observable will be notified with an appropriate exception.
@@ -42,13 +41,23 @@ import com.glucose.app.Presenter
  * depend on implementation)
  *
  * Hint: If you need to post a big amount of actions at once, concatenate them and post
- * them as one action to prevent backpressure problems.
+ * them as one action to prevent capacity problems.
  *
  * Scheduling: The interface contract does not enforce any particular scheduler for
  * action execution, however the implementations can modify this behavior.
  *
- * TODO: Can we somehow detect deadlocks? (Posting proxy as an action sounds like an easy mistake)
+ * Warning: [ActionHost] does not prevent deadlocks in any way. So if you post an action that
+ * directly depends on results of another action (such as observable.postToThis().postToThis()),
+ * the [ActionHost] will become deadlocked. That is because the second action is subscribed to
+ * first, but it has to wait for the first action to finish. However, first action can't be
+ * executed before second action finished (because it was subscribed-to first). To prevent such
+ * behaviour, use Replay or Unicast subject to break the dependency cycle.
+ *
  * TODO: Add picture.
+ *
+ * @see [PrematureTerminationException]
+ * @see [CannotExecuteException]
+ * @see [post]
  */
 interface ActionHost {
 
@@ -65,6 +74,11 @@ interface ActionHost {
     @AnyThread
     fun <R> Observable<R>.postToThis(): Observable<R> = this@ActionHost.post(this)
 
+    /**
+     * Use [ActionHost] as an [Observable.Transformer] (useful for Java interop).
+     */
+    fun <R> asTransformer(): Observable.Transformer<R, R>
+            = Observable.Transformer<R, R> { t -> this.post(t) }
 }
 
 /**
@@ -83,17 +97,9 @@ class CannotExecuteException : RuntimeException {
     constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
-// Some helper functions to simplify work with ActionHosts
-
 /**
  * Post this observable as an action to the [ActionHost].
  *
  * @see [ActionHost.post]
  */
 fun <R> Observable<R>.post(host: ActionHost): Observable<R> = host.post(this)
-
-/**
- * Use [ActionHost] as an [Observable.Transformer] (useful for Java interop).
- */
-fun <R> ActionHost.asTransformer(): Observable.Transformer<R, R>
-        = Observable.Transformer<R, R> { t -> this@asTransformer.post(t) }

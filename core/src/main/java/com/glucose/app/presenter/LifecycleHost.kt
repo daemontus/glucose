@@ -20,9 +20,10 @@ object Lifecycle {
     }
 
     /**
-     * Possible states an object can be within a lifecycle.
-     * Each state includes also states that are smaller (except for [DESTROYED]),
-     * meaning that a component that is [STARTED] is also [ATTACHED] and [ALIVE].
+     * Possible states an object can be in within a lifecycle.
+     * Each state hierarchy is inclusive with respect to states that are smaller
+     * (except for [DESTROYED]), meaning that a component that
+     * is [STARTED] is also [ATTACHED] and [ALIVE].
      *
      * Possible state transitions are as follows:
      * . -> ALIVE
@@ -38,7 +39,7 @@ object Lifecycle {
         DESTROYED, ALIVE, ATTACHED, STARTED, RESUMED;
 
         /**
-         * Return the event that will end current state.
+         * Return the event that will end this state.
          */
         fun closingEvent(): Event {
             return when (this) {
@@ -51,7 +52,7 @@ object Lifecycle {
         }
 
         /**
-         * Return the event that started current state.
+         * Return the event that started this state.
          */
         fun openingEvent(): Event {
             return when (this) {
@@ -86,10 +87,11 @@ interface LifecycleHost {
      * Note that there is no guarantee about delay between the lifecycle event and
      * the event delivery (especially when using schedulers) and that
      * the events aren't cached. So upon subscribing, you will always receive only
-     * the very last event.
+     * the upcoming events.
      *
      * Hence one can't assume that after receiving a START notification,
      * the host is actually started - it may have been stopped already.
+     * But at some point in the past, it was indeed started.
      */
     val lifecycleEvents: Observable<Lifecycle.Event>
 
@@ -98,14 +100,15 @@ interface LifecycleHost {
      *
      * Note that the component can't change state again until all callbacks
      * are finished. So if you add a START callback, it will be executed
-     * before the component can be stopped.
+     * before the component can be stopped, providing a synchronous
+     * notification.
      */
     @MainThread
     fun addEventCallback(event: Lifecycle.Event, callback: () -> Unit)
 
     /**
-     * Remove a previously added callback. Returns the callback if
-     * it was found and null if there was no such pending callback.
+     * Remove a previously added callback. Returns true if the callback
+     * was found and false if there was no such pending callback.
      */
     @MainThread
     fun removeEventCallback(event: Lifecycle.Event, callback: () -> Unit): Boolean
@@ -208,14 +211,14 @@ fun Subscription.until(
 }
 
 /**
- * Ensures that this observable is subscribed only while given [LifecycleHost] is
- * in a specified (or higher) [Lifecycle.State]. If the host is not in specified
- * state, the subscription won't be created. If it is, it will be created and
- * a callback will be added to ensure that the subscription will be unsubscribed as
- * soon as the host leaves the state.
+ * Returns a [BoundSubscription] that ensures that this observable is subscribed to
+ * only while given [LifecycleHost] is in a specified (or higher) [Lifecycle.State].
+ * If the host is not in the specified state, the subscription won't be created.
+ * If it is, it will be created and a callback will be added to ensure that the
+ * subscription will be unsubscribed as soon as the host leaves the state.
  *
  * If all you need is asynchronous behavior, use [takeWhileIn].
- * If you don't need to take hosts state into account, us [until].
+ * If you don't need to take hosts state into account, use [until].
  *
  * @see LifecycleHost
  * @see takeWhileIn
@@ -253,6 +256,13 @@ fun <T> Observable<T>.whileStarted(host: LifecycleHost) : BoundSubscription<T>
 fun <T> Observable<T>.whileResumed(host: LifecycleHost) : BoundSubscription<T>
         = this.whileIn(host, Lifecycle.State.RESUMED)
 
+/**
+ * A helper class for implementing lifecycle-bound subscriptions.
+ * [BoundSubscription] mimics the subscription API of an [Observable],
+ * but asserts that during subscription, the [LifecycleHost] connected
+ * to this [BoundSubscription] is in the desired state and that the
+ * subscription will be unsubscribed when the [LifecycleHost] leaves this state.
+ */
 class BoundSubscription<out T>(
         private val observable: Observable<T>,
         private val state: Lifecycle.State,
@@ -278,7 +288,7 @@ class BoundSubscription<out T>(
 
 }
 
-//fun some simple helper functions regarding state
+//some simple helper functions regarding state
 
 val LifecycleHost.isAlive: Boolean
     get() = this.state >= Lifecycle.State.ALIVE
