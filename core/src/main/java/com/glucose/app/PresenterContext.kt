@@ -14,6 +14,7 @@ import com.glucose.app.presenter.getId
 import com.glucose.app.presenter.isResumed
 import com.glucose.app.presenter.isStarted
 import com.glucose.app.presenter.saveWholeState
+import timber.log.Timber
 import kotlin.properties.Delegates
 
 

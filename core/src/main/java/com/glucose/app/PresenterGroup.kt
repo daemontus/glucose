@@ -9,8 +9,11 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
+import com.glucose.util.lifecycleLog
+import com.glucose.util.newSyntheticId
 import rx.Observable
 import rx.subjects.PublishSubject
+import timber.log.Timber
 import java.util.*
 
 /**
@@ -39,6 +42,8 @@ open class PresenterGroup : Presenter {
             savedChildren.forEach {
                 val (clazz, state, parentId) = it
                 findOptionalView<ViewGroup>(parentId)?.let { parent ->
+                    //State probably has an outdated classloader.
+                    state.classLoader = it.javaClass.classLoader
                     @Suppress("UNCHECKED_CAST") //Assuming state info is valid, this should work
                     attach(parentId, Class.forName(clazz) as Class<Presenter>, state)
                 }
@@ -95,7 +100,7 @@ open class PresenterGroup : Presenter {
      */
     override fun onConfigurationChanged(newConfig: Configuration) {
         val childStates = SparseArray<Pair<ViewGroup, ChildState>>()
-        for (presenter in children) {
+        for (presenter in children.toList()) {  //make a copy
             if (!presenter.canChangeConfiguration) {
                 val parent = presenter.view.parent
                 if (parent is ViewGroup) {
@@ -141,7 +146,7 @@ open class PresenterGroup : Presenter {
             val childState = PresenterParcel(
                     it.javaClass.name, it.saveHierarchyState(container)
             )
-            if (it.view.parent is View) {
+            if (it.canRecreateFromState && it.view.parent is View) {
                 val parent = it.view.parent as View
                 if (parent.id != View.NO_ID) {
                     childrenList.add(childState.copy(parentId = parent.id))
@@ -170,9 +175,18 @@ open class PresenterGroup : Presenter {
 
     private val childAdded: PublishSubject<Presenter> = PublishSubject.create()
     private val childRemoved: PublishSubject<Presenter> = PublishSubject.create()
+    private val childAddedRecursive: PublishSubject<Presenter> = PublishSubject.create()
+    private val childRemovedRecursive: PublishSubject<Presenter> = PublishSubject.create()
+
+    init {
+        childAdded.subscribe(childAddedRecursive).until(Lifecycle.Event.DESTROY)
+        childRemoved.subscribe(childRemovedRecursive).until(Lifecycle.Event.DESTROY)
+    }
 
     val onChildAdd: Observable<Presenter> = childAdded
     val onChildRemove: Observable<Presenter> = childRemoved
+    val onChildAddRecursive: Observable<Presenter> = childAddedRecursive
+    val onChildRemoveRecursive: Observable<Presenter> = childRemovedRecursive
 
     /**
      * Obtain new presenter and add it to this group.
@@ -228,6 +242,12 @@ open class PresenterGroup : Presenter {
         if (this.isStarted) presenter.performStart()
         if (this.isResumed) presenter.performResume()
         lifecycleLog("Added $presenter")
+        if (presenter is PresenterGroup) {
+            presenter.onChildAddRecursive
+                    .subscribe(childAddedRecursive).until(presenter, Lifecycle.Event.DETACH)
+            presenter.onChildRemoveRecursive
+                    .subscribe(childRemovedRecursive).until(presenter, Lifecycle.Event.DETACH)
+        }
         childAdded.onNext(presenter)
     }
 

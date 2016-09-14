@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:elevation="4dp"
+    android:layout_margin="8dp"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.marvinlabs.widget.aspectratio.ConstrainedImageView
+        android:id="@+id/show_image"
+        app:aspectRatioWidth="16"
+        app:aspectRatioHeight="10"
+        app:fixedDimension="width"
+        android:background="@color/colorAccent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        style="@android:style/TextAppearance.Material.Title"
+        android:padding="16dp"
+        android:textColor="@color/grey_c200"
+        android:layout_gravity="bottom"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:id="@+id/show_title"
+        tools:text="Lorem Ipsum"
+        android:background="@drawable/gradient_black_transparent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</FrameLayout>

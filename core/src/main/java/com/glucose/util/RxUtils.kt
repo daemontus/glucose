@@ -1,0 +1,23 @@
+package com.glucose.util
+
+import com.github.daemontus.Result
+import com.github.daemontus.asError
+import com.github.daemontus.asOk
+import rx.Observable
+
+
+/**
+ * Create an observable that will not throw an error, instead it will propagate it in form of
+ * result object.
+ */
+fun <R> Observable<R>.asResult(): Observable<Result<R, Throwable>>
+        = this.map { it.asOk<R, Throwable>() }.onErrorReturn { it.asError() }
+
+/**
+ * Unwrap an observable that emits result object to observable that throws an error instead.
+ */
+fun <R> Observable<Result<R, Throwable>>.unwrap(): Observable<R>
+        = this.map { when (it) {
+    is Result.Ok -> it.ok
+    is Result.Error -> throw it.error
+} }

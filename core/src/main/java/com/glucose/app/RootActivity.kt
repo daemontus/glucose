@@ -19,8 +19,6 @@ abstract class RootActivity(
 
     private val presenterContext = PresenterContext(this, rootPresenter, rootArguments)
 
-    private var rootView: ViewGroup by Delegates.notNull()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(presenterContext.onCreate(savedInstanceState))
@@ -51,7 +49,6 @@ abstract class RootActivity(
     }
 
     override fun onDestroy() {
-        rootView.removeAllViews()
         presenterContext.onDestroy()
         super.onDestroy()
     }

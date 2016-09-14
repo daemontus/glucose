@@ -1,9 +1,7 @@
 <resources>
-    <string name="app_name">Android Glucose</string>
-    <string name="lorem_ipsum">Lorem Ipsum dolor sit amet.</string>
-    <string name="lorem_ipsum_long">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam elementum elit quis mauris pulvinar, sit amet ornare purus sagittis. Sed mollis libero interdum, aliquam mi at, congue quam. Pellentesque eu sapien nibh. Aliquam erat volutpat. Donec sodales viverra felis, sed tincidunt sapien venenatis in. Suspendisse vitae placerat metus. Vivamus in leo lorem.</string>
-    <string name="add_presenter_1">Add content</string>
-    <string name="add_presenter_2">Add controls</string>
-    <string name="remove_all_content">Remove all content</string>
-    <string name="remove_last">Remove last</string>
+    <string name="app_name">Glucose Demo</string>
+
+    <string name="cd_back_button">Back button</string>
+    <string name="edit_text_with_id">EditText with id:</string>
+    <string name="edit_text_without_id">EditText without id:</string>
 </resources>

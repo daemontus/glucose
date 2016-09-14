@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:background="@color/lightBackground"
+    xmlns:tools="http://schemas.android.com/tools">
+    <TextView
+        android:id="@+id/episode_title"
+        android:textSize="20sp"
+        android:background="@color/colorPrimary"
+        android:fontFamily="monospace"
+        android:paddingLeft="@dimen/action_bar_height"
+        android:paddingRight="@dimen/action_bar_height"
+        android:maxLines="2"
+        android:ellipsize="end"
+        tools:text="Lorem Ipsum"
+        android:gravity="center_vertical"
+        android:textColor="@color/white"
+        android:minHeight="@dimen/action_bar_height"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+    <ScrollView
+        android:layout_marginTop="@dimen/action_bar_height"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+            android:id="@+id/episode_data"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+    </ScrollView>
+</FrameLayout>

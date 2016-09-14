@@ -5,6 +5,7 @@ import android.support.annotation.MainThread
 import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.isAttached
+import com.glucose.util.lifecycleLog
 import java.util.*
 
 

@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
+import com.glucose.util.lifecycleLog
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*
@@ -105,10 +106,8 @@ open class Presenter(
             return field
         }
 
-    val id: Int
-        get() = if (this.isAttached) {
-            arguments.getId()
-        } else View.NO_ID
+    val id: Int by NativeArgument(intBundler, View.NO_ID)
+    val canRecreateFromState: Boolean by NativeArgument(booleanBundler, true)
 
     /******************** Methods driving the lifecycle of this Presenter. ************************/
 
@@ -256,7 +255,7 @@ open class Presenter(
         val state = Bundle()
         onSaveInstanceState(state)
         if (id != View.NO_ID) {
-            container.setValueAt(id, state)
+            container.append(id, state)
         }
         return state
     }
