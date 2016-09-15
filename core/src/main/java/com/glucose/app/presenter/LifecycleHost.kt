@@ -2,13 +2,12 @@ package com.glucose.app.presenter
 
 import android.support.annotation.AnyThread
 import android.support.annotation.MainThread
+import com.glucose.app.presenter.Lifecycle.State.*
 import rx.Observable
 import rx.Observer
 import rx.Subscriber
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
-import rx.functions.Action0
-import rx.functions.Action1
 
 object Lifecycle {
 
@@ -233,28 +232,28 @@ fun <T> Observable<T>.whileIn(host: LifecycleHost, state: Lifecycle.State): Boun
  */
 @MainThread
 fun <T> Observable<T>.whileAlive(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.ALIVE)
+        = this.whileIn(host, ALIVE)
 
 /**
  * @see whileIn
  */
 @MainThread
 fun <T> Observable<T>.whileAttached(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.ATTACHED)
+        = this.whileIn(host, ATTACHED)
 
 /**
  * @see whileIn
  */
 @MainThread
 fun <T> Observable<T>.whileStarted(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.STARTED)
+        = this.whileIn(host, STARTED)
 
 /**
  * @see whileIn
  */
 @MainThread
 fun <T> Observable<T>.whileResumed(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.RESUMED)
+        = this.whileIn(host, RESUMED)
 
 /**
  * A helper class for implementing lifecycle-bound subscriptions.
@@ -291,12 +290,12 @@ class BoundSubscription<out T>(
 //some simple helper functions regarding state
 
 val LifecycleHost.isAlive: Boolean
-    get() = this.state >= Lifecycle.State.ALIVE
+    get() = this.state >= ALIVE
 val LifecycleHost.isAttached: Boolean
-    get() = this.state >= Lifecycle.State.ATTACHED
+    get() = this.state >= ATTACHED
 val LifecycleHost.isStarted: Boolean
-    get() = this.state >= Lifecycle.State.STARTED
+    get() = this.state >= STARTED
 val LifecycleHost.isResumed: Boolean
-    get() = this.state >= Lifecycle.State.RESUMED
+    get() = this.state >= RESUMED
 val LifecycleHost.isDestroyed: Boolean
-    get() = this.state <= Lifecycle.State.DESTROYED
+    get() = this.state <= DESTROYED
