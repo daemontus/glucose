@@ -13,6 +13,8 @@ import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
 import com.glucose.util.lifecycleLog
 import rx.Observable
+import rx.subjects.ReplaySubject
+import rx.android.schedulers.AndroidSchedulers
 
 /**
  * Presenter is responsible for a single, possibly modular part of UI.
@@ -65,11 +67,17 @@ import rx.Observable
  *
  * ### Presenter as [ActionHost]
  *
- * Each presenter can be used as an [ActionHost]. Internally, it uses [MainThreadActionHost]
- * so that each action is executed on main thread by default. Action execution is started after
+ * Each presenter can be used as an [ActionHost]. By default each action is subscribed on the main
+ * thread (unless the action is configured otherwise). Action execution is started after
  * the call to [onAttach] (to ensure that all state has been restored) and stopped
  * before the call to [onDetach] (to ensure state isn't changing any more). Actions posted
  * outside of this window are thrown away with an error.
+ *
+ * [Presenter] uses [ReplaySubject] as the proxy observable. Hence multiple
+ * subscriptions to the proxy observables will not execute actions multiple times and will
+ * always return the same results.
+ * However, results of each action are cached, so try to avoid actions emitting
+ * a high amount of items.
  *
  * @see [ActionHost]
  * @see [LifecycleHost]
@@ -301,7 +309,9 @@ open class Presenter(
 
     /******************** [ActionHost] implementation *********************************************/
 
-    private val actionHost = MainThreadActionHost()
+    protected open val actionHostCapacity = 5
+
+    private val actionHost = ActionDelegate(AndroidSchedulers.mainThread(), actionHostCapacity)
 
     /**
      * @see [ActionHost.post]
