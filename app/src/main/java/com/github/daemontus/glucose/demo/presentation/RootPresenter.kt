@@ -33,7 +33,7 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
 
         Observable.merge(this.onChildAdd, this.onChildRemove)
                 .observeOn(AndroidSchedulers.mainThread())
-                .whileAlive(this)
+                .whileIn(Lifecycle.State.ALIVE)
                 .subscribe {
                     startButton.state = if (presenters.size <= 1) null else startButton.backButtonState
                 }
@@ -42,7 +42,7 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
             when (it) {
                 is ShowListPresenter -> {
                     it.showClickSubject
-                            .whileAttached(it)
+                            .whileIn(it, Lifecycle.State.ALIVE)
                             .subscribe {
                                 this.pushWithReveal(
                                         ShowDetailPresenter::class.java,
@@ -53,7 +53,7 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
                 }
                 is SeriesPresenter -> {
                     it.episodeClicks
-                            .whileAttached(it)
+                            .whileIn(it, Lifecycle.State.ALIVE)
                             .subscribe {
                                 this.pushWithReveal(
                                         EpisodeDetailPresenter::class.java,

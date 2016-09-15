@@ -13,8 +13,6 @@ import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
 import com.glucose.util.lifecycleLog
 import rx.Observable
-import rx.subjects.PublishSubject
-import java.util.*
 
 /**
  * Presenter is responsible for a single, possibly modular part of UI.
@@ -142,8 +140,7 @@ open class Presenter(
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
         this.arguments = arguments
-        myState = ATTACHED
-        onLifecycleEvent(Lifecycle.Event.ATTACH)
+        lifecycleHost.mState = ATTACHED
     }
 
     /**
@@ -151,8 +148,7 @@ open class Presenter(
      */
     protected open fun onStart() {
         lifecycleLog("onStart")
-        myState = STARTED
-        onLifecycleEvent(Lifecycle.Event.START)
+        lifecycleHost.mState = STARTED
     }
 
     /**
@@ -160,16 +156,14 @@ open class Presenter(
      */
     protected open fun onResume() {
         lifecycleLog("onResume")
-        myState = RESUMED
-        onLifecycleEvent(Lifecycle.Event.RESUME)
+        lifecycleHost.mState = RESUMED
     }
 
     /**
      * @see Activity.onPause
      */
     protected open fun onPause() {
-        onLifecycleEvent(Lifecycle.Event.PAUSE)
-        myState = STARTED
+        lifecycleHost.mState = STARTED
         lifecycleLog("onPause")
     }
 
@@ -177,14 +171,12 @@ open class Presenter(
      * @see Activity.onStop
      */
     protected open fun onStop() {
-        onLifecycleEvent(Lifecycle.Event.STOP)
-        myState = ATTACHED
+        lifecycleHost.mState = ATTACHED
         lifecycleLog("onStop")
     }
 
     protected open fun onDetach() {
-        onLifecycleEvent(Lifecycle.Event.DETACH)
-        myState = ALIVE
+        lifecycleHost.mState = ALIVE
         arguments = Bundle()    //drop old arguments
         lifecycleLog("onDetach")
     }
@@ -193,8 +185,7 @@ open class Presenter(
      * @see Activity.onDestroy
      */
     protected open fun onDestroy() {
-        onLifecycleEvent(Lifecycle.Event.DESTROY)
-        myState = DESTROYED
+        lifecycleHost.mState = DESTROYED
         lifecycleLog("onDestroy")
     }
 
@@ -286,37 +277,26 @@ open class Presenter(
 
     /******************** [LifecycleHost] implementation ******************************************/
 
-    private val lifecycleEventSubject = PublishSubject.create<Lifecycle.Event>()
-    override val lifecycleEvents: Observable<Lifecycle.Event> = lifecycleEventSubject
+    private val lifecycleHost = LifecycleDelegate()
 
-    private var myState: Lifecycle.State = Lifecycle.State.ALIVE
     override val state: Lifecycle.State
-        get() = myState
+        get() = lifecycleHost.state
 
-    private val lifecycleCallbacks = ArrayList<Pair<Lifecycle.Event, () -> Unit>>()
+    override val lifecycleEvents: Observable<Lifecycle.Event>
+        get() = lifecycleHost.lifecycleEvents
 
     /**
      * @see [LifecycleHost.addEventCallback]
      */
     override fun addEventCallback(event: Lifecycle.Event, callback: () -> Unit) {
-        lifecycleCallbacks.add(event to callback)
+        lifecycleHost.addEventCallback(event, callback)
     }
 
     /**
      * @see [LifecycleHost.removeEventCallback]
      */
     override fun removeEventCallback(event: Lifecycle.Event, callback: () -> Unit): Boolean {
-        return lifecycleCallbacks.remove(event to callback)
-    }
-
-    /**
-     * Ensures callbacks and notifications regarding a Lifecycle event are dispatched.
-     */
-    private fun onLifecycleEvent(event: Lifecycle.Event) {
-        val victims = lifecycleCallbacks.filter { it.first == event }
-        lifecycleCallbacks.removeAll(victims)
-        victims.forEach { it.second.invoke() }
-        lifecycleEventSubject.onNext(event)
+        return lifecycleHost.removeEventCallback(event, callback)
     }
 
     /******************** [ActionHost] implementation *********************************************/
