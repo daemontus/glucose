@@ -1,6 +1,9 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'jacoco'  //coverage for normal unit tests
+
+//To run all tests with coverage, use "gradle createDebugCoverageReport jacocoTestReport"
 
 repositories {
     mavenCentral()
@@ -17,8 +20,12 @@ android {
         targetSdkVersion target_sdk
         versionCode version_code
         versionName version
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
+        debug {
+            testCoverageEnabled true    //coverage for instrumentation tests
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -41,6 +48,7 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'com.github.daemontus:kotlin-option-result:1.0.0'
 
+    androidTestCompile 'org.jetbrains.kotlin:kotlin-test:1.0.3'
     androidTestCompile 'com.android.support.test:runner:0.4'
     // Set this dependency to use JUnit 4 rules
     androidTestCompile 'com.android.support.test:rules:0.4'
@@ -56,4 +64,23 @@ task sourcesJar(type: Jar) {
 
 artifacts {
     archives sourcesJar
+}
+
+task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+
+    jacocoClasspath = configurations['androidJacocoAnt']
+
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
+    def debugTree = fileTree(dir: "${buildDir}/intermediates/classes/debug", excludes: fileFilter)
+    def mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories = files([mainSrc])
+    classDirectories = files([debugTree])
+    def instrumentationCoverage = fileTree(dir: "${buildDir}/outputs/code-coverage/connected", include: "*.ec")
+    executionData = files(["${buildDir}/jacoco/testDebugUnitTest.exec", instrumentationCoverage])
 }
