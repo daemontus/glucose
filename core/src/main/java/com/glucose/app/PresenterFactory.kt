@@ -29,9 +29,9 @@ import java.util.*
  * @see PresenterContext
  */
 @MainThread
-open class PresenterFactory(private val context: PresenterContext) {
+open class PresenterFactory(private val context: PresenterHost) {
 
-    private val constructors = HashMap<Class<*>, (PresenterContext, ViewGroup?) -> Presenter>()
+    private val constructors = HashMap<Class<*>, (PresenterHost, ViewGroup?) -> Presenter>()
 
     private val allPresenters = ArrayList<Presenter>()
     private val freePresenters = ArrayList<Presenter>()
@@ -41,7 +41,7 @@ open class PresenterFactory(private val context: PresenterContext) {
     /**
      * Explicitly register a constructor that will be used to create presenter of this class.
      */
-    fun <P : Presenter> register(clazz: Class<P>, constructor: (PresenterContext, ViewGroup?) -> P) {
+    fun <P : Presenter> register(clazz: Class<P>, constructor: (PresenterHost, ViewGroup?) -> P) {
         constructors[clazz] = constructor
     }
 
@@ -65,6 +65,7 @@ open class PresenterFactory(private val context: PresenterContext) {
     fun recycle(presenter: Presenter) {
         if (destroyed) throw LifecycleException("Cannot recycle Presenters after onDestroy")
         if (presenter !in allPresenters) throw LifecycleException("$presenter is not managed by $this but by ${presenter.ctx}")
+        if (presenter in freePresenters) throw LifecycleException("$presenter is already recycled")
         if (presenter.isAttached) throw LifecycleException("$presenter is still attached")
         if (presenter.canBeReused) {
             freePresenters.add(presenter)
@@ -78,13 +79,13 @@ open class PresenterFactory(private val context: PresenterContext) {
     private fun spawnPresenter(clazz: Class<out Presenter>, parent: ViewGroup?) : Presenter {
         val presenter = constructors.getOrPut(clazz) {
             try {
-                val constructor = clazz.getConstructor(PresenterContext::class.java, ViewGroup::class.java)
-                object : (PresenterContext, ViewGroup?) -> Presenter {
-                    override fun invoke(p1: PresenterContext, p2: ViewGroup?): Presenter
+                val constructor = clazz.getConstructor(PresenterHost::class.java, ViewGroup::class.java)
+                object : (PresenterHost, ViewGroup?) -> Presenter {
+                    override fun invoke(p1: PresenterHost, p2: ViewGroup?): Presenter
                             = constructor.newInstance(p1, p2)
                 }
             } catch (e: Exception) {
-                throw LifecycleException("No constructor taking PresenterContext found for ${clazz.name}", e)
+                throw LifecycleException("No valid constructor found for ${clazz.name}", e)
             }
         }.invoke(context, parent)
         lifecycleLog("Spawned presenter for $clazz: $presenter")

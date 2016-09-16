@@ -83,7 +83,7 @@ import rx.android.schedulers.AndroidSchedulers
  * @see [LifecycleHost]
  */
 open class Presenter(
-        context: PresenterContext, val view: View
+        context: PresenterHost, val view: View
 ) : LifecycleHost, ActionHost {
 
     companion object {
@@ -105,7 +105,7 @@ open class Presenter(
             else return field
         }
 
-    val ctx: PresenterContext = context
+    val ctx: PresenterHost = context
         get() {
             if (this.isDestroyed)
                 throw LifecycleException("Accessing Context on a destroyed presenter.")
@@ -125,7 +125,7 @@ open class Presenter(
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
+     fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
         onAttach(arguments)
         actionHost.startProcessingActions()
     }
@@ -138,7 +138,7 @@ open class Presenter(
 
     internal fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
 
-    internal fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
+     fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
         actionHost.stopProcessingActions()
         onDetach()
     }

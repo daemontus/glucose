@@ -127,11 +127,9 @@ open class PresenterGroup : Presenter {
                 val (layout, state) = childStates.valueAt(i)
                 val index = layout.indexOfChild(replacement)
                 layout.removeView(replacement)
-                ctx.presenterStates = state.map
-                val presenter = ctx.attach(state.clazz, arguments, layout)
+                val presenter = ctx.attachWithState(state.clazz, state.map, arguments, layout)
                 layout.addView(presenter.view, index)
                 addChild(presenter)
-                ctx.presenterStates = null
                 presenter.view.restoreHierarchyState(state.viewState)
             }
         }

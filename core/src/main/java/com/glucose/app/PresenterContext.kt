@@ -14,9 +14,21 @@ import com.glucose.app.presenter.getId
 import com.glucose.app.presenter.isResumed
 import com.glucose.app.presenter.isStarted
 import com.glucose.app.presenter.saveWholeState
-import timber.log.Timber
 import kotlin.properties.Delegates
 
+
+interface PresenterHost {
+    val activity: Activity
+    val factory: PresenterFactory
+    val root: Presenter
+
+    fun <P: Presenter> attach(clazz: Class<P>, arguments: Bundle = Bundle(), parent: ViewGroup? = null): P
+    fun <P: Presenter> attachWithState(
+            clazz: Class<P>,  savedState: SparseArray<Bundle>,
+            arguments: Bundle = Bundle(), parent: ViewGroup? = null
+    ) : P
+    fun detach(presenter: Presenter)
+}
 
 /**
  * PresenterContext is responsible for managing the root of the presenter hierarchy,
@@ -29,18 +41,18 @@ import kotlin.properties.Delegates
  */
 @MainThread
 class PresenterContext(
-        val activity: Activity,
+        override val activity: Activity,
         private val rootPresenter: Class<out Presenter>,
         private val rootArguments: Bundle = Bundle()
-) {
+) : PresenterHost {
 
     companion object {
         val HIERARCHY_TREE_KEY = "glucose:presenter_hierarchy:tree"
         val HIERARCHY_MAP_KEY = "glucose:presenter_hierarchy:map"
     }
 
-    val factory = PresenterFactory(this)
-    var root: Presenter by Delegates.notNull()
+    override val factory = PresenterFactory(this)
+    override var root: Presenter by Delegates.notNull()
         private set
 
     //temporary storage for state array while the hierarchy is being restored
@@ -51,8 +63,8 @@ class PresenterContext(
      *
      * Arguments are based on the saved state and provided data.
      */
-    fun <P: Presenter> attach(presenter: Class<P>, arguments: Bundle = Bundle(), parent: ViewGroup? = null): P {
-        val instance = factory.obtain(presenter, parent)
+    override fun <P: Presenter> attach(clazz: Class<P>, arguments: Bundle, parent: ViewGroup?): P {
+        val instance = factory.obtain(clazz, parent)
         val id = arguments.getId()
         if (id != View.NO_ID) {
             presenterStates?.get(id)?.let { savedState ->
@@ -63,10 +75,17 @@ class PresenterContext(
         return instance
     }
 
+    override fun <P : Presenter> attachWithState(clazz: Class<P>, savedState: SparseArray<Bundle>, arguments: Bundle, parent: ViewGroup?): P {
+        presenterStates = savedState
+        val p = attach(clazz, arguments, parent)
+        presenterStates = null
+        return p
+    }
+
     /**
      * Detach and recycle given presenter.
      */
-    fun detach(presenter: Presenter) {
+    override fun detach(presenter: Presenter) {
         presenter.performDetach()
         factory.recycle(presenter)
     }

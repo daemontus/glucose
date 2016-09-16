@@ -57,6 +57,7 @@ dependencies {
 }
 
 
+
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
@@ -64,6 +65,12 @@ task sourcesJar(type: Jar) {
 
 artifacts {
     archives sourcesJar
+}
+
+transformClassesAndResourcesWithSyncLibJarsForDebug.doFirst {
+    doFirst {
+        println "Hey!"
+    }
 }
 
 task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {

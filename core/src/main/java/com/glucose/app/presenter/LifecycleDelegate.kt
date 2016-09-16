@@ -5,6 +5,7 @@ import rx.subjects.PublishSubject
 import java.util.*
 import com.glucose.app.presenter.Lifecycle.State.*;
 
+//TODO: Get rid of mState
 internal class LifecycleDelegate : LifecycleHost {
 
     private val lifecycleEventSubject = PublishSubject.create<Lifecycle.Event>()
