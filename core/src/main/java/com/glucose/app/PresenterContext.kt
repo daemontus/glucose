@@ -150,7 +150,7 @@ class PresenterContext(
             if (started) root.performStop()
             parent.removeView(root.view)
             detach(root)
-            factory.onConfigurationChange(newConfig)
+            factory.performConfigChange(newConfig)
             presenterStates = state.map
             root = attach(rootPresenter, state.tree, parent)
             parent.addView(root.view)

@@ -125,25 +125,27 @@ open class Presenter(
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
+    // perform* methods are public so that other people can implement their own PresenterHosts
+
+    fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
         onAttach(arguments)
         actionHost.startProcessingActions()
     }
 
-    internal fun performStart() = assertLifecycleChange(ATTACHED, STARTED) { onStart() }
+    fun performStart() = assertLifecycleChange(ATTACHED, STARTED) { onStart() }
 
-    internal fun performResume() = assertLifecycleChange(STARTED, RESUMED) { onResume() }
+    fun performResume() = assertLifecycleChange(STARTED, RESUMED) { onResume() }
 
-    internal fun performPause() = assertLifecycleChange(RESUMED, STARTED) { onPause() }
+    fun performPause() = assertLifecycleChange(RESUMED, STARTED) { onPause() }
 
-    internal fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
+    fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
 
-    internal fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
+    fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
         actionHost.stopProcessingActions()
         onDetach()
     }
 
-    internal fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
+    fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
 
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
@@ -221,7 +223,7 @@ open class Presenter(
         if (!canChangeConfiguration) {
             throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
         }
-        ctx.factory.cleanUpBeforeConfigChange()
+        ctx.factory.prepareConfigChange()
         lifecycleLog("onConfigurationChanged")
     }
 

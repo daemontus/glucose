@@ -13,7 +13,6 @@ import com.glucose.util.lifecycleLog
 import com.glucose.util.newSyntheticId
 import rx.Observable
 import rx.subjects.PublishSubject
-import timber.log.Timber
 import java.util.*
 
 /**

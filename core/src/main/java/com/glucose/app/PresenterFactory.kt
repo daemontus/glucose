@@ -118,16 +118,18 @@ open class PresenterFactory(private val context: PresenterHost) {
     }
 
     /**
-     * Notify !unattached! presenters about configuration change.
-     * (Attached are notified through the tree)
+     * Notify all DETACHED presenters about the configuration change.
+     * [PresenterHost] is responsible for notifying all attached presenters.
      */
-    fun onConfigurationChange(newConfig: Configuration) {
-        cleanUpBeforeConfigChange()
+    fun performConfigChange(newConfig: Configuration) {
+        prepareConfigChange()
         freePresenters.forEach { it.onConfigurationChanged(newConfig) }
     }
 
-    internal fun cleanUpBeforeConfigChange() {
-        //kill presenters that can't handle config change
+    /**
+     * Clean presenter cache so that everything that can't survive config change is killed.
+     */
+    fun prepareConfigChange() {
         freePresenters.filter { !it.canChangeConfiguration }.forEach {
             killPresenter(it)
         }

@@ -1,6 +1,7 @@
 package com.glucose.app
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.os.Bundle
 import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
@@ -24,8 +25,7 @@ class PresenterFactoryTest {
     private inner class MockPresenterHost : PresenterHost {
         override val activity: Activity
             get() = activityRule.activity
-        override val factory: PresenterFactory
-            get() = throw UnsupportedOperationException()
+        override val factory: PresenterFactory = PresenterFactory(this)
         override val root: Presenter
             get() = throw UnsupportedOperationException()
 
@@ -44,7 +44,7 @@ class PresenterFactoryTest {
     }
 
     private val host = MockPresenterHost()
-    private val factory = PresenterFactory(host)
+    private val factory = host.factory
 
     @Test
     fun presenterFactory_doNothing() {
@@ -155,7 +155,7 @@ class PresenterFactoryTest {
         }
         factory.onDestroy()
     }
-/*
+
     @Test
     fun presenterFactory_recycleActive() {
         val p = factory.obtain(SimplePresenter::class.java, null)
@@ -166,7 +166,50 @@ class PresenterFactoryTest {
         p.performDetach()
         factory.recycle(p)
         factory.onDestroy()
-    }*/
+    }
+
+    @Test
+    fun presenterFactory_leakedPresenter() {
+        val p = factory.obtain(SimplePresenter::class.java, null)
+        p.performAttach(Bundle())
+        assertFailsWith<LifecycleException> {
+            factory.onDestroy()
+        }
+    }
+
+    @Test
+    fun presenterFactory_memoryTrim() {
+        val p = factory.obtain(SimplePresenter::class.java, null)
+        factory.recycle(p)
+        factory.trimMemory()
+        val p2 = factory.obtain(SimplePresenter::class.java, null)
+        assertNotEquals(p, p2)
+        factory.onDestroy()
+    }
+
+    @Test
+    fun presenterFactory_prepareConfigChange() {
+        val forget = factory.obtain(CantChangeConfiguration::class.java, null)
+        val keep = factory.obtain(CanChangeConfiguration::class.java, null)
+        factory.recycle(forget)
+        factory.recycle(keep)
+        factory.prepareConfigChange()
+        assertEquals(keep, factory.obtain(CanChangeConfiguration::class.java, null))
+        assertNotEquals(forget, factory.obtain(CantChangeConfiguration::class.java, null))
+        factory.onDestroy()
+    }
+
+    @Test
+    fun presenterFactory_changeConfiguration() {
+        val p = factory.obtain(CanChangeConfiguration::class.java, null)
+        factory.recycle(p)
+        val config = Configuration()
+        factory.performConfigChange(config)
+        val p2 = factory.obtain(CanChangeConfiguration::class.java, null)
+        assertEquals(p, p2)
+        assertEquals(config, p.config)
+        factory.onDestroy()
+    }
 
     class SimplePresenter(host: PresenterHost, val flag: Boolean)
         : Presenter(host, View(host.activity)) {
@@ -181,4 +224,16 @@ class PresenterFactoryTest {
 
     class NoReflectionPresenter(host: PresenterHost) : Presenter(host, View(host.activity))
 
+    class CanChangeConfiguration(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : Presenter(host, View(host.activity)) {
+
+        var config: Configuration? = null
+
+        override fun onConfigurationChanged(newConfig: Configuration) {
+            super.onConfigurationChanged(newConfig)
+            config = newConfig
+        }
+    }
+    class CantChangeConfiguration(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : Presenter(host, View(host.activity)) {
+        override val canChangeConfiguration: Boolean = false
+    }
 }
