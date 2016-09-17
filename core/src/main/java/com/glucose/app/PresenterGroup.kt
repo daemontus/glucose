@@ -9,7 +9,6 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
-import com.glucose.util.lifecycleLog
 import com.glucose.util.newSyntheticId
 import rx.Observable
 import rx.subjects.PublishSubject
@@ -238,7 +237,6 @@ open class PresenterGroup : Presenter {
         children.add(presenter)
         if (this.isStarted) presenter.performStart()
         if (this.isResumed) presenter.performResume()
-        lifecycleLog("Added $presenter")
         if (presenter is PresenterGroup) {
             presenter.onChildAddRecursive
                     .subscribe(childAddedRecursive).until(presenter, Lifecycle.Event.DETACH)

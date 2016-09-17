@@ -6,8 +6,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.view.ViewGroup
-import kotlin.properties.Delegates
 
 /**
  * An activity that is connected to a [PresenterContext] and has exactly one root [Presenter].

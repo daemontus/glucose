@@ -5,7 +5,6 @@ import android.support.annotation.MainThread
 import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.isAttached
-import com.glucose.util.lifecycleLog
 import java.util.*
 
 
@@ -53,7 +52,6 @@ open class PresenterFactory(private val context: PresenterHost) {
         val found = freePresenters.find { it.javaClass == clazz }
                 ?: spawnPresenter(clazz, parent)
         freePresenters.remove(found)
-        lifecycleLog("Obtained presenter $found")
         // Cast to P is safe assuming no one gave us a fake constructor
         @Suppress("UNCHECKED_CAST")
         return found as P
@@ -69,7 +67,6 @@ open class PresenterFactory(private val context: PresenterHost) {
         if (presenter.isAttached) throw LifecycleException("$presenter is still attached")
         if (presenter.canBeReused) {
             freePresenters.add(presenter)
-            lifecycleLog("Recycled $presenter")
         } else {
             killPresenter(presenter)
         }
@@ -88,7 +85,6 @@ open class PresenterFactory(private val context: PresenterHost) {
                 throw LifecycleException("No valid constructor found for ${clazz.name}", e)
             }
         }.invoke(context, parent)
-        lifecycleLog("Spawned presenter for $clazz: $presenter")
         allPresenters.add(presenter)
         return presenter
     }
@@ -99,7 +95,6 @@ open class PresenterFactory(private val context: PresenterHost) {
         presenter.performDestroy()
         freePresenters.remove(presenter)
         allPresenters.remove(presenter)
-        lifecycleLog("Killed presenter $presenter")
     }
 
     /**
