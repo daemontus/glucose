@@ -251,8 +251,6 @@ class BoundSubscription<out T>(
 
 //some simple helper functions regarding state
 
-fun LifecycleHost.getAlive(): Boolean = this.isAlive
-
 val LifecycleHost.isAlive: Boolean
     get() = this.state >= ALIVE
 val LifecycleHost.isAttached: Boolean

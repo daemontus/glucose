@@ -3,38 +3,32 @@ package com.glucose.app.presenter
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*
-import com.glucose.app.presenter.Lifecycle.State.*;
+import com.glucose.app.presenter.Lifecycle.State.*
 
-//TODO: Get rid of mState
 internal class LifecycleDelegate : LifecycleHost {
 
     private val lifecycleEventSubject = PublishSubject.create<Lifecycle.Event>()
     private val lifecycleCallbacks = ArrayList<Pair<Lifecycle.Event, () -> Unit>>()
 
-    internal var mState: Lifecycle.State = Lifecycle.State.ALIVE
-        set(value) {
-            when (field to value) {
-                //state is increasing
-                //Note: Destroyed -> Alive is not allowed
-                ALIVE to ATTACHED, ATTACHED to STARTED, STARTED to RESUMED -> {
-                    val event = value.openingEvent()
-                    field = value
-                    onLifecycleEvent(event)
-                }
-                //state is decreasing
-                RESUMED to STARTED, STARTED to ATTACHED, ATTACHED to ALIVE, ALIVE to DESTROYED -> {
-                    val event = field.closingEvent()
-                    onLifecycleEvent(event)
-                    field = value
-                }
-                else -> throw LifecycleException("Invalid lifecycle transition from $field to $value")
-            }
-        }
-
     override val lifecycleEvents: Observable<Lifecycle.Event> = lifecycleEventSubject
 
-    override val state: Lifecycle.State
-        get() = mState
+    override var state: Lifecycle.State = Lifecycle.State.ALIVE
+        internal set(value) = when (field to value) {
+            //state is increasing
+            //Note: Destroyed -> Alive is not allowed
+            ALIVE to ATTACHED, ATTACHED to STARTED, STARTED to RESUMED -> {
+                val event = value.openingEvent()
+                field = value
+                onLifecycleEvent(event)
+            }
+            //state is decreasing
+            RESUMED to STARTED, STARTED to ATTACHED, ATTACHED to ALIVE, ALIVE to DESTROYED -> {
+                val event = field.closingEvent()
+                onLifecycleEvent(event)
+                field = value
+            }
+            else -> throw LifecycleException("Invalid lifecycle transition from $field to $value")
+        }
 
     override fun addEventCallback(event: Lifecycle.Event, callback: () -> Unit) {
         lifecycleCallbacks.add(event to callback)

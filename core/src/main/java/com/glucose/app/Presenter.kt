@@ -242,7 +242,7 @@ open class Presenter(
     protected open fun onAttach(arguments: Bundle) {
         lifecycleLog("onAttach")
         _arguments = arguments
-        lifecycleHost.mState = ATTACHED
+        lifecycleHost.state = ATTACHED
     }
 
     /**
@@ -250,7 +250,7 @@ open class Presenter(
      */
     protected open fun onStart() {
         lifecycleLog("onStart")
-        lifecycleHost.mState = STARTED
+        lifecycleHost.state = STARTED
     }
 
     /**
@@ -258,14 +258,14 @@ open class Presenter(
      */
     protected open fun onResume() {
         lifecycleLog("onResume")
-        lifecycleHost.mState = RESUMED
+        lifecycleHost.state = RESUMED
     }
 
     /**
      * @see Activity.onPause
      */
     protected open fun onPause() {
-        lifecycleHost.mState = STARTED
+        lifecycleHost.state = STARTED
         lifecycleLog("onPause")
     }
 
@@ -273,7 +273,7 @@ open class Presenter(
      * @see Activity.onStop
      */
     protected open fun onStop() {
-        lifecycleHost.mState = ATTACHED
+        lifecycleHost.state = ATTACHED
         lifecycleLog("onStop")
     }
 
@@ -289,7 +289,7 @@ open class Presenter(
      * @see canBeReused
      */
     protected open fun onDetach() {
-        lifecycleHost.mState = ALIVE
+        lifecycleHost.state = ALIVE
         lifecycleLog("onDetach")
         _arguments = null
     }
@@ -298,7 +298,7 @@ open class Presenter(
      * @see Activity.onDestroy
      */
     protected open fun onDestroy() {
-        lifecycleHost.mState = DESTROYED
+        lifecycleHost.state = DESTROYED
         lifecycleLog("onDestroy")
         _host = null
     }

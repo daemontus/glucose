@@ -18,7 +18,7 @@ class LifecycleHostTest {
     private val lifecycle = LifecycleDelegate()
 
     private fun doTransition(state: Lifecycle.State) {
-        lifecycle.mState = state
+        lifecycle.state = state
         assertEquals(state, lifecycle.state)
         assertTrue(lifecycle.isAlive == state >= ALIVE)
         assertTrue(lifecycle.isAttached == state >= ATTACHED)
@@ -50,85 +50,85 @@ class LifecycleHostTest {
     fun lifecycleDelegate_invalidTransitions() {
         //Alive -> Alive
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ALIVE
+            lifecycle.state = ALIVE
         }
         //Alive -> Started
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = STARTED
+            lifecycle.state = STARTED
         }
         //Alive -> Resumed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = RESUMED
+            lifecycle.state = RESUMED
         }
         //Alive -> Attached
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         //Attached -> Attached
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ATTACHED
+            lifecycle.state = ATTACHED
         }
         //Attached -> Resumed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = RESUMED
+            lifecycle.state = RESUMED
         }
         //Attached -> Destroyed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = DESTROYED
+            lifecycle.state = DESTROYED
         }
         //Attached -> Started
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         //Started -> Started
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = STARTED
+            lifecycle.state = STARTED
         }
         //Started -> Destroyed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = DESTROYED
+            lifecycle.state = DESTROYED
         }
         //Started -> Alive
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ALIVE
+            lifecycle.state = ALIVE
         }
         //Started -> Resumed
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         //Resumed -> Resumed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = RESUMED
+            lifecycle.state = RESUMED
         }
         //Resumed -> Destroyed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = DESTROYED
+            lifecycle.state = DESTROYED
         }
         //Resumed -> Alive
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ALIVE
+            lifecycle.state = ALIVE
         }
         //Resumed -> Attached
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ATTACHED
+            lifecycle.state = ATTACHED
         }
         //Resumed -> Started
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         //Started -> Attached
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         //Attached -> Alive
-        lifecycle.mState = ALIVE
+        lifecycle.state = ALIVE
         //Alive -> Destroyed
-        lifecycle.mState = DESTROYED
+        lifecycle.state = DESTROYED
         //Destroyed -> Alive
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ALIVE
+            lifecycle.state = ALIVE
         }
         //Destroyed -> Attached
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = ATTACHED
+            lifecycle.state = ATTACHED
         }
         //Destroyed -> Started
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = STARTED
+            lifecycle.state = STARTED
         }
         //Destroyed -> Resumed
         assertFailsWith(LifecycleException::class) {
-            lifecycle.mState = RESUMED
+            lifecycle.state = RESUMED
         }
     }
 
@@ -155,31 +155,31 @@ class LifecycleHostTest {
         lifecycle.addEventCallback(STOP, stop)
         lifecycle.addEventCallback(DETACH, detach)
         lifecycle.addEventCallback(DESTROY, destroy)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         assertTrue(attached)
         assertFalse(lifecycle.removeEventCallback(ATTACH, attach))
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         assertTrue(started)
         assertFalse(lifecycle.removeEventCallback(START, start))
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         assertTrue(resumed)
         assertFalse(lifecycle.removeEventCallback(RESUME, resume))
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         assertTrue(paused)
         assertFalse(lifecycle.removeEventCallback(PAUSE, pause))
-        lifecycle.mState = RESUMED
-        lifecycle.mState = STARTED
-        lifecycle.mState = ATTACHED
+        lifecycle.state = RESUMED
+        lifecycle.state = STARTED
+        lifecycle.state = ATTACHED
         assertTrue(stopped)
         assertFalse(lifecycle.removeEventCallback(STOP, stop))
-        lifecycle.mState = STARTED
-        lifecycle.mState = ATTACHED
-        lifecycle.mState = ALIVE
+        lifecycle.state = STARTED
+        lifecycle.state = ATTACHED
+        lifecycle.state = ALIVE
         assertTrue(detached)
         assertFalse(lifecycle.removeEventCallback(DETACH, detach))
-        lifecycle.mState = ATTACHED
-        lifecycle.mState = ALIVE
-        lifecycle.mState = DESTROYED
+        lifecycle.state = ATTACHED
+        lifecycle.state = ALIVE
+        lifecycle.state = DESTROYED
         assertTrue(destroyed)
         assertFalse(lifecycle.removeEventCallback(DESTROY, destroy))
     }
@@ -188,17 +188,17 @@ class LifecycleHostTest {
     fun lifecycleDelegate_lifecycleNotifications() {
         val notificationLog = lifecycle.lifecycleEvents.replay()
         notificationLog.connect()
-        lifecycle.mState = ATTACHED
-        lifecycle.mState = STARTED
-        lifecycle.mState = RESUMED
-        lifecycle.mState = STARTED
-        lifecycle.mState = ATTACHED
-        lifecycle.mState = STARTED
-        lifecycle.mState = RESUMED
-        lifecycle.mState = STARTED
-        lifecycle.mState = ATTACHED
-        lifecycle.mState = ALIVE
-        lifecycle.mState = DESTROYED
+        lifecycle.state = ATTACHED
+        lifecycle.state = STARTED
+        lifecycle.state = RESUMED
+        lifecycle.state = STARTED
+        lifecycle.state = ATTACHED
+        lifecycle.state = STARTED
+        lifecycle.state = RESUMED
+        lifecycle.state = STARTED
+        lifecycle.state = ATTACHED
+        lifecycle.state = ALIVE
+        lifecycle.state = DESTROYED
         assertEquals(listOf(
             ATTACH, START, RESUME, PAUSE, STOP, START, RESUME, PAUSE, STOP, DETACH, DESTROY
         ), notificationLog.toListInternal())
@@ -222,25 +222,25 @@ class LifecycleHostTest {
         val untilDestroy = subject.takeUntil(lifecycle, DESTROY).replay()
         untilDestroy.connect()
         subject.onNext(1)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(2)
         assertEquals(listOf(1), untilAttach.toListInternal())
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(3)
         assertEquals(listOf(1, 2), untilStart.toListInternal())
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         subject.onNext(4)
         assertEquals(listOf(1, 2, 3), untilResume.toListInternal())
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(5)
         assertEquals(listOf(1, 2, 3, 4), untilPause.toListInternal())
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(6)
         assertEquals(listOf(1, 2, 3, 4, 5), untilStop.toListInternal())
-        lifecycle.mState = ALIVE
+        lifecycle.state = ALIVE
         subject.onNext(7)
         assertEquals(listOf(1, 2, 3, 4, 5, 6), untilDetach.toListInternal())
-        lifecycle.mState = DESTROYED
+        lifecycle.state = DESTROYED
         subject.onNext(8)
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 7), untilDestroy.toListInternal())
     }
@@ -255,28 +255,28 @@ class LifecycleHostTest {
         val alive = whileAlive.replay()
         alive.connect()
         subject.onNext(1)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         val attached = whileAttached.replay()
         attached.connect()
         subject.onNext(2)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         val started = whileStarted.replay()
         started.connect()
         subject.onNext(3)
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         val resumed = whileResumed.replay()
         resumed.connect()
         subject.onNext(4)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(5)
         assertEquals(listOf(4), resumed.toListInternal())
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(6)
         assertEquals(listOf(3, 4, 5), started.toListInternal())
-        lifecycle.mState = ALIVE
+        lifecycle.state = ALIVE
         subject.onNext(7)
         assertEquals(listOf(2, 3, 4, 5, 6), attached.toListInternal())
-        lifecycle.mState = DESTROYED
+        lifecycle.state = DESTROYED
         subject.onNext(8)
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 7), alive.toListInternal())
 
@@ -309,31 +309,31 @@ class LifecycleHostTest {
         val destroy = ArrayList<Int>()
         val untilDestroy = subject.subscribe { destroy.add(it) }.until(lifecycle, DESTROY)
         subject.onNext(1)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(2)
         assertTrue(untilAttach.isUnsubscribed)
         assertEquals(listOf(1), attach)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(3)
         assertTrue(untilStart.isUnsubscribed)
         assertEquals(listOf(1, 2), start)
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         subject.onNext(4)
         assertTrue(untilResume.isUnsubscribed)
         assertEquals(listOf(1, 2, 3), resume)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(5)
         assertTrue(untilPause.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4), pause)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(6)
         assertTrue(untilStop.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4, 5), stop)
-        lifecycle.mState = ALIVE
+        lifecycle.state = ALIVE
         subject.onNext(7)
         assertTrue(untilDetach.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4, 5, 6), detach)
-        lifecycle.mState = DESTROYED
+        lifecycle.state = DESTROYED
         subject.onNext(8)
         assertTrue(untilDestroy.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 7), destroy)
@@ -348,28 +348,28 @@ class LifecycleHostTest {
         val resumed = ArrayList<Int>()
         val whileAlive = subject.whileIn(lifecycle, ALIVE).subscribe { alive.add(it) }
         subject.onNext(1)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         val whileAttached = subject.whileIn(lifecycle, ATTACHED).subscribe { attached.add(it) }
         subject.onNext(2)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         val whileStarted = subject.whileIn(lifecycle, STARTED).subscribe { started.add(it) }
         subject.onNext(3)
-        lifecycle.mState = RESUMED
+        lifecycle.state = RESUMED
         val whileResumed = subject.whileIn(lifecycle, RESUMED).subscribe { resumed.add(it) }
         subject.onNext(4)
-        lifecycle.mState = STARTED
+        lifecycle.state = STARTED
         subject.onNext(5)
         assertTrue(whileResumed!!.isUnsubscribed)
         assertEquals(listOf(4), resumed)
-        lifecycle.mState = ATTACHED
+        lifecycle.state = ATTACHED
         subject.onNext(6)
         assertTrue(whileStarted!!.isUnsubscribed)
         assertEquals(listOf(3, 4, 5), started)
-        lifecycle.mState = ALIVE
+        lifecycle.state = ALIVE
         subject.onNext(7)
         assertTrue(whileAttached!!.isUnsubscribed)
         assertEquals(listOf(2, 3, 4, 5, 6), attached)
-        lifecycle.mState = DESTROYED
+        lifecycle.state = DESTROYED
         subject.onNext(8)
         assertTrue(whileAlive!!.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 7), alive)
