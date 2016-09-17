@@ -168,9 +168,9 @@ open class Presenter(
     private inline fun assertLifecycleChange(
             from: Lifecycle.State, to: Lifecycle.State, transition: () -> Unit
     ) {
-        if (state != from) throw IllegalStateException("Something is wrong with the lifecycle!")
+        if (state != from) throw LifecycleException("Unexpected transition. Expected $from -> $to. Got $state -> $to instead.")
         transition()
-        if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
+        if (state != to) throw LifecycleException("Unexpected transition. Expected $from -> $to. Got $state -> $to instead. Maybe forgot to call super?")
     }
 
     // perform* methods are public so that other people can implement their own PresenterHosts
@@ -314,7 +314,7 @@ open class Presenter(
      */
     open fun onConfigurationChanged(newConfig: Configuration) {
         if (!canChangeConfiguration) {
-            throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
+            throw LifecycleException("$this cannot change configuration and should have been destroyed.")
         }
         host.factory.prepareConfigChange()
         lifecycleLog("onConfigurationChanged")
