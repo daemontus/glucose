@@ -8,13 +8,10 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
-import com.glucose.app.presenter.getAlive
 import com.glucose.app.presenter.isAlive
-import com.glucose.app.presenter.post
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import rx.Observable
 import kotlin.test.*
 
 @RunWith(AndroidJUnit4::class)
@@ -89,9 +86,9 @@ class PresenterFactoryTest {
     fun presenterFactory_presenterCaching() {
         val p1 = factory.obtain(SimplePresenter::class.java, null)
         factory.recycle(p1)
-        //assertTrue(p1.isAlive)
+        assertTrue(p1.isAlive)
         val p2 = factory.obtain(SimplePresenter::class.java, null)
-        //assertTrue(p2.isAlive)
+        assertTrue(p2.isAlive)
         assertEquals(p1, p2)
         factory.recycle(p2)
         factory.onDestroy()
@@ -103,10 +100,10 @@ class PresenterFactoryTest {
             SimplePresenter(host, false)
         }
         val p1 = factory.obtain(SimplePresenter::class.java, null)
-        //assertTrue(p1.isAlive)
+        assertTrue(p1.isAlive)
         factory.recycle(p1)
         val p2 = factory.obtain(SimplePresenter::class.java, null)
-        //assertTrue(p2.isAlive)
+        assertTrue(p2.isAlive)
         assertNotEquals(p1, p2)
         factory.recycle(p2)
         factory.onDestroy()
@@ -117,9 +114,9 @@ class PresenterFactoryTest {
         val p1 = factory.obtain(SimplePresenter::class.java, null)
         val p2 = factory.obtain(SimplePresenter::class.java, null)
         val p3 = factory.obtain(SimplePresenter::class.java, null)
-        //assertTrue(p1.isAlive)
-        //assertTrue(p2.isAlive)
-        //assertTrue(p3.isAlive)
+        assertTrue(p1.isAlive)
+        assertTrue(p2.isAlive)
+        assertTrue(p3.isAlive)
         assertNotEquals(p1, p2)
         assertNotEquals(p1, p3)
         assertNotEquals(p2, p3)

@@ -125,7 +125,7 @@ open class Presenter(
         if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
     }
 
-     fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
+    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
         onAttach(arguments)
         actionHost.startProcessingActions()
     }
@@ -138,7 +138,7 @@ open class Presenter(
 
     internal fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
 
-     fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
+    internal fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
         actionHost.stopProcessingActions()
         onDetach()
     }

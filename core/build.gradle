@@ -67,11 +67,6 @@ artifacts {
     archives sourcesJar
 }
 
-transformClassesAndResourcesWithSyncLibJarsForDebug.doFirst {
-    doFirst {
-        println "Hey!"
-    }
-}
 
 task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
 
@@ -90,4 +85,15 @@ task jacocoTestReport(type: JacocoReport, dependsOn: 'testDebugUnitTest') {
     classDirectories = files([debugTree])
     def instrumentationCoverage = fileTree(dir: "${buildDir}/outputs/code-coverage/connected", include: "*.ec")
     executionData = files(["${buildDir}/jacoco/testDebugUnitTest.exec", instrumentationCoverage])
+}
+
+//workaround for https://youtrack.jetbrains.com/issue/KT-11333
+preBuild.doFirst {
+    //At this point, this task is actually created
+    transformClassesWithJacocoForDebug.doLast {
+        copy {
+            from "${buildDir}/intermediates/classes/debug/META-INF"
+            into "${buildDir}/intermediates/transforms/jacoco/debug/folders/1/1/main/META-INF"
+        }
+    }
 }
