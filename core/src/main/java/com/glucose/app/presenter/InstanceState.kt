@@ -21,15 +21,15 @@ fun Bundle.isFresh() = !this.isRestored()
 //Note: Presenter state is checked when accessing arguments, so whatever we do with them here is safe.
 
 class NativeArgument<out T>(
-        private val bundler: NativeBundler<T>,
-        private val default: T
+        private val default: T,
+        private val bundler: NativeBundler<T>
 ) : ReadOnlyProperty<Presenter, T> {
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
             = bundler.getter(thisRef.arguments, property.name, default)
 }
 
 class Argument<out T>(
-        private val bundler: Bundler<T>
+        private val bundler: ObjectBundler<T>
 ) : ReadOnlyProperty<Presenter, T> {
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
@@ -38,15 +38,27 @@ class Argument<out T>(
 }
 
 class RequiredArgument<out T>(
-        private val bundler: Bundler<T?>
+        private val bundler: ObjectBundler<T?>
 ) : ReadOnlyProperty<Presenter, T> {
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
             = bundler.getter(thisRef.arguments, property.name) ?:
             throw KotlinNullPointerException("Missing required argument for ${property.name}")
 }
 
+class NativeState<T>(
+        private val default: T,
+        private val bundler: NativeBundler<T>
+) : ReadWriteProperty<Presenter, T> {
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
+            = bundler.getter(thisRef.arguments, property.name, default)
+
+    override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
+            = bundler.setter(thisRef.arguments, property.name, value)
+
+}
+
 class State<T>(
-        private val bundler: Bundler<T>
+        private val bundler: ObjectBundler<T>
 ) : ReadWriteProperty<Presenter, T> {
 
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
@@ -58,7 +70,7 @@ class State<T>(
 }
 
 class RequiredState<T>(
-        private val bundler: Bundler<T?>
+        private val bundler: ObjectBundler<T?>
 ) : ReadWriteProperty<Presenter, T> {
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
             = bundler.setter(thisRef.arguments, property.name, value)

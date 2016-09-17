@@ -188,7 +188,7 @@ class PresenterFactoryTest {
         factory.onDestroy()
     }
 
-    class SimplePresenter(host: PresenterHost, val flag: Boolean)
+    open class SimplePresenter(host: PresenterHost, val flag: Boolean = true)
         : Presenter(host, View(host.activity)) {
 
         override val canBeReused: Boolean = flag

@@ -11,7 +11,6 @@ import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
-import com.glucose.util.lifecycleLog
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.ReplaySubject
@@ -124,7 +123,7 @@ open class Presenter(
      * This is a part of the presenters state and hence can be modified using the arguments bundle.
      * Default: [View.NO_ID]
      */
-    val id: Int by NativeArgument(intBundler, View.NO_ID)
+    val id: Int by NativeArgument(View.NO_ID, intBundler)
 
     /**
      * This property indicates whether the presenter can be attached automatically when the
@@ -134,7 +133,7 @@ open class Presenter(
      * This is a part of the presenters state and hence can be modified using the arguments bundle.
      * Default: true
      */
-    val canReattachAfterStateChange: Boolean by NativeArgument(booleanBundler, true)
+    val canReattachAfterStateChange: Boolean by NativeArgument(true, booleanBundler)
 
     /**************** Internal configuration properties (parent shouldn't modify these) ***********/
 
@@ -240,7 +239,6 @@ open class Presenter(
      * @see canBeReused
      */
     protected open fun onAttach(arguments: Bundle) {
-        lifecycleLog("onAttach")
         _arguments = arguments
         lifecycleHost.state = ATTACHED
     }
@@ -249,7 +247,6 @@ open class Presenter(
      * @see Activity.onStart
      */
     protected open fun onStart() {
-        lifecycleLog("onStart")
         lifecycleHost.state = STARTED
     }
 
@@ -257,7 +254,6 @@ open class Presenter(
      * @see Activity.onResume
      */
     protected open fun onResume() {
-        lifecycleLog("onResume")
         lifecycleHost.state = RESUMED
     }
 
@@ -266,7 +262,6 @@ open class Presenter(
      */
     protected open fun onPause() {
         lifecycleHost.state = STARTED
-        lifecycleLog("onPause")
     }
 
     /**
@@ -274,7 +269,6 @@ open class Presenter(
      */
     protected open fun onStop() {
         lifecycleHost.state = ATTACHED
-        lifecycleLog("onStop")
     }
 
     /**
@@ -290,7 +284,6 @@ open class Presenter(
      */
     protected open fun onDetach() {
         lifecycleHost.state = ALIVE
-        lifecycleLog("onDetach")
         _arguments = null
     }
 
@@ -299,7 +292,6 @@ open class Presenter(
      */
     protected open fun onDestroy() {
         lifecycleHost.state = DESTROYED
-        lifecycleLog("onDestroy")
         _host = null
     }
 
@@ -317,14 +309,12 @@ open class Presenter(
             throw LifecycleException("$this cannot change configuration and should have been destroyed.")
         }
         host.factory.prepareConfigChange()
-        lifecycleLog("onConfigurationChanged")
     }
 
     /**
      * @see Activity.onActivityResult
      */
     open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        lifecycleLog("onActivityResult $resultCode for request $requestCode")
     }
 
     /**
