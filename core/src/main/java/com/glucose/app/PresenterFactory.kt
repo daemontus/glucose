@@ -64,7 +64,7 @@ open class PresenterFactory(private val context: PresenterHost) {
      */
     fun recycle(presenter: Presenter) {
         if (destroyed) throw LifecycleException("Cannot recycle Presenters after onDestroy")
-        if (presenter !in allPresenters) throw LifecycleException("$presenter is not managed by $this but by ${presenter.ctx}")
+        if (presenter !in allPresenters) throw LifecycleException("$presenter is not managed by $this but by ${presenter.host}")
         if (presenter in freePresenters) throw LifecycleException("$presenter is already recycled")
         if (presenter.isAttached) throw LifecycleException("$presenter is still attached")
         if (presenter.canBeReused) {

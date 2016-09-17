@@ -71,7 +71,7 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val child = presenter.attach(container, SeriesPresenter::class.java,
                     (SeriesPresenter::seriesId.name with series[position].seriesId) and
-                            (Presenter::canRecreateFromState.name with false)
+                            (Presenter::canReattachAfterStateChange.name with false)
             )
             presenters[position]?.let { presenter.detach(it) }
             presenters[position] = child

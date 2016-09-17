@@ -1,11 +1,9 @@
 package com.glucose.app
 
-import android.app.Activity
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
@@ -22,28 +20,7 @@ class PresenterFactoryTest {
     @Rule @JvmField
     val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
 
-    private inner class MockPresenterHost : PresenterHost {
-        override val activity: Activity
-            get() = activityRule.activity
-        override val factory: PresenterFactory = PresenterFactory(this)
-        override val root: Presenter
-            get() = throw UnsupportedOperationException()
-
-        override fun <P : Presenter> attach(clazz: Class<P>, arguments: Bundle, parent: ViewGroup?): P {
-            throw UnsupportedOperationException("not implemented")
-        }
-
-        override fun <P : Presenter> attachWithState(clazz: Class<P>, savedState: SparseArray<Bundle>, arguments: Bundle, parent: ViewGroup?): P {
-            throw UnsupportedOperationException("not implemented")
-        }
-
-        override fun detach(presenter: Presenter) {
-            throw UnsupportedOperationException("not implemented")
-        }
-
-    }
-
-    private val host = MockPresenterHost()
+    private val host = MockPresenterHost(activityRule)
     private val factory = host.factory
 
     @Test
@@ -136,7 +113,7 @@ class PresenterFactoryTest {
 
     @Test
     fun presenterFactory_foreignPresenter() {
-        val factory2 = PresenterFactory(MockPresenterHost())
+        val factory2 = PresenterFactory(MockPresenterHost(activityRule))
         val p1 = factory.obtain(SimplePresenter::class.java, null)
         assertFailsWith(LifecycleException::class) {
             factory2.recycle(p1)

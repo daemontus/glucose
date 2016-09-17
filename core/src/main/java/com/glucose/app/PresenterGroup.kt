@@ -107,7 +107,7 @@ open class PresenterGroup : Presenter {
                     childStates.put(replacementId, Pair(parent, presenter.saveWholeState()))
                     val index = parent.indexOfChild(presenter.view)
                     detach(presenter)
-                    parent.addView(View(ctx.activity).apply { this.id = replacementId }, index)
+                    parent.addView(View(host.activity).apply { this.id = replacementId }, index)
 
                 } else {
                     detach(presenter)
@@ -126,7 +126,7 @@ open class PresenterGroup : Presenter {
                 val (layout, state) = childStates.valueAt(i)
                 val index = layout.indexOfChild(replacement)
                 layout.removeView(replacement)
-                val presenter = ctx.attachWithState(state.clazz, state.map, arguments, layout)
+                val presenter = host.attachWithState(state.clazz, state.map, arguments, layout)
                 layout.addView(presenter.view, index)
                 addChild(presenter)
                 presenter.view.restoreHierarchyState(state.viewState)
@@ -143,7 +143,7 @@ open class PresenterGroup : Presenter {
             val childState = PresenterParcel(
                     it.javaClass.name, it.saveHierarchyState(container)
             )
-            if (it.canRecreateFromState && it.view.parent is View) {
+            if (it.canReattachAfterStateChange && it.view.parent is View) {
                 val parent = it.view.parent as View
                 if (parent.id != View.NO_ID) {
                     childrenList.add(childState.copy(parentId = parent.id))
@@ -197,7 +197,7 @@ open class PresenterGroup : Presenter {
      * WARNING: If the parent view doesn't have an ID, the presenter won't be restored from state.
      */
     fun <P: Presenter> attach(parentView: ViewGroup, presenter: Class<P>, arguments: Bundle = Bundle()): P {
-        val instance = ctx.attach(presenter, arguments, parentView)
+        val instance = host.attach(presenter, arguments, parentView)
         add(parentView, instance)
         return instance
     }
@@ -227,8 +227,8 @@ open class PresenterGroup : Presenter {
         if (presenter.view.parent != null) {
             throw LifecycleException("$presenter view is already added to ${presenter.view.parent}")
         }
-        if (presenter.ctx != this.ctx) {
-            throw LifecycleException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
+        if (presenter.host != this.host) {
+            throw LifecycleException("$presenter is attached to ${presenter.host} instead of ${this.host}")
         }
         parentView.addView(presenter.view)
         addChild(presenter)
@@ -271,7 +271,7 @@ open class PresenterGroup : Presenter {
      * Detach and recycle a presenter.
      */
     fun detach(presenter: Presenter): Unit {
-        ctx.detach(remove(presenter))
+        host.detach(remove(presenter))
     }
 
     // ============================ Child retrieval ================================================

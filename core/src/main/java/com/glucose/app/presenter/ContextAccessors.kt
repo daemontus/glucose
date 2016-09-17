@@ -13,7 +13,7 @@ import kotlin.reflect.KProperty
  */
 fun <A: Activity> Presenter.getActivity(): A {
     @Suppress("UNCHECKED_CAST") //this is not on us
-    return this.ctx.activity as A
+    return this.host.activity as A
 }
 
 /**
@@ -32,7 +32,7 @@ class ParentActivity<out A: Activity> : ReadOnlyProperty<Presenter, A> {
  */
 fun <A: Application> Presenter.getApp(): A {
     @Suppress("UNCHECKED_CAST")
-    return this.ctx.activity.application as A
+    return this.host.activity.application as A
 }
 
 /**
