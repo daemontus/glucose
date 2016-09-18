@@ -11,8 +11,7 @@ import kotlin.reflect.KProperty
  *
  * @see [ParentActivity]
  */
-fun <A: Activity> Presenter.getActivity(): A {
-    @Suppress("UNCHECKED_CAST") //this is not on us
+inline fun <reified A: Activity> Presenter.getActivity(): A {
     return this.host.activity as A
 }
 
@@ -21,8 +20,12 @@ fun <A: Activity> Presenter.getActivity(): A {
  * Use this if you need to access the parent activity often, so that [Presenter.getActivity]
  * becomes too verbose.
  */
-class ParentActivity<out A: Activity> : ReadOnlyProperty<Presenter, A> {
-    override fun getValue(thisRef: Presenter, property: KProperty<*>): A = thisRef.getActivity()
+class ParentActivity<out A: Activity>(
+        private val clazz: Class<A>
+) : ReadOnlyProperty<Presenter, A> {
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): A {
+        return clazz.cast(thisRef.host.activity)
+    }
 }
 
 /**
@@ -30,8 +33,7 @@ class ParentActivity<out A: Activity> : ReadOnlyProperty<Presenter, A> {
  *
  * @see [ParentApp]
  */
-fun <A: Application> Presenter.getApp(): A {
-    @Suppress("UNCHECKED_CAST")
+inline fun <reified A: Application> Presenter.getApp(): A {
     return this.host.activity.application as A
 }
 
@@ -40,6 +42,10 @@ fun <A: Application> Presenter.getApp(): A {
  * Use this if you need to access the parent application often, so that [Presenter.getApp]
  * becomes too verbose.
  */
-class ParentApp<out A: Application> : ReadOnlyProperty<Presenter, A> {
-    override fun getValue(thisRef: Presenter, property: KProperty<*>): A = thisRef.getApp()
+class ParentApp<out A: Application>(
+        private val clazz: Class<A>
+) : ReadOnlyProperty<Presenter, A> {
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): A {
+        return clazz.cast(thisRef.host.activity.application)
+    }
 }
