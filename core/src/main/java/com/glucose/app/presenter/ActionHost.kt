@@ -86,7 +86,6 @@ interface ActionHost {
  */
 class PrematureTerminationException : RuntimeException {
     constructor(message: String) : super(message)
-    constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
 /**
@@ -94,7 +93,6 @@ class PrematureTerminationException : RuntimeException {
  */
 class CannotExecuteException : RuntimeException {
     constructor(message: String) : super(message)
-    constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
 /**
