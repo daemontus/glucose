@@ -13,7 +13,7 @@ import com.github.daemontus.glucose.demo.data.Episode
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterContext
-import com.glucose.app.presenter.Argument
+import com.glucose.app.presenter.OptionalArgument
 import com.glucose.app.presenter.Lifecycle
 import com.glucose.app.presenter.findView
 import com.glucose.app.presenter.longBundler
@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat
 
 class SeriesPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_series, parent) {
 
-    val seriesId by Argument(longBundler)
+    val seriesId by OptionalArgument(longBundler)
     val episodeClicks: PublishSubject<Episode> = PublishSubject.create<Episode>()
 
     val repo = ShowRepository()

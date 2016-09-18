@@ -7,7 +7,7 @@ import com.github.daemontus.glucose.demo.R
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterContext
 import com.glucose.app.PresenterGroup
-import com.glucose.app.presenter.RequiredArgument
+import com.glucose.app.presenter.Argument
 import com.glucose.app.presenter.findView
 import com.glucose.app.presenter.isFresh
 import com.glucose.app.presenter.stringBundler
@@ -15,7 +15,7 @@ import com.glucose.app.presenter.stringBundler
 class EpisodeDetailPresenter(context: PresenterContext, parent: ViewGroup?)
     : PresenterGroup(context, R.layout.presenter_episode_detail, parent) {
 
-    val episodeName by RequiredArgument(stringBundler)
+    val episodeName by Argument(stringBundler)
 
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
