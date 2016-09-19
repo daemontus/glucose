@@ -223,7 +223,6 @@ fun <T> Observable<T>.whileIn(host: LifecycleHost, state: Lifecycle.State): Boun
  * to this [BoundSubscription] is in the desired state and that the
  * subscription will be unsubscribed when the [LifecycleHost] leaves this state.
  */
-@Suppress("unused") //It's just a copy of the Observable API.
 class BoundSubscription<out T>(
         private val observable: Observable<T>,
         private val state: Lifecycle.State,

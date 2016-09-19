@@ -4,6 +4,8 @@ import com.glucose.app.presenter.Lifecycle.Event.*
 import com.glucose.app.presenter.Lifecycle.State.*
 import org.junit.Test
 import rx.Observable
+import rx.Observer
+import rx.Subscriber
 import rx.subjects.PublishSubject
 import java.util.*
 import kotlin.test.assertEquals
@@ -341,25 +343,45 @@ class LifecycleHostTest {
 
     @Test
     fun lifecycleHost_whileIn() {
+        //also testing various bound subscriptions
         val subject = PublishSubject.create<Int>()
         val alive = ArrayList<Int>()
         val attached = ArrayList<Int>()
         val started = ArrayList<Int>()
         val resumed = ArrayList<Int>()
+        //test empty subscription
+        val empty = subject.whileIn(lifecycle, ALIVE).subscribe()
         val whileAlive = subject.whileIn(lifecycle, ALIVE).subscribe { alive.add(it) }
         subject.onNext(1)
         lifecycle.state = ATTACHED
-        val whileAttached = subject.whileIn(lifecycle, ATTACHED).subscribe { attached.add(it) }
+        val whileAttached = subject.whileIn(lifecycle, ATTACHED)
+                .subscribe({ attached.add(it) }, { throw it })
         subject.onNext(2)
         lifecycle.state = STARTED
-        val whileStarted = subject.whileIn(lifecycle, STARTED).subscribe { started.add(it) }
+        val whileStarted = subject.whileIn(lifecycle, STARTED)
+                .subscribe({ started.add(it) }, { throw it }, { assertEquals(listOf(3,4,5), started) })
         subject.onNext(3)
         lifecycle.state = RESUMED
-        val whileResumed = subject.whileIn(lifecycle, RESUMED).subscribe { resumed.add(it) }
+        val whileResumed = subject.whileIn(lifecycle, RESUMED)
+                .subscribe(object : Observer<Int> {
+                    override fun onCompleted() = assertEquals(listOf(4), resumed)
+                    override fun onError(e: Throwable?) = throw e!!
+                    override fun onNext(t: Int?): Unit {
+                        resumed.add(t!!)
+                    }
+                })
+        val subscriber = subject.whileIn(lifecycle, RESUMED)
+                .subscribe(object : Subscriber<Int>() {
+                    override fun onNext(t: Int?) = assertEquals(4, t)
+                    override fun onError(e: Throwable?) = throw e!!
+                    override fun onCompleted() = assertEquals(listOf(4), resumed)
+
+                })
         subject.onNext(4)
         lifecycle.state = STARTED
         subject.onNext(5)
         assertTrue(whileResumed!!.isUnsubscribed)
+        assertTrue(subscriber!!.isUnsubscribed)
         assertEquals(listOf(4), resumed)
         lifecycle.state = ATTACHED
         subject.onNext(6)
@@ -372,6 +394,7 @@ class LifecycleHostTest {
         lifecycle.state = DESTROYED
         subject.onNext(8)
         assertTrue(whileAlive!!.isUnsubscribed)
+        assertTrue(empty!!.isUnsubscribed)
         assertEquals(listOf(1, 2, 3, 4, 5, 6, 7), alive)
 
         //All of them should complete without emitting anything, because the state is wrong
@@ -384,4 +407,77 @@ class LifecycleHostTest {
             subject.whileIn(lifecycle, DESTROYED).subscribe()
         }
     }
+/*
+    @Test
+    fun lifecycleHost_boundSubscriptionTest() {
+        //these simple observables are technically synchronous, so we don't have to wait.
+
+        val e = IllegalStateException()
+        val items = Observable.just(1,2,3)
+        val error = Observable.error<Int>(e)
+        val itemsBound = BoundSubscription(items, Lifecycle.State.ALIVE, lifecycle)
+        val errorBound = BoundSubscription(error, Lifecycle.State.ALIVE, lifecycle)
+
+        var sawItems = listOf<Int>()
+        var sawError: Throwable? = null
+        itemsBound.subscribe({ sawItems += it}, { sawError = it })
+        assertEquals(null, sawError)
+        assertEquals(listOf(1,2,3), sawItems)
+
+        sawItems = listOf<Int>()
+        sawError = null
+        errorBound.subscribe({ sawItems += it}, { sawError = it })
+        assertEquals(e, sawError)
+        assertEquals(listOf(), sawItems)
+
+        sawItems = listOf<Int>()
+        sawError = null
+        var completed = false
+        itemsBound.subscribe({ sawItems += it}, { sawError = it }, { completed = true })
+        assertEquals(null, sawError)
+        assertEquals(listOf(1,2,3), sawItems)
+        assertEquals(true, completed)
+
+        sawItems = listOf<Int>()
+        sawError = null
+        completed = false
+        error.subscribe(object : Observer<Int> {
+            override fun onNext(t: Int) {
+                sawItems += t
+            }
+
+            override fun onCompleted() {
+                completed = true
+            }
+
+            override fun onError(e: Throwable?) {
+                sawError = e
+            }
+
+        })
+        assertEquals(e, sawError)
+        assertEquals(listOf(), sawItems)
+        assertEquals(true, completed)
+
+        sawItems = listOf<Int>()
+        sawError = null
+        completed = false
+        error.subscribe(object : Subscriber<Int>() {
+            override fun onError(e: Throwable?) {
+                sawError = e
+            }
+
+            override fun onNext(t: Int) {
+                sawItems += t
+            }
+
+            override fun onCompleted() {
+                completed = true
+            }
+
+        })
+        assertEquals(e, sawError)
+        assertEquals(listOf(), sawItems)
+        assertEquals(true, completed)
+    }*/
 }
