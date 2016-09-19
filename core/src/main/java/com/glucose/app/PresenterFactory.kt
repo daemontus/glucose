@@ -53,8 +53,7 @@ open class PresenterFactory(private val context: PresenterHost) {
                 ?: spawnPresenter(clazz, parent)
         freePresenters.remove(found)
         // Cast to P is safe assuming no one gave us a fake constructor
-        @Suppress("UNCHECKED_CAST")
-        return found as P
+        return clazz.cast(found)
     }
 
     /**

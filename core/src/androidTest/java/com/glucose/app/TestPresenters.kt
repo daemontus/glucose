@@ -5,7 +5,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.app.presenter.NativeArgument
 import com.glucose.app.presenter.NativeState
 import com.glucose.app.presenter.intBundler
 import kotlin.test.assertTrue
