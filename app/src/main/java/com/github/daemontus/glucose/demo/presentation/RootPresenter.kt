@@ -24,7 +24,7 @@ class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGr
     val startButton = findView<MultiStateButton>(R.id.start_action_button).apply {
         this.setOnClickListener {
             if (this.state == this.backButtonState) {
-                ctx.activity.onBackPressed()
+                host.activity.onBackPressed()
             }
         }
     }

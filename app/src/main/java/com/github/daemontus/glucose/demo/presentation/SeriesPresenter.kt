@@ -13,10 +13,7 @@ import com.github.daemontus.glucose.demo.data.Episode
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterContext
-import com.glucose.app.presenter.OptionalArgument
-import com.glucose.app.presenter.Lifecycle
-import com.glucose.app.presenter.findView
-import com.glucose.app.presenter.longBundler
+import com.glucose.app.presenter.*
 import com.jakewharton.rxbinding.view.clicks
 import rx.Observer
 import rx.android.schedulers.AndroidSchedulers
@@ -25,13 +22,13 @@ import java.text.SimpleDateFormat
 
 class SeriesPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_series, parent) {
 
-    val seriesId by OptionalArgument(longBundler)
+    val seriesId by NativeArgument(-1, longBundler)
     val episodeClicks: PublishSubject<Episode> = PublishSubject.create<Episode>()
 
     val repo = ShowRepository()
 
     val list = findView<RecyclerView>(R.id.episode_list).apply {
-        this.layoutManager = LinearLayoutManager(ctx.activity)
+        this.layoutManager = LinearLayoutManager(host.activity)
     }
 
 
@@ -39,7 +36,7 @@ class SeriesPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter
         super.onAttach(arguments)
         repo.getEpisodesBySeriesId(seriesId).observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                list.adapter = EpisodeAdapter(it, ctx.activity, episodeClicks)
+                list.adapter = EpisodeAdapter(it, host.activity, episodeClicks)
             }.until(Lifecycle.Event.DETACH)
     }
 
