@@ -244,6 +244,59 @@ class PresenterGroupTest {
         assertEquals(listOf(g, p1, p2, p3), childRemove.toBlocking().toIterable().toList())
     }
 
+    @Test
+    fun presenterGroup_findByParent() {
+        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        host.onCreate(null)
+        val group = host.root as SimpleGroup
+        val p1 = group.attach(R.id.inflated_view, GoBackPresenter::class.java,
+                bundle(GoBackPresenter::goBack.name with 14)
+        )
+        val p2 = group.attach(R.id.inflated_view, GoBackPresenter::class.java,
+                bundle(GoBackPresenter::goBack.name with 5)
+        )
+        val genericContainer = FrameLayout(activityRule.activity)
+        group.container.addView(genericContainer)
+        val p3 = group.attach(genericContainer, SimplePresenter::class.java,
+                bundle(Presenter::id.name with newSyntheticId())
+        )
+        assertEquals(listOf(p1, p2), group.findPresentersByParent(R.id.inflated_view))
+        assertEquals(listOf(p3), group.findPresentersByParent(genericContainer))
+        host.onDestroy()
+    }
+
+    @Test
+    fun presenterGroup_findById() {
+        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        host.onCreate(null)
+        val id1 = newSyntheticId()
+        val id2 = newSyntheticId()
+        val group = host.root as SimpleGroup
+        val p1 = group.attach(R.id.inflated_view, GoBackPresenter::class.java,
+                bundle(GoBackPresenter::goBack.name with 14) and
+                        (Presenter::id.name with id1)
+        )
+        val p2 = group.attach(R.id.inflated_view, SimpleGroup::class.java,
+                bundle(GoBackPresenter::goBack.name with 5)
+        )
+        val p3 = p2.attach(R.id.inflated_view, SimplePresenter::class.java,
+                bundle(Presenter::id.name with newSyntheticId()) and
+                        (Presenter::id.name with id2)
+        )
+        assertEquals(p1, group.findPresenter(id1, false))
+        assertEquals(p1, group.findOptionalPresenter(id1, false))
+        assertFailsWith<KotlinNullPointerException> {
+            group.findPresenter(id2, false)
+        }
+        assertEquals(null, group.findOptionalPresenter(id2, false))
+
+        assertEquals(p1, group.findPresenter(id1, true))
+        assertEquals(p1, group.findOptionalPresenter(id1, true))
+        assertEquals(p3, group.findPresenter(id2, true))
+        assertEquals(p3, group.findOptionalPresenter(id2, true))
+        host.onDestroy()
+    }
+
     class SimpleGroup(host: PresenterHost, parent: ViewGroup?) : PresenterGroup(host, R.layout.presenter_test, parent) {
         val container = view.findViewById(R.id.inflated_view) as ViewGroup
     }

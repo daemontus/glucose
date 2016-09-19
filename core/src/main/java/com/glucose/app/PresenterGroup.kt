@@ -287,7 +287,37 @@ open class PresenterGroup : Presenter {
 
     // ============================ Child retrieval ================================================
 
+    /**
+     * A read-only copy of the presenters currently managed by this group.
+     */
     val presenters: List<Presenter>
         get() = children.toList()
+
+    /**
+     * Find all presenters attached inside a view group specified by id.
+     */
+    fun findPresentersByParent(@IdRes id: Int): List<Presenter>
+            = findPresentersByParent(findView<ViewGroup>(id))
+
+    /**
+     * Find all presenters attached inside a specified view group.
+     */
+    fun findPresentersByParent(parent: ViewGroup): List<Presenter> {
+        return children.filter { it.view.parent == parent }
+    }
+
+    /**
+     * Find a required presenter by it's id.
+     */
+    fun findPresenter(@IdRes id: Int, recursive: Boolean = true): Presenter
+            = findOptionalPresenter(id, recursive)!!
+
+    fun findOptionalPresenter(@IdRes id: Int, recursive: Boolean = true): Presenter? {
+        return presenters.firstOrNull { it.id == id } ?: if (recursive) {
+            children.fold(null as Presenter?, { acc, child ->
+                acc ?: if (child is PresenterGroup) child.findOptionalPresenter(id, true) else null
+            })
+        } else null
+    }
 
 }
