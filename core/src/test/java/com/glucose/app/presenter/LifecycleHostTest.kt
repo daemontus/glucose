@@ -32,6 +32,25 @@ class LifecycleHostTest {
     private fun <T> Observable<T>.toListInternal(): List<T> = this.toBlocking().toIterable().toList()
 
     @Test
+    fun lifecycleHost_events() {
+        assertFailsWith<LifecycleException> {
+            ALIVE.openingEvent()
+        }
+        assertEquals(ATTACH, ATTACHED.openingEvent())
+        assertEquals(START, STARTED.openingEvent())
+        assertEquals(RESUME, RESUMED.openingEvent())
+        assertEquals(DESTROY, DESTROYED.openingEvent())
+
+        assertFailsWith<LifecycleException> {
+            DESTROYED.closingEvent()
+        }
+        assertEquals(DETACH, ATTACHED.closingEvent())
+        assertEquals(STOP, STARTED.closingEvent())
+        assertEquals(PAUSE, RESUMED.closingEvent())
+        assertEquals(DESTROY, ALIVE.closingEvent())
+    }
+
+    @Test
     fun lifecycleDelegate_validTransitions() {
         doTransition(ATTACHED)
         doTransition(STARTED)
