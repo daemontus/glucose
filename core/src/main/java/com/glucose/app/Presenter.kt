@@ -20,7 +20,7 @@ import rx.subjects.ReplaySubject
  *
  * Presenter should be completely isolated in terms of state from it's parent
  * (therefore it doesn't even have a reference to it), however, it can access
- * global data by means of a [PresenterContext].
+ * global data by means of a [PresenterHost].
  *
  * Presenter is responsible for managing it's child presenters and relationships
  * between them (see [PresenterGroup]).

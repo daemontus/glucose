@@ -260,64 +260,9 @@ class PresenterTest {
 
     @Test
     fun presenter_invalidConfigChange() {
-        val p = PresenterFactoryTest.CantChangeConfiguration(host, null)
+        val p = CantChangeConfiguration(host, null)
         assertFailsWith<LifecycleException> {
             p.onConfigurationChanged(Configuration())
-        }
-    }
-
-    class LifecycleTestingPresenter(
-            host: PresenterHost,
-            private val superAttach: Boolean = true,
-            private val superStart: Boolean = true,
-            private val superResume: Boolean = true,
-            private val superPause: Boolean = true,
-            private val superStop: Boolean = true,
-            private val superDetach: Boolean = true,
-            private val superDestroy: Boolean = true
-    ) : Presenter(host, View(host.activity)) {
-
-        var onAttachCalled = false
-        var onStartCalled = false
-        var onResumeCalled = false
-        var onPauseCalled = false
-        var onStopCalled = false
-        var onDetachCalled = false
-        var onDestroyCalled = false
-
-        override fun onAttach(arguments: Bundle) {
-            if (superAttach) super.onAttach(arguments)
-            onAttachCalled = true
-        }
-
-        override fun onStart() {
-            if (superStart) super.onStart()
-            onStartCalled = true
-        }
-
-        override fun onResume() {
-            if (superResume) super.onResume()
-            onResumeCalled = true
-        }
-
-        override fun onPause() {
-            if (superPause) super.onPause()
-            onPauseCalled = true
-        }
-
-        override fun onStop() {
-            if (superStop) super.onStop()
-            onStopCalled = true
-        }
-
-        override fun onDetach() {
-            if (superDetach) super.onDetach()
-            onDetachCalled = true
-        }
-
-        override fun onDestroy() {
-            if (superDestroy) super.onDestroy()
-            onDestroyCalled = true
         }
     }
 

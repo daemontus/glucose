@@ -5,14 +5,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.github.daemontus.glucose.demo.R
 import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterDelegate
 import com.glucose.app.PresenterGroup
 import com.glucose.app.presenter.Argument
 import com.glucose.app.presenter.findView
 import com.glucose.app.presenter.isFresh
 import com.glucose.app.presenter.stringBundler
 
-class EpisodeDetailPresenter(context: PresenterContext, parent: ViewGroup?)
+class EpisodeDetailPresenter(context: PresenterDelegate, parent: ViewGroup?)
     : PresenterGroup(context, R.layout.presenter_episode_detail, parent) {
 
     val episodeName by Argument(stringBundler)
@@ -28,7 +28,7 @@ class EpisodeDetailPresenter(context: PresenterContext, parent: ViewGroup?)
     }
 }
 
-class PersistentPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class PersistentPresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
     override val canChangeConfiguration: Boolean = true
 
@@ -37,7 +37,7 @@ class PersistentPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
     }
 }
 
-class RecreatedPresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class RecreatedPresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
     override val canChangeConfiguration: Boolean = false
 
@@ -46,7 +46,7 @@ class RecreatedPresenter(context: PresenterContext, parent: ViewGroup?) : Presen
     }
 }
 
-class NoRecyclePresenter(context: PresenterContext, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class NoRecyclePresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
     override val canBeReused: Boolean = false
 

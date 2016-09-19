@@ -12,12 +12,12 @@ import com.github.daemontus.glucose.demo.data.Series
 import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterDelegate
 import com.glucose.app.PresenterGroup
 import com.glucose.app.presenter.*
 import rx.android.schedulers.AndroidSchedulers
 
-class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
+class ShowDetailPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
 
     val showId: Long by NativeArgument(-1, longBundler)
 

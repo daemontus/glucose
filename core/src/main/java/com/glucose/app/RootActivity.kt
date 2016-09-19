@@ -8,14 +8,14 @@ import android.os.Build
 import android.os.Bundle
 
 /**
- * An activity that is connected to a [PresenterContext] and has exactly one root [Presenter].
+ * An activity that is connected to a [PresenterDelegate] and has exactly one root [Presenter].
  */
 abstract class RootActivity(
         rootPresenter: Class<out Presenter>,
         rootArguments: Bundle = Bundle()
 ) : Activity() {
 
-    private val presenterContext = PresenterContext(this, rootPresenter, rootArguments)
+    private val presenterContext = PresenterDelegate(this, rootPresenter, rootArguments)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

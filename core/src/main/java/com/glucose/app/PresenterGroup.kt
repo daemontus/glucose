@@ -24,9 +24,9 @@ open class PresenterGroup : Presenter {
         val CHILDREN_KEY = "glucose:presenter_children"
     }
 
-    constructor(context: PresenterContext, view: View) : super(context, view)
+    constructor(context: PresenterDelegate, view: View) : super(context, view)
     constructor(
-            context: PresenterContext, @LayoutRes layout: Int, parent: ViewGroup?
+            context: PresenterDelegate, @LayoutRes layout: Int, parent: ViewGroup?
     ) : super(context, layout, parent)
 
     private val children = ArrayList<Presenter>()

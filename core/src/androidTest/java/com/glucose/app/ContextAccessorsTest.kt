@@ -21,7 +21,7 @@ class ContextAccessorsTest {
 
     @Test
     fun contextAccessors_validActivityAccess() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val activity by ParentActivity(EmptyActivity::class.java)
         }
         assertEquals(activityRule.activity, p.activity)
@@ -33,7 +33,7 @@ class ContextAccessorsTest {
 
     @Test
     fun contextAccessors_invalidActivityAccess() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val activity by ParentActivity(OtherActivity::class.java)
         }
         assertFailsWith<ClassCastException> {
@@ -43,7 +43,7 @@ class ContextAccessorsTest {
 
     @Test
     fun contextAccessors_validApplicationAccess() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val app by ParentApp(Application::class.java)
         }
         assertEquals(activityRule.activity.application, p.app)
@@ -53,7 +53,7 @@ class ContextAccessorsTest {
 
     @Test
     fun contextAccessors_invalidApplicationAccess() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val app by ParentApp(OtherApp::class.java)
         }
         assertFailsWith<ClassCastException> {

@@ -13,11 +13,11 @@ import java.util.*
  *
  * PresenterFactory first looks for a registered constructor (see [register]).
  * If no such constructor exists, it will try to find a constructor
- * with two parameters ([PresenterContext], [ViewGroup]?) using reflection.
+ * with two parameters ([PresenterHost], [ViewGroup]?) using reflection.
  * If no such constructor is found, it will throw an [IllegalStateException].
  *
  * PresenterFactory will try to cache detached [Presenter] instances. To
- * ensure this mechanism works properly, it relies on [PresenterContext]
+ * ensure this mechanism works properly, it relies on [PresenterHost]
  * to provide appropriate callbacks for detached presenters. To prevent this
  * behavior, use [Presenter.canBeReused].
  *
@@ -25,7 +25,7 @@ import java.util.*
  * and at the time of destruction checks if all of them were properly
  * detached. This way you can detect leaked presenters.
  *
- * @see PresenterContext
+ * @see PresenterHost
  */
 @MainThread
 open class PresenterFactory(private val context: PresenterHost) {

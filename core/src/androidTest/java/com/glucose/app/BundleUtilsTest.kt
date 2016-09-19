@@ -23,7 +23,7 @@ class BundleUtilsTest {
 
     @Test
     fun bundleUtils_nativeArguments() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val boolArgument by NativeArgument(false, booleanBundler)
             val byteArgument by NativeArgument(-1, byteBundler)
             val charArgument by NativeArgument('a', charBundler)
@@ -154,7 +154,7 @@ class BundleUtilsTest {
 
     @Test
     fun bundleUtils_requiredArguments() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val charSequenceArgument by Argument(charSequenceBundler)
             val stringArgument by Argument(stringBundler)
             val bundleArgument by Argument(bundleBundler)
@@ -288,7 +288,7 @@ class BundleUtilsTest {
 
     @Test
     fun bundleUtils_optionalArgument() {
-        val p = object : PresenterFactoryTest.SimplePresenter(host) {
+        val p = object : SimplePresenter(host) {
             val optionalArgument by OptionalArgument(stringBundler)
             var optionalState by OptionalState(stringBundler)
         }

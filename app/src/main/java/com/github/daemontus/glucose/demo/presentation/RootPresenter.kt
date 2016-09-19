@@ -10,7 +10,7 @@ import com.github.daemontus.glucose.demo.presentation.util.Duration
 import com.github.daemontus.glucose.demo.presentation.util.MultiStateButton
 import com.github.daemontus.glucose.demo.presentation.util.finishAnimation
 import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterDelegate
 import com.glucose.app.PresenterGroup
 import com.glucose.app.presenter.*
 import com.glucose.util.asResult
@@ -19,7 +19,7 @@ import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 
 
-class RootPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
+class RootPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
 
     val startButton = findView<MultiStateButton>(R.id.start_action_button).apply {
         this.setOnClickListener {

@@ -4,8 +4,6 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
-import android.view.View
-import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.isAlive
 import org.junit.Rule
@@ -188,29 +186,4 @@ class PresenterFactoryTest {
         factory.onDestroy()
     }
 
-    open class SimplePresenter(host: PresenterHost, val flag: Boolean = true)
-        : Presenter(host, View(host.activity)) {
-
-        override val canBeReused: Boolean = flag
-
-        //reflection constructor
-        @Suppress("unused")
-        constructor(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : this(host, true)
-
-    }
-
-    class NoReflectionPresenter(host: PresenterHost) : Presenter(host, View(host.activity))
-
-    class CanChangeConfiguration(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : Presenter(host, View(host.activity)) {
-
-        var config: Configuration? = null
-
-        override fun onConfigurationChanged(newConfig: Configuration) {
-            super.onConfigurationChanged(newConfig)
-            config = newConfig
-        }
-    }
-    class CantChangeConfiguration(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : Presenter(host, View(host.activity)) {
-        override val canChangeConfiguration: Boolean = false
-    }
 }
