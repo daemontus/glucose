@@ -16,6 +16,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import rx.Observable
+import rx.subjects.PublishSubject
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -264,6 +266,58 @@ class PresenterTest {
         assertFailsWith<LifecycleException> {
             p.onConfigurationChanged(Configuration())
         }
+    }
+
+    @Test
+    fun presenter_internalLifecycleBounds() {
+        val lifecycle = SimplePresenter(host, null)
+        val subject = PublishSubject.create<Int>()
+        val takeUntilDestroy = lifecycle.run {
+            subject.takeUntil(DESTROY).replay()
+        }
+        takeUntilDestroy.connect()
+        val takeWhileAlive = lifecycle.run {
+            subject.takeWhileIn(Lifecycle.State.ALIVE).replay()
+        }
+        takeWhileAlive.connect()
+        val untilDestroy = ArrayList<Int>()
+        lifecycle.apply {
+            subject.subscribe { untilDestroy.add(it) }.until(DESTROY)
+        }
+        val whileAlive = ArrayList<Int>()
+        lifecycle.apply {
+            subject.whileIn(Lifecycle.State.ALIVE).subscribe { whileAlive.add(it) }
+        }
+        subject.onNext(1)
+        lifecycle.performAttach(Bundle())
+        subject.onNext(2)
+        lifecycle.performStart()
+        subject.onNext(3)
+        lifecycle.performStop()
+        subject.onNext(4)
+        lifecycle.performDetach()
+        subject.onNext(5)
+        lifecycle.performDestroy()
+        subject.onNext(6)
+        val expected = listOf(1,2,3,4,5)
+        assertEquals(expected, takeUntilDestroy.toBlocking().toIterable().toList())
+        assertEquals(expected, takeWhileAlive.toBlocking().toIterable().toList())
+        assertEquals(expected, untilDestroy)
+        assertEquals(expected, whileAlive)
+    }
+
+    @Test
+    fun presenter_miscActionHost() {
+        val p = SimplePresenter(host, null)
+        p.performAttach(Bundle())
+        p.apply {
+            assertEquals(listOf(1, 2, 3), Observable.just(1, 2, 3)
+                    .postToThis().toBlocking().toIterable().toList())
+        }
+        assertEquals(listOf(1, 2, 3), Observable.just(1, 2, 3)
+                .compose(p.asTransformer()).toBlocking().toIterable().toList())
+        p.performDetach()
+        p.performDestroy()
     }
 
 }

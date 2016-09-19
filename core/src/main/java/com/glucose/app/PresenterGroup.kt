@@ -37,11 +37,10 @@ open class PresenterGroup : Presenter {
         if (arguments.isRestored()) {
             val savedChildren = arguments.getParcelableArrayList<PresenterParcel>(CHILDREN_KEY)
             savedChildren.forEach {
-                val (clazz, state, parentId) = it
-                findOptionalView<ViewGroup>(parentId)?.let { parent ->
+                findOptionalView<ViewGroup>(it.parentId)?.let { parent ->
                     //State probably has an outdated classloader.
-                    state.classLoader = it.javaClass.classLoader
-                    attach(parentId, Class.forName(clazz).asSubclass(Presenter::class.java), state)
+                    it.state.classLoader = it.javaClass.classLoader
+                    attach(it.parentId, Class.forName(it.clazz).asSubclass(Presenter::class.java), it.state)
                 }
             }
             //this should ensure that children that were not restored will be garbage collected
@@ -133,12 +132,12 @@ open class PresenterGroup : Presenter {
             //We have to call it on all children, because even if we drop this bundle, some
             //deeper child might save itself to the container
             val childState = PresenterParcel(
-                    it.javaClass.name, it.saveHierarchyState(container)
+                    it.javaClass.name, it.saveHierarchyState(container),
+                    (it.view.parent as View).id
             )
             if (it.canReattachAfterStateChange) {
-                val parent = it.view.parent as View
-                if (parent.id != View.NO_ID) {
-                    childrenList.add(childState.copy(parentId = parent.id))
+                if (childState.parentId != View.NO_ID) {
+                    childrenList.add(childState)
                 }
             }
         }

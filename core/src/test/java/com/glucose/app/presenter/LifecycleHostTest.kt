@@ -426,77 +426,42 @@ class LifecycleHostTest {
             subject.whileIn(lifecycle, DESTROYED).subscribe()
         }
     }
-/*
+
     @Test
-    fun lifecycleHost_boundSubscriptionTest() {
-        //these simple observables are technically synchronous, so we don't have to wait.
+    fun lifecycleHost_internalLifecycleBounds() {
+        val subject = PublishSubject.create<Int>()
+        val takeUntilDestroy = lifecycle.run {
+            subject.takeUntil(DESTROY).replay()
+        }
+        takeUntilDestroy.connect()
+        val takeWhileAlive = lifecycle.run {
+            subject.takeWhileIn(ALIVE).replay()
+        }
+        takeWhileAlive.connect()
+        val untilDestroy = ArrayList<Int>()
+        lifecycle.apply {
+            subject.subscribe { untilDestroy.add(it) }.until(DESTROY)
+        }
+        val whileAlive = ArrayList<Int>()
+        lifecycle.apply {
+            subject.whileIn(ALIVE).subscribe { whileAlive.add(it) }
+        }
+        subject.onNext(1)
+        lifecycle.state = ATTACHED
+        subject.onNext(2)
+        lifecycle.state = STARTED
+        subject.onNext(3)
+        lifecycle.state = ATTACHED
+        subject.onNext(4)
+        lifecycle.state = ALIVE
+        subject.onNext(5)
+        lifecycle.state = DESTROYED
+        subject.onNext(6)
+        val expected = listOf(1,2,3,4,5)
+        assertEquals(expected, takeUntilDestroy.toBlocking().toIterable().toList())
+        assertEquals(expected, takeWhileAlive.toBlocking().toIterable().toList())
+        assertEquals(expected, untilDestroy)
+        assertEquals(expected, whileAlive)
+    }
 
-        val e = IllegalStateException()
-        val items = Observable.just(1,2,3)
-        val error = Observable.error<Int>(e)
-        val itemsBound = BoundSubscription(items, Lifecycle.State.ALIVE, lifecycle)
-        val errorBound = BoundSubscription(error, Lifecycle.State.ALIVE, lifecycle)
-
-        var sawItems = listOf<Int>()
-        var sawError: Throwable? = null
-        itemsBound.subscribe({ sawItems += it}, { sawError = it })
-        assertEquals(null, sawError)
-        assertEquals(listOf(1,2,3), sawItems)
-
-        sawItems = listOf<Int>()
-        sawError = null
-        errorBound.subscribe({ sawItems += it}, { sawError = it })
-        assertEquals(e, sawError)
-        assertEquals(listOf(), sawItems)
-
-        sawItems = listOf<Int>()
-        sawError = null
-        var completed = false
-        itemsBound.subscribe({ sawItems += it}, { sawError = it }, { completed = true })
-        assertEquals(null, sawError)
-        assertEquals(listOf(1,2,3), sawItems)
-        assertEquals(true, completed)
-
-        sawItems = listOf<Int>()
-        sawError = null
-        completed = false
-        error.subscribe(object : Observer<Int> {
-            override fun onNext(t: Int) {
-                sawItems += t
-            }
-
-            override fun onCompleted() {
-                completed = true
-            }
-
-            override fun onError(e: Throwable?) {
-                sawError = e
-            }
-
-        })
-        assertEquals(e, sawError)
-        assertEquals(listOf(), sawItems)
-        assertEquals(true, completed)
-
-        sawItems = listOf<Int>()
-        sawError = null
-        completed = false
-        error.subscribe(object : Subscriber<Int>() {
-            override fun onError(e: Throwable?) {
-                sawError = e
-            }
-
-            override fun onNext(t: Int) {
-                sawItems += t
-            }
-
-            override fun onCompleted() {
-                completed = true
-            }
-
-        })
-        assertEquals(e, sawError)
-        assertEquals(listOf(), sawItems)
-        assertEquals(true, completed)
-    }*/
 }
