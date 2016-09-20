@@ -1,3 +1,7 @@
+dependencies:
+    pre:
+        - cp accepted_licenses/* $ANDROID_HOME/licenses/
+
 test:
   override:
     # start the emulator
