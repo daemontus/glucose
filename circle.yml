@@ -1,5 +1,6 @@
 dependencies:
     pre:
+        - mkdir -p $ANDROID_HOME/licenses/
         - cp accepted_licenses/* $ANDROID_HOME/licenses/
 
 test:
