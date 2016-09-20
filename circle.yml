@@ -2,6 +2,7 @@ dependencies:
     pre:
         - mkdir -p $ANDROID_HOME/licenses/
         - cp accepted_licenses/* $ANDROID_HOME/licenses/
+        - echo y | android update sdk --no-ui --all --filter "android-24","build-tools-24.0.2","extra-android-m2repository"
 
 test:
   override:
