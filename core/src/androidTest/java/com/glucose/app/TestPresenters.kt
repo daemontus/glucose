@@ -5,7 +5,9 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import com.glucose.app.presenter.NativeArgument
 import com.glucose.app.presenter.NativeState
+import com.glucose.app.presenter.booleanBundler
 import com.glucose.app.presenter.intBundler
 import kotlin.test.assertTrue
 
@@ -89,6 +91,8 @@ class PresenterWithState(host: PresenterHost, @Suppress("UNUSED_PARAMETER") pare
 
 class LifecycleObservingPresenter(host: PresenterHost)
 : Presenter(host, View(host.activity)) {
+
+    val goBack by NativeArgument(false, booleanBundler)
 
     private var attached = false
 

@@ -3,6 +3,7 @@
 
     <application>
         <activity android:name="com.glucose.app.EmptyActivity"/>
+        <activity android:name="com.glucose.app.LifecycleObservingActivity"/>
     </application>
 
 </manifest>
