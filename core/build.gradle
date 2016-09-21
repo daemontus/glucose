@@ -36,7 +36,7 @@ android {
     }
 }
 
-com.android.ddmlib.DdmPreferences.setTimeOut(600000)
+com.android.ddmlib.DdmPreferences.setTimeOut(1200000)
 
 
 dependencies {

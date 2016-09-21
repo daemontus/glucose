@@ -14,7 +14,7 @@ test:
     - circle-android wait-for-boot
     # run tests  against the emulator.
     #- ./gradlew connectedAndroidTest
-    - ADB_INSTALL_TIMEOUT=10 ./gradlew createDebugCoverageReport jacocoTestReport
+    - ADB_INSTALL_TIMEOUT=20 ./gradlew createDebugCoverageReport jacocoTestReport
     #- ./gradlew createDebugCoverageReport jacocoTestReport
     # copy the build outputs to artifacts
     #- cp -r my-project/build/outputs $CIRCLE_ARTIFACTS
