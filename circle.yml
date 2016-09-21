@@ -15,7 +15,7 @@ test:
     # run tests  against the emulator.
     #- ./gradlew connectedAndroidTest
     - ADB_INSTALL_TIMEOUT=10 ./gradlew createDebugCoverageReport jacocoTestReport
-      timeout: 360
+        timeout: 360
     #- ./gradlew createDebugCoverageReport jacocoTestReport
     # copy the build outputs to artifacts
     #- cp -r my-project/build/outputs $CIRCLE_ARTIFACTS
