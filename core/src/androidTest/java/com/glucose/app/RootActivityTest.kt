@@ -11,7 +11,7 @@ import rx.android.schedulers.AndroidSchedulers
 
 @RunWith(AndroidJUnit4::class)
 class RootActivityTest {
-
+/*
     @Rule @JvmField
     val activityRule: ActivityTestRule<LifecycleObservingActivity> = ActivityTestRule(LifecycleObservingActivity::class.java)
 
@@ -70,5 +70,5 @@ class RootActivityTest {
                 .toBlocking().first()
     }
 
-
+*/
 }
