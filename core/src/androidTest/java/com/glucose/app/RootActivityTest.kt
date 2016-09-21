@@ -8,7 +8,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
-
+/*
 @RunWith(AndroidJUnit4::class)
 class RootActivityTest {
 /*
@@ -71,4 +71,4 @@ class RootActivityTest {
     }
 
 */
-}
+}*/
