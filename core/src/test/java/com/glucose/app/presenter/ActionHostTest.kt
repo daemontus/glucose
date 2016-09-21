@@ -148,8 +148,10 @@ class ActionHostTest {
             a1.subscribe()
             val s2 = a2.subscribe()
             s2.unsubscribe()
-            assertFalse(a1.isEmpty.toBlocking().first())
-            assertTrue(a2.isEmpty.toBlocking().first())
+            //We somehow have to make sure that the termination notification has been delivered
+            //for a1
+            assertFalse(a1.isEmpty.toBlocking().last())
+            assertTrue(a2.isEmpty.toBlocking().last())
             actions.stopProcessingActions()
         }
     }
