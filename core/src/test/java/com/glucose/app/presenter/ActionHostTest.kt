@@ -138,6 +138,7 @@ class ActionHostTest {
         }
     }
 
+    /*
     @Test
     fun actionDelegate_removeInQueue() {
         kotlin.repeat(10) {
@@ -154,7 +155,7 @@ class ActionHostTest {
             assertTrue(a2.isEmpty.toBlocking().last())
             actions.stopProcessingActions()
         }
-    }
+    }*/
 
     @Test
     fun actionDelegate_capacityOverflow() {
