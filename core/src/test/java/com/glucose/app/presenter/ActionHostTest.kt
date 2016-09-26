@@ -143,7 +143,6 @@ class ActionHostTest {
     @Test
     fun actionDelegate_removeInQueue() {
         kotlin.repeat(10) {
-            println(it)
             actions.startProcessingActions()
             val a1 = actions.post(Observable.just(Unit)
                     .delay(100, TimeUnit.MILLISECONDS))
