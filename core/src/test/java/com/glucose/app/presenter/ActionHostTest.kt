@@ -154,7 +154,7 @@ class ActionHostTest {
             assertTrue(a2.isEmpty.toBlocking().last())
             //We somehow have to make sure that the termination notification has been delivered
             //for a1 before the stopProcessingActions is called.
-            Thread.sleep(20)
+            Thread.sleep(100)
             actions.stopProcessingActions()
         }
     }
