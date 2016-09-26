@@ -1,24 +1,20 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.test.rule.ActivityTestRule
-import android.support.test.runner.AndroidJUnit4
-import com.glucose.app.presenter.LifecycleException
-import com.glucose.app.presenter.isAlive
-import org.junit.Rule
+import com.github.daemontus.glucose.core.BuildConfig
+import com.glucose.app.*
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.*
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class PresenterFactoryTest {
 
-
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
-
-    private val host = MockPresenterHost(activityRule)
+    private val host = MockPresenterHost(setupEmptyActivity())
     private val factory = host.factory
 
     @Test
@@ -111,7 +107,7 @@ class PresenterFactoryTest {
 
     @Test
     fun presenterFactory_foreignPresenter() {
-        val factory2 = PresenterFactory(MockPresenterHost(activityRule))
+        val factory2 = PresenterFactory(MockPresenterHost(setupEmptyActivity()))
         val p1 = factory.obtain(SimplePresenter::class.java, null)
         assertFailsWith(LifecycleException::class) {
             factory2.recycle(p1)

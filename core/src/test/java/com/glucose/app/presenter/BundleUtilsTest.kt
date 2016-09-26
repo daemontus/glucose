@@ -1,25 +1,23 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.test.rule.ActivityTestRule
-import android.support.test.runner.AndroidJUnit4
 import android.util.SparseArray
-import com.glucose.app.presenter.*
-import org.junit.Rule
+import com.github.daemontus.glucose.core.BuildConfig
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.Serializable
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-@RunWith(AndroidJUnit4::class)
+
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class BundleUtilsTest {
 
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
-
-    private val host = MockPresenterHost(activityRule)
+    private val host = MockPresenterHost(setupEmptyActivity())
 
     @Test
     fun bundleUtils_nativeArguments() {
@@ -63,12 +61,12 @@ class BundleUtilsTest {
         assertEquals(-1, p.intState)
         assertEquals(-1, p.longState)
         assertEquals(-1, p.shortState)
-        
+
         p.performDetach()
 
         //external values
         p.performAttach(
-                        ("boolArgument" with true)
+                ("boolArgument" with true)
                         and ("byteArgument" with 12.toByte())
                         and ("charArgument" with 'f')
                         and ("doubleArgument" with 12.0)
@@ -219,12 +217,12 @@ class BundleUtilsTest {
         assertFailsWith<NullPointerException> {
             assertEquals(parcelArray1, p.sparseParcelableState)
         }
-        
+
         p.performDetach()
-        
+
         //Valid arguments
-        p.performAttach(bundle("charSequenceArgument" with string1) and 
-                ("stringArgument" with string1) and 
+        p.performAttach(bundle("charSequenceArgument" with string1) and
+                ("stringArgument" with string1) and
                 ("bundleArgument" with bundle1) and
                 ("serializableArgument" with string1 as Serializable) and
                 ("parcelableArgument" with parcel1) and
@@ -234,7 +232,7 @@ class BundleUtilsTest {
                 ("bundleState" with bundle1) and
                 ("serializableState" with string1 as Serializable) and
                 ("parcelableState" with parcel1 as Parcelable) and
-                ("sparseParcelableState" with parcelArray1) 
+                ("sparseParcelableState" with parcelArray1)
         )
 
         assertEquals(string1, p.charSequenceArgument)

@@ -1,31 +1,31 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.content.ComponentCallbacks2
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.test.rule.ActivityTestRule
-import android.support.test.runner.AndroidJUnit4
 import android.util.SparseArray
-import com.glucose.app.presenter.*
+import com.github.daemontus.glucose.core.BuildConfig
+import com.glucose.app.*
 import com.glucose.util.newSyntheticId
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class PresenterDelegateTest {
 
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
+    private val activity = setupEmptyActivity()
 
     @Test
     fun presenterDelegate_invalidLifecycleCalls() {
-        val delegate = PresenterDelegate(activityRule.activity, SimplePresenter::class.java)
+        val delegate = PresenterDelegate(activity, SimplePresenter::class.java)
         //before on create
         assertFailsWith<LifecycleException> {
             delegate.onStart()
@@ -100,7 +100,7 @@ class PresenterDelegateTest {
 
     @Test
     fun presenterDelegate_validLifecycle() {
-        val host = PresenterDelegate(activityRule.activity, LifecycleObservingPresenter::class.java)
+        val host = PresenterDelegate(activity, LifecycleObservingPresenter::class.java)
         host.factory.register(LifecycleObservingPresenter::class.java) { host, parent -> LifecycleObservingPresenter(host) }
         host.onCreate(null)
         val root = host.root as LifecycleObservingPresenter
@@ -140,7 +140,7 @@ class PresenterDelegateTest {
 
     @Test
     fun presenterDelegate_trimMemory() {
-        val host = PresenterDelegate(activityRule.activity, SimplePresenter::class.java)
+        val host = PresenterDelegate(activity, SimplePresenter::class.java)
         host.onCreate(null)
         val a = host.factory.obtain(SimplePresenter::class.java, null)
         host.factory.recycle(a)
@@ -156,20 +156,20 @@ class PresenterDelegateTest {
 
     @Test
     fun presenterDelegate_preserveState() {
-        val host1 = PresenterDelegate(activityRule.activity, PresenterWithState::class.java)
+        val host1 = PresenterDelegate(activity, PresenterWithState::class.java)
         host1.onCreate(null)
         (host1.root as PresenterWithState).data = -32
         val state = Bundle()
         host1.onSaveInstanceState(state)
         host1.onDestroy()
-        val host2 = PresenterDelegate(activityRule.activity, PresenterWithState::class.java)
+        val host2 = PresenterDelegate(activity, PresenterWithState::class.java)
         host2.onCreate(state)
         host2.onDestroy()
     }
 
     @Test
     fun presenterDelegate_restoreBasedOnId() {
-        val host = PresenterDelegate(activityRule.activity, SimplePresenter::class.java)
+        val host = PresenterDelegate(activity, SimplePresenter::class.java)
         host.onCreate(null)
 
         //check state is restored
@@ -201,7 +201,7 @@ class PresenterDelegateTest {
 
     @Test
     fun presenterDelegate_configurationChange() {
-        val host = PresenterDelegate(activityRule.activity, CantChangeConfiguration::class.java)
+        val host = PresenterDelegate(activity, CantChangeConfiguration::class.java)
         host.onCreate(null)
         val root1 = host.root as CantChangeConfiguration
         root1.data = 87

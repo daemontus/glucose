@@ -1,12 +1,9 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.app.Activity
 import android.os.Bundle
 import android.widget.FrameLayout
-import com.glucose.app.presenter.NativeArgument
-import com.glucose.app.presenter.booleanBundler
-import com.glucose.app.presenter.bundle
-import com.glucose.app.presenter.with
+import com.glucose.app.RootActivity
 
 class EmptyActivity : Activity() {
 

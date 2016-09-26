@@ -1,17 +1,16 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.app.Activity
 import android.os.Bundle
-import android.support.test.rule.ActivityTestRule
 import android.util.SparseArray
 import android.view.ViewGroup
+import com.glucose.app.Presenter
+import com.glucose.app.PresenterFactory
+import com.glucose.app.PresenterHost
 
-class MockPresenterHost<A: Activity>(
-        private val activityRule: ActivityTestRule<A>
+class MockPresenterHost<out A: Activity>(
+        override val activity: A
 ) : PresenterHost {
-
-    override val activity: Activity
-        get() = activityRule.activity
 
     override val factory: PresenterFactory = PresenterFactory(this)
 

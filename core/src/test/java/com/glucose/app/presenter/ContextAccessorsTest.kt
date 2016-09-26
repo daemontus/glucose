@@ -1,22 +1,22 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.app.Activity
 import android.app.Application
-import android.support.test.rule.ActivityTestRule
-import com.glucose.app.presenter.ParentActivity
-import com.glucose.app.presenter.ParentApp
-import org.junit.Rule
+import com.github.daemontus.glucose.core.BuildConfig
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class ContextAccessorsTest {
 
+    private val activity = setupEmptyActivity()
 
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
-
-    private val host = MockPresenterHost(activityRule)
+    private val host = MockPresenterHost(activity)
 
 
     @Test
@@ -24,7 +24,7 @@ class ContextAccessorsTest {
         val p = object : SimplePresenter(host) {
             val activity by ParentActivity(EmptyActivity::class.java)
         }
-        assertEquals(activityRule.activity, p.activity)
+        assertEquals(activity, p.activity)
         //Reified methods don't work with Jacoco for some reason...
         //assertEquals(activityRule.activity, p.getActivity<EmptyActivity>())
     }
@@ -46,7 +46,7 @@ class ContextAccessorsTest {
         val p = object : SimplePresenter(host) {
             val app by ParentApp(Application::class.java)
         }
-        assertEquals(activityRule.activity.application, p.app)
+        assertEquals(activity.application, p.app)
     }
 
     class OtherApp : Application()
@@ -57,7 +57,7 @@ class ContextAccessorsTest {
             val app by ParentApp(OtherApp::class.java)
         }
         assertFailsWith<ClassCastException> {
-            assertEquals(activityRule.activity.application, p.app)
+            assertEquals(activity.application, p.app)
         }
     }
 

@@ -1,14 +1,12 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.app.presenter.NativeArgument
-import com.glucose.app.presenter.NativeState
-import com.glucose.app.presenter.booleanBundler
-import com.glucose.app.presenter.intBundler
+import com.glucose.app.Presenter
+import com.glucose.app.PresenterHost
 import kotlin.test.assertTrue
 
 class LifecycleTestingPresenter(
@@ -242,7 +240,7 @@ class LifecycleObservingPresenter(host: PresenterHost)
 
 
 open class SimplePresenter(host: PresenterHost, val flag: Boolean = true)
-    : Presenter(host, View(host.activity)) {
+: Presenter(host, View(host.activity)) {
 
     override val canBeReused: Boolean = flag
 

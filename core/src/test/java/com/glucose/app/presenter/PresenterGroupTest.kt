@@ -1,32 +1,35 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.test.rule.ActivityTestRule
-import android.support.test.runner.AndroidJUnit4
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import com.github.daemontus.glucose.core.test.R
-import com.glucose.app.presenter.*
+import com.github.daemontus.glucose.core.BuildConfig
+import com.github.daemontus.glucose.core.R
+import com.glucose.app.Presenter
+import com.glucose.app.PresenterDelegate
+import com.glucose.app.PresenterGroup
+import com.glucose.app.PresenterHost
 import com.glucose.util.newSyntheticId
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class PresenterGroupTest {
 
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
+    val activity = setupEmptyActivity()
 
     @Test
     fun presenterGroup_simpleLifecycle() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.factory.register(LifecycleObservingPresenter::class.java) { host, parent -> LifecycleObservingPresenter(host) }
         host.onCreate(null)
         val group = host.root as PresenterGroup
@@ -67,7 +70,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_onBackPressed() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as PresenterGroup
         val child = group.attach(R.id.inflated_view, GoBackPresenter::class.java)
@@ -82,7 +85,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_cleanUpWhenDetaching() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as PresenterGroup
         val child = group.attach(R.id.inflated_view, SimplePresenter::class.java)
@@ -94,7 +97,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_stateSaveAndRestore() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         group.attach(R.id.inflated_view, GoBackPresenter::class.java,
@@ -103,7 +106,7 @@ class PresenterGroupTest {
         group.attach(R.id.inflated_view, GoBackPresenter::class.java,
                 bundle(GoBackPresenter::goBack.name with 5)
         )
-        val genericContainer = FrameLayout(activityRule.activity)
+        val genericContainer = FrameLayout(activity)
         group.container.addView(genericContainer)
         group.attach(genericContainer, SimplePresenter::class.java,
                 bundle(Presenter::id.name with newSyntheticId())
@@ -112,7 +115,7 @@ class PresenterGroupTest {
             host.onSaveInstanceState(this)
         }
         host.onDestroy()
-        val host2 = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host2 = PresenterDelegate(activity, SimpleGroup::class.java)
         host2.onCreate(state)
         val group2 = host2.root as SimpleGroup
         assertEquals(2, group2.container.childCount)
@@ -126,7 +129,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_configChange() {
-        val host = PresenterDelegate(activityRule.activity, PresenterGroup::class.java)
+        val host = PresenterDelegate(activity, PresenterGroup::class.java)
         host.factory.register(PresenterGroup::class.java) { host, parent ->
             PresenterGroup(host, FrameLayout(host.activity))
         }
@@ -168,7 +171,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_invalidAdd() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         val p = host.factory.obtain(SimplePresenter::class.java, null)
@@ -180,7 +183,7 @@ class PresenterGroupTest {
         assertFailsWith<LifecycleException> {
             group.add(R.id.inflated_view, p2)
         }
-        val host2 = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host2 = PresenterDelegate(activity, SimpleGroup::class.java)
         host2.onCreate(null)
         val p3 = host2.attach(SimplePresenter::class.java)
         assertFailsWith<LifecycleException> {
@@ -193,7 +196,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_invalidRemove() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         val p = host.attach(SimplePresenter::class.java)
@@ -206,7 +209,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_childObservables() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         val childAdd = group.onChildAdd.replay()
@@ -224,7 +227,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_childObservablesRecursive() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         val childAdd = group.onChildAddRecursive.replay()
@@ -246,7 +249,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_findByParent() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val group = host.root as SimpleGroup
         val p1 = group.attach(R.id.inflated_view, GoBackPresenter::class.java,
@@ -255,7 +258,7 @@ class PresenterGroupTest {
         val p2 = group.attach(R.id.inflated_view, GoBackPresenter::class.java,
                 bundle(GoBackPresenter::goBack.name with 5)
         )
-        val genericContainer = FrameLayout(activityRule.activity)
+        val genericContainer = FrameLayout(activity)
         group.container.addView(genericContainer)
         val p3 = group.attach(genericContainer, SimplePresenter::class.java,
                 bundle(Presenter::id.name with newSyntheticId())
@@ -267,7 +270,7 @@ class PresenterGroupTest {
 
     @Test
     fun presenterGroup_findById() {
-        val host = PresenterDelegate(activityRule.activity, SimpleGroup::class.java)
+        val host = PresenterDelegate(activity, SimpleGroup::class.java)
         host.onCreate(null)
         val id1 = newSyntheticId()
         val id2 = newSyntheticId()

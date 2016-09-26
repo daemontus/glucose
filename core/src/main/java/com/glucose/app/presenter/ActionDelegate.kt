@@ -96,6 +96,10 @@ internal class ActionDelegate(
             if (active && activeSubscription == null && pendingActions.isNotEmpty()) {
                 val nextAction = pendingActions.remove()
                 activeAction = nextAction
+                //Warning: Calling subscribe here can initiate a chain of calls
+                //that will execute terminate/unsubscribe !before! the subscribe
+                //call returns, meaning that activeSubscription will be assigned
+                //something that is already terminated.
                 activeSubscription = nextAction.first
                         //make sure each action runs by default on the same scheduler
                         .subscribeOn(scheduler)
@@ -108,6 +112,12 @@ internal class ActionDelegate(
                                 takeNextAction()
                             }
                         }.asResult().subscribe()
+                //therefore we have to check that the action is still active!
+                //We don't have to update the activeAction, because that is already
+                //assigned and hence will be cleared correctly.
+                if (activeSubscription?.isUnsubscribed ?: false) {
+                    activeSubscription = null
+                }
             }
         }
     }

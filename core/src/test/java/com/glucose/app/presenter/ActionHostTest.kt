@@ -138,7 +138,7 @@ class ActionHostTest {
         }
     }
 
-    /*
+
     @Test
     fun actionDelegate_removeInQueue() {
         kotlin.repeat(10) {
@@ -150,12 +150,12 @@ class ActionHostTest {
             val s2 = a2.subscribe()
             s2.unsubscribe()
             //We somehow have to make sure that the termination notification has been delivered
-            //for a1
+            //for a1 before the stopProcessingActions is called.
             assertFalse(a1.isEmpty.toBlocking().last())
             assertTrue(a2.isEmpty.toBlocking().last())
             actions.stopProcessingActions()
         }
-    }*/
+    }
 
     @Test
     fun actionDelegate_capacityOverflow() {

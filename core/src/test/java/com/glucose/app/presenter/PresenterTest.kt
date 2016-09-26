@@ -1,20 +1,18 @@
-package com.glucose.app
+package com.glucose.app.presenter
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.support.test.rule.ActivityTestRule
-import android.support.test.runner.AndroidJUnit4
 import android.util.SparseArray
 import android.view.View
 import android.widget.FrameLayout
-import com.github.daemontus.glucose.core.test.R
-import com.glucose.app.presenter.CannotExecuteException
-import com.glucose.app.presenter.Lifecycle
+import com.github.daemontus.glucose.core.BuildConfig
+import com.github.daemontus.glucose.core.R
+import com.glucose.app.Presenter
 import com.glucose.app.presenter.Lifecycle.Event.*
-import com.glucose.app.presenter.LifecycleException
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import rx.Observable
 import rx.subjects.PublishSubject
 import java.util.*
@@ -23,18 +21,17 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class PresenterTest {
 
+    private val activity = setupEmptyActivity()
 
-    @Rule @JvmField
-    val activityRule: ActivityTestRule<EmptyActivity> = ActivityTestRule(EmptyActivity::class.java)
-
-    private val host = MockPresenterHost(activityRule)
+    private val host = MockPresenterHost(activity)
 
     @Test
     fun presenter_createWithArtificialView() {
-        val view = View(activityRule.activity)
+        val view = View(activity)
         val p = Presenter(host, view)
         assertEquals(view, p.view)
         assertEquals(host, p.host)
@@ -203,12 +200,12 @@ class PresenterTest {
         notificationLog.connect()
         var resumed = false
         val callback = { resumed = true }
-        p.addEventCallback(Lifecycle.Event.RESUME, callback)
+        p.addEventCallback(RESUME, callback)
         p.performAttach(Bundle())
         p.performStart()
         p.performResume()
         assertTrue(resumed)
-        assertFalse(p.removeEventCallback(Lifecycle.Event.RESUME, callback))
+        assertFalse(p.removeEventCallback(RESUME, callback))
         p.performPause()
         p.performStop()
         p.performDetach()
