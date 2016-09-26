@@ -64,7 +64,7 @@ internal class ActionDelegate(
                         .doOnUnsubscribe {
                             synchronized(this) {
                                 pendingActions.removeAll {
-                                    it.second == proxy
+                                    it == proxy
                                 }
                                 if (activeAction == proxy) {
                                     activeSubscription?.unsubscribe()
@@ -141,16 +141,19 @@ internal class ActionDelegate(
         synchronized(this) {
             if (!active) throw IllegalStateException("This host isn't started.")
             active = false
+            //first clear pending to make sure unsubscribe won't start executing them
+            pendingActions.forEach {
+                it.second.onError(CannotExecuteException("ActionHost is shutting down."))
+            }
+            pendingActions.clear()
             activeSubscription?.unsubscribe()
             activeAction?.second?.let { proxy ->
                 if (!proxy.hasCompleted() && !proxy.hasThrowable()) {
                     proxy.onError(PrematureTerminationException("ActionHost is shutting down."))
                 }
             }
-            pendingActions.forEach {
-                it.second.onError(CannotExecuteException("ActionHost is shutting down."))
-            }
-            pendingActions.clear()
+            activeSubscription = null
+            activeAction = null
         }
     }
 
