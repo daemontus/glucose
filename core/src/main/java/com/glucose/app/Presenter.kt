@@ -11,18 +11,18 @@ import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
 import com.glucose.app.presenter.Lifecycle.State.*
-import com.glucose.util.lifecycleLog
 import rx.Observable
-import rx.subjects.PublishSubject
-import java.util.*
+import rx.android.schedulers.AndroidSchedulers
+import rx.subjects.ReplaySubject
 
 /**
- * Presenter is responsible for a single, possibly modular part of UI.
+ * Presenter is a class responsible for a single, possibly modular part of UI.
+ *
  * Presenter should be completely isolated in terms of state from it's parent
  * (therefore it doesn't even have a reference to it), however, it can access
- * global data by means of a [PresenterContext].
+ * global data by means of a [PresenterHost].
  *
- * Presenter is responsible for managing it's child Presenters and relationships
+ * Presenter is responsible for managing it's child presenters and relationships
  * between them (see [PresenterGroup]).
  *
  * Presenter lifecycle is similar to that of an [Activity], but instead of the
@@ -67,17 +67,23 @@ import java.util.*
  *
  * ### Presenter as [ActionHost]
  *
- * Each presenter can be used as an [ActionHost]. Internally, it uses [MainThreadActionHost]
- * so that each action is executed on main thread by default. Action execution is started after
+ * Each presenter can be used as an [ActionHost]. By default each action is subscribed on the main
+ * thread (unless the action is configured otherwise). Action execution is started after
  * the call to [onAttach] (to ensure that all state has been restored) and stopped
  * before the call to [onDetach] (to ensure state isn't changing any more). Actions posted
  * outside of this window are thrown away with an error.
+ *
+ * [Presenter] uses [ReplaySubject] as the proxy observable. Hence multiple
+ * subscriptions to the proxy observables will not execute actions multiple times and will
+ * always return the same results.
+ * However, results of each action are cached, so try to avoid actions emitting
+ * a high amount of items.
  *
  * @see [ActionHost]
  * @see [LifecycleHost]
  */
 open class Presenter(
-        context: PresenterContext, val view: View
+        host: PresenterHost, val view: View
 ) : LifecycleHost, ActionHost {
 
     companion object {
@@ -85,129 +91,209 @@ open class Presenter(
     }
 
     /**
-     * Create a Presenter with view initialized from layout resource.
+     * Create a Presenter with view inflated from layout resource.
      */
-    constructor(context: PresenterContext, @LayoutRes layout: Int, parent: ViewGroup?) : this(
+    constructor(context: PresenterHost, @LayoutRes layout: Int, parent: ViewGroup?) : this(
             context, LayoutInflater.from(context.activity).inflate(layout, parent, false)
     )
 
-    var arguments: Bundle = Bundle()
-        private set
-        get() {
-            if (!this.isAttached)
-                throw LifecycleException("Presenter is not attached. Cannot access arguments.")
-            else return field
-        }
+    /**************** External configuration properties (parent/user sets this) *******************/
 
-    val ctx: PresenterContext = context
-        get() {
-            if (this.isDestroyed)
-                throw LifecycleException("Accessing Context on a destroyed presenter.")
-            return field
-        }
+    private var _arguments: Bundle? = null
+    private var _host: PresenterHost? = host
 
-    val id: Int by NativeArgument(intBundler, View.NO_ID)
-    val canRecreateFromState: Boolean by NativeArgument(booleanBundler, true)
+    /**
+     * The state [Bundle] of this presenter. Available when [state] >= ATTACHED,
+     * otherwise throws a [LifecycleException].
+     */
+    val arguments: Bundle
+        get() = _arguments ?: throw LifecycleException("Presenter is $state and has no arguments.")
+
+    /**
+     * The [PresenterHost] (context) of this presenter. Available when
+     * [state] >= ALIVE, otherwise throws a [LifecycleException].
+     */
+    val host: PresenterHost
+        get() = _host ?: throw LifecycleException("Presenter is $state and is disconnected from it's host.")
+
+    /**
+     * The id of this presenter (should be unique within the whole tree). It is used to identify
+     * the state bundle when restoring the presenter hierarchy. For more info, see main description.
+     *
+     * This is a part of the presenters state and hence can be modified using the arguments bundle.
+     * Default: [View.NO_ID]
+     */
+    val id: Int by NativeArgument(View.NO_ID, intBundler)
+
+    /**
+     * This property indicates whether the presenter can be attached automatically when the
+     * hierarchy is being restored. Use this property for presenters that are managed
+     * by an adapter or when the amount of recreated presenters is too high for smooth start.
+     *
+     * This is a part of the presenters state and hence can be modified using the arguments bundle.
+     * Default: true
+     */
+    val canReattachAfterStateChange: Boolean by NativeArgument(true, booleanBundler)
+
+    /**************** Internal configuration properties (parent shouldn't modify these) ***********/
+
+    /**
+     * Override this property to modify action queue size of this presenter.
+     * Note that this value is used only once during creation (you can't change the host capacity
+     * dynamically).
+     *
+     * Default: 5
+     */
+    open val actionHostCapacity = 5
+
+    /**
+     * Override this property to indicate that the presenter can't change configuration
+     * and should be recreated in case of a configuration change.
+     *
+     * Default: true
+     */
+    open val canChangeConfiguration = true
+
+    /**
+     * Override this property to indicate that the presenter can't be reused and should
+     * be destroyed as soon as it is recycled.
+     *
+     * Default: true
+     */
+    open val canBeReused = true
 
     /******************** Methods driving the lifecycle of this Presenter. ************************/
 
     private inline fun assertLifecycleChange(
             from: Lifecycle.State, to: Lifecycle.State, transition: () -> Unit
     ) {
-        if (state != from) throw IllegalStateException("Something is wrong with the lifecycle!")
+        if (state != from) throw LifecycleException("Unexpected transition. Expected $from -> $to. Got $state -> $to instead.")
         transition()
-        if (state != to) throw IllegalStateException("Something is wrong with the lifecycle! Maybe forgot to call super?")
+        if (state != to) throw LifecycleException("Unexpected transition. Expected $from -> $to. Got $state -> $to instead. Maybe forgot to call super?")
     }
 
-    internal fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
+    // perform* methods are public so that other people can implement their own PresenterHosts
+
+    /**
+     * Perform a lifecycle change from ALIVE to ATTACHED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performAttach(arguments: Bundle) = assertLifecycleChange(ALIVE, ATTACHED) {
         onAttach(arguments)
         actionHost.startProcessingActions()
     }
 
-    internal fun performStart() = assertLifecycleChange(ATTACHED, STARTED) { onStart() }
+    /**
+     * Perform a lifecycle change from ATTACHED to STARTED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performStart() = assertLifecycleChange(ATTACHED, STARTED) { onStart() }
 
-    internal fun performResume() = assertLifecycleChange(STARTED, RESUMED) { onResume() }
+    /**
+     * Perform a lifecycle change from STARTED to RESUMED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performResume() = assertLifecycleChange(STARTED, RESUMED) { onResume() }
 
-    internal fun performPause() = assertLifecycleChange(RESUMED, STARTED) { onPause() }
+    /**
+     * Perform a lifecycle change from RESUMED to STARTED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performPause() = assertLifecycleChange(RESUMED, STARTED) { onPause() }
 
-    internal fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
+    /**
+     * Perform a lifecycle change from STARTED to ATTACHED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performStop() = assertLifecycleChange(STARTED, ATTACHED) { onStop() }
 
-    internal fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
+    /**
+     * Perform a lifecycle change from ATTACHED to ALIVE.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performDetach() = assertLifecycleChange(ATTACHED, ALIVE) {
         actionHost.stopProcessingActions()
         onDetach()
     }
 
-    internal fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
+    /**
+     * Perform a lifecycle change from ALIVE to DESTROYED.
+     * Note: Use with caution. (You probably don't need this unless you are making a custom
+     * [PresenterHost] or [PresenterGroup])
+     */
+    fun performDestroy() = assertLifecycleChange(ALIVE, DESTROYED) { onDestroy() }
 
+    /**
+     * Called when this presenter is attached to the main tree.
+     *
+     * Here you should initialize the presenter based on its arguments.
+     *
+     * Note that if [canBeReused] is false, this will be called only once.
+     *
+     * @see canBeReused
+     */
     protected open fun onAttach(arguments: Bundle) {
-        lifecycleLog("onAttach")
-        this.arguments = arguments
-        myState = ATTACHED
-        onLifecycleEvent(Lifecycle.Event.ATTACH)
+        _arguments = arguments
+        lifecycleHost.state = ATTACHED
     }
 
     /**
      * @see Activity.onStart
      */
     protected open fun onStart() {
-        lifecycleLog("onStart")
-        myState = STARTED
-        onLifecycleEvent(Lifecycle.Event.START)
+        lifecycleHost.state = STARTED
     }
 
     /**
      * @see Activity.onResume
      */
     protected open fun onResume() {
-        lifecycleLog("onResume")
-        myState = RESUMED
-        onLifecycleEvent(Lifecycle.Event.RESUME)
+        lifecycleHost.state = RESUMED
     }
 
     /**
      * @see Activity.onPause
      */
     protected open fun onPause() {
-        onLifecycleEvent(Lifecycle.Event.PAUSE)
-        myState = STARTED
-        lifecycleLog("onPause")
+        lifecycleHost.state = STARTED
     }
 
     /**
      * @see Activity.onStop
      */
     protected open fun onStop() {
-        onLifecycleEvent(Lifecycle.Event.STOP)
-        myState = ATTACHED
-        lifecycleLog("onStop")
+        lifecycleHost.state = ATTACHED
     }
 
+    /**
+     * Called when this presenter is detached from the main tree.
+     *
+     * Here you should clean up all argument-based variables (and view state)
+     * to make sure next attach goes smoothly.
+     *
+     * If [canBeReused] is false, this will be called only once and you don't
+     * have to worry about next attach.
+     *
+     * @see canBeReused
+     */
     protected open fun onDetach() {
-        onLifecycleEvent(Lifecycle.Event.DETACH)
-        myState = ALIVE
-        arguments = Bundle()    //drop old arguments
-        lifecycleLog("onDetach")
+        lifecycleHost.state = ALIVE
+        _arguments = null
     }
 
     /**
      * @see Activity.onDestroy
      */
     protected open fun onDestroy() {
-        onLifecycleEvent(Lifecycle.Event.DESTROY)
-        myState = DESTROYED
-        lifecycleLog("onDestroy")
+        lifecycleHost.state = DESTROYED
+        _host = null
     }
-
-    /**
-     * True if this presenter can handle a configuration change.
-     */
-    open val canChangeConfiguration = true
-
-    /**
-     * True if this presenter can be used again after being recycled.
-     * If false, it is guaranteed to be attached only once.
-     */
-    open val canBeReused = true
 
     /**
      * Called when this presenter changes configuration.
@@ -220,19 +306,15 @@ open class Presenter(
      */
     open fun onConfigurationChanged(newConfig: Configuration) {
         if (!canChangeConfiguration) {
-            throw IllegalStateException("$this cannot change configuration and should have been destroyed.")
+            throw LifecycleException("$this cannot change configuration and should have been destroyed.")
         }
-        ctx.factory.cleanUpBeforeConfigChange()
-        lifecycleLog("onConfigurationChanged")
+        host.factory.prepareConfigChange()
     }
 
     /**
-     * Notification to all attached presenters that activity has returned a result.
-     *
      * @see Activity.onActivityResult
      */
     open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
-        lifecycleLog("onActivityResult $resultCode for request $requestCode")
     }
 
     /**
@@ -246,10 +328,10 @@ open class Presenter(
     /**
      * Save state of this [Presenter] and all it's children.
      *
-     * Given container holds a flattened id <-> state "map" and returned
+     * Given container holds a flattened parent-id <-> child-state "map" and returned
      * bundle holds a state tree. This means that child bundles can be
-     * present twice - once if their parent view has an ID and second time
-     * if they have an ID.
+     * present twice - once if their parent view has an ID (in container) and second time
+     * if they have an ID (in bundle).
      */
     open fun saveHierarchyState(container: SparseArray<Bundle>): Bundle {
         val state = Bundle()
@@ -266,6 +348,7 @@ open class Presenter(
      * For more info about state preservation, see class description.
      *
      * @see Activity.onSaveInstanceState
+     * @see Presenter.saveHierarchyState
      */
     open fun onSaveInstanceState(out: Bundle) {
         out.putAll(arguments)   //make a copy of the current state
@@ -286,42 +369,31 @@ open class Presenter(
 
     /******************** [LifecycleHost] implementation ******************************************/
 
-    private val lifecycleEventSubject = PublishSubject.create<Lifecycle.Event>()
-    override val lifecycleEvents: Observable<Lifecycle.Event> = lifecycleEventSubject
+    private val lifecycleHost = LifecycleDelegate()
 
-    private var myState: Lifecycle.State = Lifecycle.State.ALIVE
     override val state: Lifecycle.State
-        get() = myState
+        get() = lifecycleHost.state
 
-    private val lifecycleCallbacks = ArrayList<Pair<Lifecycle.Event, () -> Unit>>()
+    override val lifecycleEvents: Observable<Lifecycle.Event>
+        get() = lifecycleHost.lifecycleEvents
 
     /**
      * @see [LifecycleHost.addEventCallback]
      */
     override fun addEventCallback(event: Lifecycle.Event, callback: () -> Unit) {
-        lifecycleCallbacks.add(event to callback)
+        lifecycleHost.addEventCallback(event, callback)
     }
 
     /**
      * @see [LifecycleHost.removeEventCallback]
      */
     override fun removeEventCallback(event: Lifecycle.Event, callback: () -> Unit): Boolean {
-        return lifecycleCallbacks.remove(event to callback)
-    }
-
-    /**
-     * Ensures callbacks and notifications regarding a Lifecycle event are dispatched.
-     */
-    private fun onLifecycleEvent(event: Lifecycle.Event) {
-        val victims = lifecycleCallbacks.filter { it.first == event }
-        lifecycleCallbacks.removeAll(victims)
-        victims.forEach { it.second.invoke() }
-        lifecycleEventSubject.onNext(event)
+        return lifecycleHost.removeEventCallback(event, callback)
     }
 
     /******************** [ActionHost] implementation *********************************************/
 
-    private val actionHost = MainThreadActionHost()
+    private val actionHost = ActionDelegate(AndroidSchedulers.mainThread(), actionHostCapacity)
 
     /**
      * @see [ActionHost.post]

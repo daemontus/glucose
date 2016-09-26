@@ -13,20 +13,20 @@ import com.github.daemontus.glucose.demo.R
 import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterDelegate
 import com.glucose.app.presenter.findView
 import com.jakewharton.rxbinding.view.clicks
 import rx.Observer
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 
-class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
+class ShowListPresenter(context: PresenterDelegate, parent: ViewGroup?)
     : Presenter(context, R.layout.presenter_show_list, parent) {
 
     val showClickSubject: PublishSubject<Show> = PublishSubject.create<Show>()
 
     val showList = findView<RecyclerView>(R.id.show_list).apply {
-        this.layoutManager = LinearLayoutManager(ctx.activity)
+        this.layoutManager = LinearLayoutManager(host.activity)
     }
 
     val repository = ShowRepository()
@@ -35,13 +35,13 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
         super.onAttach(arguments)
         repository.getShows().observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                showList.adapter = ShowAdapter(it, ctx.activity, showClickSubject)
+                showList.adapter = ShowAdapter(it, host.activity, showClickSubject)
             }
     }
 
     class ShowAdapter(
             val items: List<Show>,
-            val ctx: Context,
+            val host: Context,
             val clickObserver: Observer<Show>
     ) : RecyclerView.Adapter<ShowAdapter.ShowHolder>() {
 
@@ -50,7 +50,7 @@ class ShowListPresenter(context: PresenterContext, parent: ViewGroup?)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ShowHolder
-                = ShowHolder(LayoutInflater.from(ctx).inflate(R.layout.item_show, parent, false), clickObserver)
+                = ShowHolder(LayoutInflater.from(host).inflate(R.layout.item_show, parent, false), clickObserver)
 
         override fun getItemCount(): Int {
             return items.size

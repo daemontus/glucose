@@ -1,14 +1,8 @@
 package com.glucose.app.presenter
 
 import android.os.Bundle
-import android.os.IBinder
-import android.os.Parcelable
-import android.util.Size
-import android.util.SizeF
 import android.view.View
 import com.glucose.app.Presenter
-import java.io.Serializable
-import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -19,57 +13,67 @@ fun Bundle.setRestored(restored: Boolean) = this.putBoolean(Presenter.IS_RESTORE
 fun Bundle.isFresh() = !this.isRestored()
 
 //Note: Presenter state is checked when accessing arguments, so whatever we do with them here is safe.
+//Note: State and Argument don't check for value presence on attach, but on first access.
+//This is mainly because we don't have the property name until it is first accessed.
 
 class NativeArgument<out T>(
-        private val bundler: NativeBundler<T>,
-        private val default: T
+        private val default: T,
+        private val bundler: NativeBundler<T>
 ) : ReadOnlyProperty<Presenter, T> {
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
             = bundler.getter(thisRef.arguments, property.name, default)
 }
 
-class Argument<out T>(
-        private val bundler: Bundler<T>
-) : ReadOnlyProperty<Presenter, T> {
+class OptionalArgument<out T>(
+        private val bundler: ObjectBundler<T?>
+) : ReadOnlyProperty<Presenter, T?> {
 
-    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T?
             = bundler.getter(thisRef.arguments, property.name)
 
 }
 
-class RequiredArgument<out T>(
-        private val bundler: Bundler<T?>
+class Argument<out T>(
+        private val bundler: ObjectBundler<T?>
 ) : ReadOnlyProperty<Presenter, T> {
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
             = bundler.getter(thisRef.arguments, property.name) ?:
-            throw KotlinNullPointerException("Missing required argument for ${property.name}")
+            throw NullPointerException("Missing required argument for ${property.name}")
+}
+
+class NativeState<T>(
+        private val default: T,
+        private val bundler: NativeBundler<T>
+) : ReadWriteProperty<Presenter, T> {
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
+            = bundler.getter(thisRef.arguments, property.name, default)
+
+    override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
+            = bundler.setter(thisRef.arguments, property.name, value)
+
+}
+
+class OptionalState<T>(
+        private val bundler: ObjectBundler<T?>
+) : ReadWriteProperty<Presenter, T?> {
+
+    override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T?)
+            = bundler.setter(thisRef.arguments, property.name, value)
+
+    override fun getValue(thisRef: Presenter, property: KProperty<*>): T?
+            = bundler.getter(thisRef.arguments, property.name)
+
 }
 
 class State<T>(
-        private val bundler: Bundler<T>
+        private val bundler: ObjectBundler<T?>
 ) : ReadWriteProperty<Presenter, T> {
 
-    override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
-            = bundler.setter(thisRef.arguments, property.name, value)
-
-    override fun getValue(thisRef: Presenter, property: KProperty<*>): T
-            = bundler.getter(thisRef.arguments, property.name)
-
-}
-
-class RequiredState<T>(
-        private val bundler: Bundler<T?>
-) : ReadWriteProperty<Presenter, T> {
     override fun setValue(thisRef: Presenter, property: KProperty<*>, value: T)
             = bundler.setter(thisRef.arguments, property.name, value)
 
     override fun getValue(thisRef: Presenter, property: KProperty<*>): T
             = bundler.getter(thisRef.arguments, property.name) ?:
-            throw KotlinNullPointerException("Missing required state for ${property.name}")
+            throw NullPointerException("Missing required state for ${property.name}")
 
 }
-
-private inline fun <R> checkAttached(presenter: Presenter, name: String, action: () -> R): R
-        = if (presenter.isAttached) action() else {
-            throw LifecycleException("Accessing argument $name on a detached Presenter.")
-        }

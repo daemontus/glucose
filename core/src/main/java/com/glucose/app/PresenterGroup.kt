@@ -9,16 +9,13 @@ import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.*
-import com.glucose.util.lifecycleLog
 import com.glucose.util.newSyntheticId
 import rx.Observable
 import rx.subjects.PublishSubject
-import timber.log.Timber
 import java.util.*
 
 /**
- * Note: All children are restored synchronously when attaching. In case of a deep hierarchy,
- * this can cause frame drops.
+ * [PresenterGroup] is an extension of [Presenter] that can
  */
 open class PresenterGroup : Presenter {
 
@@ -26,10 +23,10 @@ open class PresenterGroup : Presenter {
         val CHILDREN_KEY = "glucose:presenter_children"
     }
 
-    constructor(context: PresenterContext, view: View) : super(context, view)
+    constructor(host: PresenterHost, view: View) : super(host, view)
     constructor(
-            context: PresenterContext, @LayoutRes layout: Int, parent: ViewGroup?
-    ) : super(context, layout, parent)
+            host: PresenterHost, @LayoutRes layout: Int, parent: ViewGroup?
+    ) : super(host, layout, parent)
 
     private val children = ArrayList<Presenter>()
 
@@ -40,12 +37,10 @@ open class PresenterGroup : Presenter {
         if (arguments.isRestored()) {
             val savedChildren = arguments.getParcelableArrayList<PresenterParcel>(CHILDREN_KEY)
             savedChildren.forEach {
-                val (clazz, state, parentId) = it
-                findOptionalView<ViewGroup>(parentId)?.let { parent ->
+                findOptionalView<ViewGroup>(it.parentId)?.let { parent ->
                     //State probably has an outdated classloader.
-                    state.classLoader = it.javaClass.classLoader
-                    @Suppress("UNCHECKED_CAST") //Assuming state info is valid, this should work
-                    attach(parentId, Class.forName(clazz) as Class<Presenter>, state)
+                    it.state.classLoader = it.javaClass.classLoader
+                    attach(it.parentId, Class.forName(it.clazz).asSubclass(Presenter::class.java), it.state)
                 }
             }
             //this should ensure that children that were not restored will be garbage collected
@@ -102,17 +97,12 @@ open class PresenterGroup : Presenter {
         val childStates = SparseArray<Pair<ViewGroup, ChildState>>()
         for (presenter in children.toList()) {  //make a copy
             if (!presenter.canChangeConfiguration) {
-                val parent = presenter.view.parent
-                if (parent is ViewGroup) {
-                    val replacementId = newSyntheticId()
-                    childStates.put(replacementId, Pair(parent, presenter.saveWholeState()))
-                    val index = parent.indexOfChild(presenter.view)
-                    detach(presenter)
-                    parent.addView(View(ctx.activity).apply { this.id = replacementId }, index)
-
-                } else {
-                    detach(presenter)
-                }
+                val parent = presenter.view.parent as ViewGroup
+                val replacementId = newSyntheticId()
+                childStates.put(replacementId, Pair(parent, presenter.saveWholeState()))
+                val index = parent.indexOfChild(presenter.view)
+                detach(presenter)
+                parent.addView(View(host.activity).apply { this.id = replacementId }, index)
             }
         }
         children.forEach {
@@ -127,11 +117,9 @@ open class PresenterGroup : Presenter {
                 val (layout, state) = childStates.valueAt(i)
                 val index = layout.indexOfChild(replacement)
                 layout.removeView(replacement)
-                ctx.presenterStates = state.map
-                val presenter = ctx.attach(state.clazz, arguments, layout)
+                val presenter = host.attachWithState(state.clazz, state.map, state.tree, layout)
                 layout.addView(presenter.view, index)
                 addChild(presenter)
-                ctx.presenterStates = null
                 presenter.view.restoreHierarchyState(state.viewState)
             }
         }
@@ -144,12 +132,12 @@ open class PresenterGroup : Presenter {
             //We have to call it on all children, because even if we drop this bundle, some
             //deeper child might save itself to the container
             val childState = PresenterParcel(
-                    it.javaClass.name, it.saveHierarchyState(container)
+                    it.javaClass.name, it.saveHierarchyState(container),
+                    (it.view.parent as View).id
             )
-            if (it.canRecreateFromState && it.view.parent is View) {
-                val parent = it.view.parent as View
-                if (parent.id != View.NO_ID) {
-                    childrenList.add(childState.copy(parentId = parent.id))
+            if (it.canReattachAfterStateChange) {
+                if (childState.parentId != View.NO_ID) {
+                    childrenList.add(childState)
                 }
             }
         }
@@ -169,6 +157,22 @@ open class PresenterGroup : Presenter {
         children.forEach {
             it.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        children.forEach {
+            it.onTrimMemory(level)
+        }
+    }
+
+    override fun onDestroy() {
+        //no children should be present any more
+        childAdded.onCompleted()
+        childRemoved.onCompleted()
+        childAddedRecursive.onCompleted()
+        childRemovedRecursive.onCompleted()
+        super.onDestroy()
     }
 
     // ========================== Children manipulation ============================================
@@ -200,7 +204,7 @@ open class PresenterGroup : Presenter {
      * WARNING: If the parent view doesn't have an ID, the presenter won't be restored from state.
      */
     fun <P: Presenter> attach(parentView: ViewGroup, presenter: Class<P>, arguments: Bundle = Bundle()): P {
-        val instance = ctx.attach(presenter, arguments, parentView)
+        val instance = host.attach(presenter, arguments, parentView)
         add(parentView, instance)
         return instance
     }
@@ -226,12 +230,14 @@ open class PresenterGroup : Presenter {
      * WARNING: If the parent does not have an ID, the presenter won't be restored from state.
      */
     fun add(parentView: ViewGroup, presenter: Presenter) {
-        if (!presenter.isAttached) throw IllegalStateException("$presenter is not attached!")
+        if (!presenter.isAttached) {
+            throw LifecycleException("$presenter is not attached!")
+        }
         if (presenter.view.parent != null) {
             throw LifecycleException("$presenter view is already added to ${presenter.view.parent}")
         }
-        if (presenter.ctx != this.ctx) {
-            throw LifecycleException("$presenter is attached to ${presenter.ctx} instead of ${this.ctx}")
+        if (presenter.host != this.host) {
+            throw LifecycleException("$presenter is attached to ${presenter.host} instead of ${this.host}")
         }
         parentView.addView(presenter.view)
         addChild(presenter)
@@ -241,7 +247,6 @@ open class PresenterGroup : Presenter {
         children.add(presenter)
         if (this.isStarted) presenter.performStart()
         if (this.isResumed) presenter.performResume()
-        lifecycleLog("Added $presenter")
         if (presenter is PresenterGroup) {
             presenter.onChildAddRecursive
                     .subscribe(childAddedRecursive).until(presenter, Lifecycle.Event.DETACH)
@@ -260,7 +265,9 @@ open class PresenterGroup : Presenter {
      * Typical use case: Moving a presenter between groups without detaching.
      */
     fun remove(presenter: Presenter): Presenter {
-        if (presenter !in children) throw LifecycleException("Removing presenter that isn't attached to ${this@PresenterGroup}")
+        if (presenter !in children) {
+            throw LifecycleException("Removing presenter that isn't attached to ${this@PresenterGroup}")
+        }
         if (isResumed) presenter.performPause()
         if (isStarted) presenter.performStop()
         children.remove(presenter)
@@ -274,12 +281,42 @@ open class PresenterGroup : Presenter {
      * Detach and recycle a presenter.
      */
     fun detach(presenter: Presenter): Unit {
-        ctx.detach(remove(presenter))
+        host.detach(remove(presenter))
     }
 
     // ============================ Child retrieval ================================================
 
+    /**
+     * A read-only copy of the presenters currently managed by this group.
+     */
     val presenters: List<Presenter>
         get() = children.toList()
+
+    /**
+     * Find all presenters attached inside a view group specified by id.
+     */
+    fun findPresentersByParent(@IdRes id: Int): List<Presenter>
+            = findPresentersByParent(findView<ViewGroup>(id))
+
+    /**
+     * Find all presenters attached inside a specified view group.
+     */
+    fun findPresentersByParent(parent: ViewGroup): List<Presenter> {
+        return children.filter { it.view.parent == parent }
+    }
+
+    /**
+     * Find a required presenter by it's id.
+     */
+    fun findPresenter(@IdRes id: Int, recursive: Boolean = true): Presenter
+            = findOptionalPresenter(id, recursive)!!
+
+    fun findOptionalPresenter(@IdRes id: Int, recursive: Boolean = true): Presenter? {
+        return presenters.firstOrNull { it.id == id } ?: if (recursive) {
+            children.fold(null as Presenter?, { acc, child ->
+                acc ?: if (child is PresenterGroup) child.findOptionalPresenter(id, true) else null
+            })
+        } else null
+    }
 
 }

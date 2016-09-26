@@ -2,13 +2,11 @@ package com.glucose.app.presenter
 
 import android.support.annotation.AnyThread
 import android.support.annotation.MainThread
+import com.glucose.app.presenter.Lifecycle.State.*
 import rx.Observable
 import rx.Observer
 import rx.Subscriber
 import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
-import rx.functions.Action0
-import rx.functions.Action1
 
 object Lifecycle {
 
@@ -47,7 +45,7 @@ object Lifecycle {
                 ATTACHED -> Event.DETACH
                 STARTED -> Event.STOP
                 RESUMED -> Event.PAUSE
-                DESTROYED -> throw IllegalStateException("$this does not have a closing event.")
+                DESTROYED -> throw LifecycleException("$this does not have a closing event.")
             }
         }
 
@@ -56,9 +54,9 @@ object Lifecycle {
          */
         fun openingEvent(): Event {
             return when (this) {
-                ALIVE -> throw IllegalStateException("$this does not have an opening event.")
+                ALIVE -> throw LifecycleException("$this does not have an opening event.")
                 ATTACHED -> Event.ATTACH
-                STARTED -> Event.STOP
+                STARTED -> Event.START
                 RESUMED -> Event.RESUME
                 DESTROYED -> Event.DESTROY
             }
@@ -113,27 +111,15 @@ interface LifecycleHost {
     @MainThread
     fun removeEventCallback(event: Lifecycle.Event, callback: () -> Unit): Boolean
 
-    /**
-     * @see [takeUntil]
-     */
     fun <T> Observable<T>.takeUntil(event: Lifecycle.Event): Observable<T>
             = this.takeUntil(this@LifecycleHost, event)
 
-    /**
-     * @see [takeWhileIn]
-     */
     fun <T> Observable<T>.takeWhileIn(state: Lifecycle.State): Observable<T>
             = this.takeWhileIn(this@LifecycleHost, state)
 
-    /**
-     * @see [until]
-     */
     fun Subscription.until(event: Lifecycle.Event) : Subscription
             = this.until(this@LifecycleHost, event)
 
-    /**
-     * @see [whileIn]
-     */
     fun <T> Observable<T>.whileIn(state: Lifecycle.State) : BoundSubscription<T>
             = this.whileIn(this@LifecycleHost, state)
 
@@ -179,13 +165,15 @@ fun <T> Observable<T>.takeUntil(host: LifecycleHost, event: Lifecycle.Event): Ob
  */
 @AnyThread
 fun <T> Observable<T>.takeWhileIn(host: LifecycleHost, state: Lifecycle.State): Observable<T> {
+    //If state is DESTROYED, closing event will kick in and kill this fast
+    val event = state.closingEvent()
     return Observable.defer {
         if (host.state >= state) {
-            this.takeUntil(host, state.closingEvent())
+            this.takeUntil(host, event)
         } else {
             Observable.empty()
         }
-    }.subscribeOn(AndroidSchedulers.mainThread())
+    }
 }
 
 /**
@@ -229,34 +217,6 @@ fun <T> Observable<T>.whileIn(host: LifecycleHost, state: Lifecycle.State): Boun
         = BoundSubscription(this, state, host)
 
 /**
- * @see whileIn
- */
-@MainThread
-fun <T> Observable<T>.whileAlive(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.ALIVE)
-
-/**
- * @see whileIn
- */
-@MainThread
-fun <T> Observable<T>.whileAttached(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.ATTACHED)
-
-/**
- * @see whileIn
- */
-@MainThread
-fun <T> Observable<T>.whileStarted(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.STARTED)
-
-/**
- * @see whileIn
- */
-@MainThread
-fun <T> Observable<T>.whileResumed(host: LifecycleHost) : BoundSubscription<T>
-        = this.whileIn(host, Lifecycle.State.RESUMED)
-
-/**
  * A helper class for implementing lifecycle-bound subscriptions.
  * [BoundSubscription] mimics the subscription API of an [Observable],
  * but asserts that during subscription, the [LifecycleHost] connected
@@ -291,12 +251,12 @@ class BoundSubscription<out T>(
 //some simple helper functions regarding state
 
 val LifecycleHost.isAlive: Boolean
-    get() = this.state >= Lifecycle.State.ALIVE
+    get() = this.state >= ALIVE
 val LifecycleHost.isAttached: Boolean
-    get() = this.state >= Lifecycle.State.ATTACHED
+    get() = this.state >= ATTACHED
 val LifecycleHost.isStarted: Boolean
-    get() = this.state >= Lifecycle.State.STARTED
+    get() = this.state >= STARTED
 val LifecycleHost.isResumed: Boolean
-    get() = this.state >= Lifecycle.State.RESUMED
+    get() = this.state >= RESUMED
 val LifecycleHost.isDestroyed: Boolean
-    get() = this.state <= Lifecycle.State.DESTROYED
+    get() = this.state <= DESTROYED

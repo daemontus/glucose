@@ -1,0 +1,21 @@
+machine:
+  environment:
+    ADB_INSTALL_TIMEOUT: "20"
+    GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"'
+
+dependencies:
+    pre:
+        - mkdir -p $ANDROID_HOME/licenses/
+        - cp accepted_licenses/* $ANDROID_HOME/licenses/
+        - echo y | android update sdk --no-ui --all --filter "android-24","build-tools-24.0.2","extra-android-m2repository"
+
+test:
+  override:
+    - ./gradlew build
+    - ./gradlew jacocoTestReport
+    # copy the build outputs to artifacts
+    #- cp -r my-project/build/outputs $CIRCLE_ARTIFACTS
+    # copy the test results to the test results directory.
+    #- cp -r my-project/build/outputs/androidTest-results/* $CIRCLE_TEST_REPORTS
+  post:
+    - bash <(curl -s https://codecov.io/bash)

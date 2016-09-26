@@ -12,14 +12,14 @@ import com.github.daemontus.glucose.demo.data.Series
 import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
-import com.glucose.app.PresenterContext
+import com.glucose.app.PresenterDelegate
 import com.glucose.app.PresenterGroup
 import com.glucose.app.presenter.*
 import rx.android.schedulers.AndroidSchedulers
 
-class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
+class ShowDetailPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
 
-    val showId: Long by Argument(longBundler)
+    val showId: Long by NativeArgument(-1, longBundler)
 
     val repo = ShowRepository()
 
@@ -37,7 +37,7 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
             .subscribe { show ->
                 if (show == null) {
                     //Normally, you would display some kind of error, right? ;)
-                    ctx.activity.onBackPressed()
+                    host.activity.onBackPressed()
                 } else {
                     showTitle.text = show.name
                     loadSeries(show)
@@ -71,7 +71,7 @@ class ShowDetailPresenter(context: PresenterContext, parent: ViewGroup?) : Prese
         override fun instantiateItem(container: ViewGroup, position: Int): Any {
             val child = presenter.attach(container, SeriesPresenter::class.java,
                     (SeriesPresenter::seriesId.name with series[position].seriesId) and
-                            (Presenter::canRecreateFromState.name with false)
+                            (Presenter::canReattachAfterStateChange.name with false)
             )
             presenters[position]?.let { presenter.detach(it) }
             presenters[position] = child
