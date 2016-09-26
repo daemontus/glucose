@@ -140,7 +140,6 @@ class ActionHostTest {
     }
 
 
-    @Ignore
     @Test
     fun actionDelegate_removeInQueue() {
         kotlin.repeat(10) {

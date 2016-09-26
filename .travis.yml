@@ -26,3 +26,6 @@ cache:
   directories:
     - $HOME/.m2
     - $HOME/.gradle
+
+script:
+  - ./gradlew build connectedCheck --info
