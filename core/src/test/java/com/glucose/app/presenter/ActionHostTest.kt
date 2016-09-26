@@ -141,6 +141,7 @@ class ActionHostTest {
 
     @Test
     fun actionDelegate_removeInQueue() {
+        //TODO: This may fail with premature termination somehow
         kotlin.repeat(10) {
             actions.startProcessingActions()
             val a1 = actions.post(Observable.just(Unit)
