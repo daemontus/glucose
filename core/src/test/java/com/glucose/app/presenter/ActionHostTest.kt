@@ -151,10 +151,11 @@ class ActionHostTest {
             a1.subscribe()
             val s2 = a2.subscribe()
             s2.unsubscribe()
-            //We somehow have to make sure that the termination notification has been delivered
-            //for a1 before the stopProcessingActions is called.
             assertFalse(a1.isEmpty.toBlocking().last())
             assertTrue(a2.isEmpty.toBlocking().last())
+            //We somehow have to make sure that the termination notification has been delivered
+            //for a1 before the stopProcessingActions is called.
+            Thread.sleep(20)
             actions.stopProcessingActions()
         }
     }
