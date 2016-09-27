@@ -1,3 +1,5 @@
+**Please note that the documentation and wiki are just being prepared, so if you run into some inconsistencies, please give it a few days.**
+
 [![Release](https://jitpack.io/v/daemontus/glucose.svg)](https://jitpack.io/#daemontus/glucose)
 [![Build Status](https://travis-ci.org/daemontus/glucose.svg?branch=tests)](https://travis-ci.org/daemontus/glucose)
 [![codecov.io](https://codecov.io/github/daemontus/glucose/coverage.svg?branch=master)](https://codecov.io/github/daemontus/glucose?branch=master)
@@ -18,7 +20,7 @@ Main features of Glucose include:
  - Ability to recreate only necessary layouts when changing configuration.
 
 To learn more about Glucose, head to one of the wiki articles that explain the motivation, design and implementation of the library:
- - **Motivation**: The problems that Glucose is trying to solve and how are these solved (or not) by other libraries.
+ - [**Motivation**](https://github.com/daemontus/glucose/wiki/Motivation): The problems that Glucose is trying to solve and how are these solved (or not) by other libraries.
  - **Design**: The description of the library architecture and how it relates to the problems from motivation.
  - **Implementation**: Code examples and detailed walkthrough of the library API.
 
