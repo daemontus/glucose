@@ -62,7 +62,7 @@ Yes, Kotlin has a great interoperability with existing Java code. A few specific
 ### Can I use Android Fragments and Glucose Presenters in one activity?
 Glucose highly values the interoperability with existing libraries. To this end, it provides two interop components: **FragmentPresenter** and **PresenterFragment**. First one allows you to safely include a specific Fragment class into the Presenter tree. The latter then allows you to plant a Presenter tree into a Fragment.
 
-However, please note that the PresenterFragment is only as good as the FragmentManager in which it resides and therefore the semantics are a little relaxed :)
+However, please note that the PresenterFragment is only as good as the FragmentManager in which it resides :)
 
 ### Exactly how lightweight is it?
 The core module has only ~650 methods and 110kB. The only major dependencies are RxJava and Kotlin Standard Library (both of which you should be already using anyway). Apart from these, there is only RxAndroid, SupportAnnotations and a small library for Option and Result types. You don't even have to use the Support Library.
