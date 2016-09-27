@@ -3,7 +3,7 @@
 
 subprojects {
     group = 'com.github.daemontus'
-    version = '1.0.0-rc'
+    version = '1.0.0-alpha1'
     ext.version_code = 
     ext.compile_sdk = 24
     ext.target_sdk = 24
