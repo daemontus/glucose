@@ -70,5 +70,6 @@ If you have some concrete suggestion, you are wellcome to submit a pull request 
 Currently, there are several planned extensions (will be implemented as separate modules):
  - A BackStack implementation that detaches presenters as soon as they are not visible and handles state restoration properly.
  - A ResourceDelegate, that will react to configuration changes and reload resources in case of a configuration change.
+ - A way to present Dialogs and Snackbars.
  - A set of utility PresenterGroups - for proper remote data fetching, for morphing between two presenters, etc.
  - A module that simplifies animations involving tranfer of presenters between two positions in the main tree. 
