@@ -12,6 +12,7 @@ import com.github.daemontus.glucose.demo.presentation.util.finishAnimation
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterDelegate
 import com.glucose.app.PresenterGroup
+import com.glucose.app.PresenterHost
 import com.glucose.app.presenter.*
 import com.glucose.util.asResult
 import rx.Observable
@@ -19,7 +20,7 @@ import rx.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 
 
-class RootPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
+class RootPresenter(context: PresenterHost, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_root, parent) {
 
     val startButton = findView<MultiStateButton>(R.id.start_action_button).apply {
         this.setOnClickListener {
@@ -55,6 +56,7 @@ class RootPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterG
                     it.episodeClicks
                             .whileIn(it, Lifecycle.State.ALIVE)
                             .subscribe {
+                                Timber.d("Episode clicked!")
                                 this.pushWithReveal(
                                         EpisodeDetailPresenter::class.java,
                                         (Presenter::id.name with R.id.episode_detail) and
@@ -95,7 +97,16 @@ class RootPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterG
                     .translationY(0f)
                     .setDuration(Duration.ENTER)
                     .setInterpolator(LinearOutSlowInInterpolator())
-        }.postToThis().asResult().subscribe { if (it is Result.Error) Timber.e(it.error) else Timber.d("Push result: $it") }
+        }.postToThis()
+                .asResult()
+                .subscribe {
+                    //NOTE: You don't want this in production. This will silently swallow
+                    //any error in your app, confusing the user.
+                    if (it is Result.Error)
+                        Timber.e(it.error)
+                    else
+                        Timber.d("Push result: $it")
+                }
     }
 
     private fun popWithHide(): Boolean {
@@ -112,8 +123,17 @@ class RootPresenter(context: PresenterDelegate, parent: ViewGroup?) : PresenterG
                         .translationY(400f)
                         .setDuration(Duration.LEAVE)
                         .setInterpolator(FastOutLinearInInterpolator())
-            }.doOnNext{ detach(it) }.postToThis()
-                    .asResult().subscribe { Timber.d("Popped: $it") }
+            }.doOnNext{ detach(it) }
+                .postToThis()
+                .asResult()
+                .subscribe {
+                    //NOTE: You don't want this in production. This will silently swallow
+                    //any error in your app, confusing the user.
+                    if (it is Result.Error)
+                        Timber.e(it.error)
+                    else
+                        Timber.d("Pop result: $it")
+            }
             true
         } else false
     }

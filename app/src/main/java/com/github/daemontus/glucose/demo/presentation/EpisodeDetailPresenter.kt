@@ -1,18 +1,14 @@
 package com.github.daemontus.glucose.demo.presentation
 
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.view.ViewGroup
 import android.widget.TextView
 import com.github.daemontus.glucose.demo.R
-import com.glucose.app.Presenter
-import com.glucose.app.PresenterDelegate
-import com.glucose.app.PresenterGroup
-import com.glucose.app.presenter.Argument
-import com.glucose.app.presenter.findView
-import com.glucose.app.presenter.isFresh
-import com.glucose.app.presenter.stringBundler
+import com.glucose.app.*
+import com.glucose.app.presenter.*
 
-class EpisodeDetailPresenter(context: PresenterDelegate, parent: ViewGroup?)
+class EpisodeDetailPresenter(context: PresenterHost, parent: ViewGroup?)
     : PresenterGroup(context, R.layout.presenter_episode_detail, parent) {
 
     val episodeName by Argument(stringBundler)
@@ -24,20 +20,40 @@ class EpisodeDetailPresenter(context: PresenterDelegate, parent: ViewGroup?)
             attach(R.id.episode_data, PersistentPresenter::class.java)
             attach(R.id.episode_data, RecreatedPresenter::class.java)
             attach(R.id.episode_data, NoRecyclePresenter::class.java)
+            attach(R.id.episode_data, SimpleFragmentPresenter::class.java,
+                    bundle(FragmentPresenter::fragmentClass.name with SimpleFragment::class.java)
+            )
+            attach(R.id.episode_data, NestedFragmentPresenter::class.java,
+                    bundle( FragmentPresenter::fragmentClass.name with NestedPresenterTree::class.java  ) and (
+                            FragmentPresenter::fragmentArguments.name with (
+                                bundle( PresenterFragment.ROOT_PRESENTER_CLASS_KEY with PersistentPresenter::class.java) and (
+                                        PresenterFragment.ROOT_PRESENTER_ARGS_KEY with
+                                                bundle(
+                                                        PersistentPresenter::text.name with
+                                                        "And this is a Presenter inside a Fragment, inside a Presenter!"
+                                                )
+                                )
+                            )
+                    )
+            )
         }
     }
 }
 
-class PersistentPresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class PersistentPresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+
+    val text by OptionalArgument(stringBundler)
 
     override val canChangeConfiguration: Boolean = true
 
-    init {
-        findView<TextView>(R.id.data_title).text = "canChangeConfiguration = true"
+    override fun onAttach(arguments: Bundle) {
+        super.onAttach(arguments)
+        findView<TextView>(R.id.data_title).text = text ?: "canChangeConfiguration = true"
     }
+
 }
 
-class RecreatedPresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class RecreatedPresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
     override val canChangeConfiguration: Boolean = false
 
@@ -46,7 +62,7 @@ class RecreatedPresenter(context: PresenterDelegate, parent: ViewGroup?) : Prese
     }
 }
 
-class NoRecyclePresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
+class NoRecyclePresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
     override val canBeReused: Boolean = false
 
@@ -54,3 +70,11 @@ class NoRecyclePresenter(context: PresenterDelegate, parent: ViewGroup?) : Prese
         findView<TextView>(R.id.data_title).text = "canBeReused = false"
     }
 }
+
+class SimpleFragmentPresenter(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : FragmentPresenter(
+        host, (host.activity as AppCompatActivity).supportFragmentManager
+)
+
+class NestedFragmentPresenter(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : FragmentPresenter(
+        host, (host.activity as AppCompatActivity).supportFragmentManager
+)

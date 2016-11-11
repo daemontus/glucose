@@ -10,6 +10,7 @@ subprojects {
     ext.build_tools = '24.0.2'
     ext.kotlin_version = '1.0.4'
     ext.support_library = '24.2.1'
+    ext.robolectric_version = '3.1.4'
 }
 
 buildscript {

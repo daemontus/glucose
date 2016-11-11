@@ -1,9 +1,6 @@
 package com.github.daemontus.glucose.demo.presentation.util
 
-import android.app.Activity
-import android.graphics.Rect
 import android.view.ViewPropertyAnimator
-import android.view.Window
 import rx.Observable
 import rx.subjects.UnicastSubject
 

@@ -12,8 +12,6 @@ import android.view.ViewGroup
 import com.glucose.app.PresenterFragment.Companion.ROOT_PRESENTER_ARGS_KEY
 import com.glucose.app.PresenterFragment.Companion.ROOT_PRESENTER_CLASS_KEY
 import com.glucose.app.presenter.LifecycleException
-import com.glucose.app.presenter.bundle
-import com.glucose.app.presenter.with
 
 
 /**
@@ -43,7 +41,8 @@ import com.glucose.app.presenter.with
  *
  * Known problems:
  * 1. Fragments don't receive onBackPressed and onTrimMemory callbacks. If you need this
- * functionality, you have implement your own notification mechanism.
+ * functionality, you have implement your own notification mechanism. (The methods are provided,
+ * you just have to call them yourself)
  * 2. You have to make sure state of the fragment is properly restored (the state of presenter will
  * be saved into the bundle in [onSaveInstanceState], just make sure it's not lost).
  * 3. If the fragment is used as a nested fragment, you have to make sure activity results and
@@ -72,12 +71,11 @@ open class PresenterFragment(
     override fun onAttach(context: Context?) {
         super.onAttach(context)
         if (context !is Activity) {
-            throw LifecycleException("PresenterFragment cannot be attached to $context which is not and Activity")
+            throw LifecycleException("PresenterFragment cannot be attached to $context which is not an Activity")
         }
-        bundle(ROOT_PRESENTER_CLASS_KEY with Presenter::class.java)
         val clazz = rootPresenter ?:
             Presenter::class.java.javaClass.cast(arguments.getSerializable(ROOT_PRESENTER_CLASS_KEY))
-        val args = rootArguments ?: arguments.getBundle(ROOT_PRESENTER_ARGS_KEY)
+        val args = rootArguments ?: arguments.getBundle(ROOT_PRESENTER_ARGS_KEY) ?: Bundle()
         presenterContext = PresenterDelegate(context, clazz, args)
     }
 
@@ -130,5 +128,13 @@ open class PresenterFragment(
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         presenterContext?.onSaveInstanceState(outState)
+    }
+
+    fun onBackPressed(): Boolean {
+        return presenterContext?.onBackPressed() ?: false
+    }
+
+    fun onTrimMemory(level: Int) {
+        presenterContext?.onTrimMemory(level)
     }
 }

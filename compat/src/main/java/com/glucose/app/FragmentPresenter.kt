@@ -36,10 +36,11 @@ open class FragmentPresenter(
 ) : Presenter(host, FrameLayout(host.activity)) {
 
     val fragmentClass by Argument(serializableBundler)
-    val fragmentArguments by Argument(bundleBundler)
-    var fragmentState by State(parcelableBundler<Fragment.SavedState>())
+    val fragmentArguments by OptionalArgument(bundleBundler)
+    var fragmentState by OptionalState(parcelableBundler<Fragment.SavedState>())
 
-    private var fragment: Fragment? = null
+    var fragment: Fragment? = null
+        private set
 
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
@@ -65,14 +66,13 @@ open class FragmentPresenter(
     }
 
     override fun onSaveInstanceState(out: Bundle) {
-        super.onSaveInstanceState(out)
         fragment?.let {
             fragmentState = fragmentManager.saveFragmentInstanceState(it)
         }
+        super.onSaveInstanceState(out)
     }
 
     override fun onDetach() {
-        super.onDetach()
         fragment?.let {
             //fragment can be null if we are detached before starting
             fragmentState = fragmentManager.saveFragmentInstanceState(it)
@@ -81,5 +81,6 @@ open class FragmentPresenter(
                     .commitNowAllowingStateLoss()
         }
         fragment = null
+        super.onDetach()
     }
 }
