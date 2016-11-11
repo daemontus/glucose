@@ -19,7 +19,7 @@ import com.glucose.util.newSyntheticId
  * views of this presenter (after it has been added to the main tree).
  *
  * Also if you are using this in combination with [PresenterFragment], you
- * probably with to use the child fragment manager.
+ * probably want to use the child fragment manager.
  *
  * To ensure proper fragment state restoration, the parent view has always
  * a new, unique, synthetic ID, so that the [FragmentManager] shouldn't be able

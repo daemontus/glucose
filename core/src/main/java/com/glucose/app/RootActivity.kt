@@ -6,22 +6,29 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import kotlin.properties.Delegates
+import com.glucose.app.presenter.LifecycleException
 
 /**
  * An activity that is connected to a [PresenterDelegate] and has exactly one root [Presenter].
  */
 abstract class RootActivity(
-        private val rootPresenter: Class<out Presenter>,
-        private val rootArguments: Bundle = Bundle()
+        rootPresenter: Class<out Presenter>,
+        rootArguments: Bundle = Bundle()
 ) : Activity() {
 
-    protected var presenterHost by Delegates.notNull<PresenterDelegate>()
-        private set
+    @Suppress("LeakingThis") // there is no other way. If one wants to register a factory for
+                             // the root presenter, delegate has to be created before onCreate.
+    private var _presenterHost: PresenterDelegate? = PresenterDelegate(this, rootPresenter, rootArguments)
+
+    protected val presenterHost: PresenterDelegate
+        get() {
+            return _presenterHost ?: throw LifecycleException(
+                    "Accessing presenterHost on $this that is already destroyed."
+                )
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        presenterHost = PresenterDelegate(this, rootPresenter, rootArguments)
         setContentView(presenterHost.onCreate(savedInstanceState))
     }
 
@@ -51,6 +58,7 @@ abstract class RootActivity(
 
     override fun onDestroy() {
         presenterHost.onDestroy()
+        _presenterHost = null
         super.onDestroy()
     }
 
