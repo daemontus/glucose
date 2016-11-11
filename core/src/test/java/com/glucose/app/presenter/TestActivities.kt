@@ -3,6 +3,7 @@ package com.glucose.app.presenter
 import android.app.Activity
 import android.os.Bundle
 import android.widget.FrameLayout
+import com.glucose.app.PresenterHost
 import com.glucose.app.RootActivity
 
 class EmptyActivity : Activity() {
@@ -23,5 +24,6 @@ class LifecycleObservingActivity : RootActivity(LifecycleObservingPresenter::cla
         }
     }
 
-    val host = this.presenterHost
+    val host: PresenterHost
+        get() = this.presenterHost
 }
