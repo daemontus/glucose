@@ -9,10 +9,10 @@
 ![Logo](static/logo.jpg)
 
 
-Glucose is a lightweight modular replacement for Android Fragments written in **Kotlin** and designed with **simplicity**, **composability**, **safety** and **reactive** programming in mind. It does not enforce any specific MV\* paradigm. Instead, it serves as a clean and reliable **lifecycle provider** with focus on safe asynchronous operations. Finally, Glucose highly values **compatibility** with existing libraries and legacy code.
+Glucose is a lightweight modular replacement for Android Fragments written in **Kotlin** and designed with **simplicity**, **composability**, **safety** and **reactive** programming in mind. It does not enforce any specific MV\* paradigm. Instead, it serves as a clean and reliable **lifecycle provider** with focus on **safe asynchronous operations**. Finally, Glucose highly values **compatibility** with existing libraries and legacy code.
 
 Main features of Glucose include:
- - A **Presenter** and **PresenterGroup** components which replace Fragments.
+ - A **Presenter** and a **PresenterGroup** components which replace Fragments.
  - A reactive **ActionHost** which replaces Fragment Transactions and other asychronous actions.
  - Strict and transparent lifecycle semantics with synchronous and asynchronous notifications.
  - More transparent and automated state preservation.
@@ -51,12 +51,12 @@ However, the whole project is covered by JUnit and Robolectric tests, with the t
 **So yes, Glucose is ready for production, with a few possible minor changes in the future.**
 
 ### I am not using Kotlin (yet), can I use Glucose?
-Yes, Kotlin has a great interoperability with existing Java code. A few specific features (f.e. simplified syntax for creating bundles) might be a little cumbersome to use, but the rest of the API is pretty much language agnostic.
+Yes, Kotlin has a great interoperability with existing Java code. A few specific features (such as simplified syntax for creating bundles) might be a little cumbersome to use, but the rest of the API is pretty much language agnostic.
 
-### Can I use Android Fragments and Glucose Presenters in one activity?
-Glucose highly values the interoperability with existing libraries. To this end, it provides two interop components: **FragmentPresenter** and **PresenterFragment**. First one allows you to safely include a specific Fragment class into the Presenter tree. The latter then allows you to plant a Presenter tree into a Fragment.
+### Can I use Android Fragments and Glucose Presenters in one App/Module/Activity/Room/Conversation?
+Glucose highly values interoperability with existing libraries. To this end, it provides two interop components: **FragmentPresenter** and **PresenterFragment**. First one allows you to safely include a specific Fragment class into the Presenter tree. The latter then allows you to plant a Presenter tree into a Fragment.
 
-However, please note that the PresenterFragment is only as good as the FragmentManager in which it resides (so for example if the fragment doesn't receive an activity result notification, the presenter won't either).
+Of course, a Presenter hosted in a Fragment will inherit some fragment-related problems (example: If the fragment doesn't receive notification about activity result, neither does the hosted Presenter), but all major functionality should work as expected.
 
 ### Exactly how lightweight is it?
 The core module has only ~650 methods and 110kB. The only major dependencies are RxJava and Kotlin Standard Library (both of which you are probably using anyway). Apart from these, there is only RxAndroid, SupportAnnotations and a small library for Option and Result types. You don't even have to use the Android Support Library. 
@@ -67,7 +67,7 @@ In terms of speed, there aren't any specific benchmarks available now. However, 
 If you have some concrete suggestion, you are wellcome to submit a pull request or create an issue. If you have a feature request that doesn't have to be integrated into some existing module, the best option would be to publish a separate repository which can be then mentioned in the module list above. This way you retain the ownership of the code and the base library stays as light as possible. (If you publish such repository, create an issue with a link to it, or make a pull request with a modified readme)
 
 ### What's next?
-Currently, there are several planned extensions (will be implemented as separate modules):
+Currently, there are several planned extensions (mostly implemented as separate modules):
  - A BackStack implementation that detaches presenters as soon as they are not visible and handles state restoration properly.
  - A ResourceDelegate, that will react to configuration changes and reload resources in case of a configuration change.
  - A way to present Dialogs and Snackbars.
