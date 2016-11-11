@@ -14,13 +14,14 @@ import com.github.daemontus.glucose.demo.data.Show
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterDelegate
+import com.glucose.app.PresenterHost
 import com.glucose.app.presenter.findView
 import com.jakewharton.rxbinding.view.clicks
 import rx.Observer
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 
-class ShowListPresenter(context: PresenterDelegate, parent: ViewGroup?)
+class ShowListPresenter(context: PresenterHost, parent: ViewGroup?)
     : Presenter(context, R.layout.presenter_show_list, parent) {
 
     val showClickSubject: PublishSubject<Show> = PublishSubject.create<Show>()

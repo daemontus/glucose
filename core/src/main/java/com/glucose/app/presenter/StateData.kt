@@ -28,7 +28,7 @@ internal fun Presenter.saveWholeState(): ChildState {
  * A parcelable representation of a [Presenter]s state.
  */
 internal class PresenterParcel(
-        val clazz: String,
+        val clazz: String,  //TODO: Class is serializable - maybe jsut it directly?
         val state: Bundle,
         @IdRes val parentId: Int = View.NO_ID
 ) : Parcelable {

@@ -12,6 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @RunWith(RobolectricTestRunner::class)
@@ -37,6 +38,9 @@ class RootActivityTest {
         root.assertStopped()
         controller.destroy()
         root.assertDestroyed()
+        assertFailsWith(LifecycleException::class) {
+            activity.host
+        }
     }
 
     @TargetApi(23)
@@ -97,6 +101,5 @@ class RootActivityTest {
         }.subscribeOn(AndroidSchedulers.mainThread())
                 .toBlocking().first()
     }
-
 
 }

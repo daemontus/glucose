@@ -13,6 +13,7 @@ import com.github.daemontus.glucose.demo.data.Episode
 import com.github.daemontus.glucose.demo.domain.ShowRepository
 import com.glucose.app.Presenter
 import com.glucose.app.PresenterDelegate
+import com.glucose.app.PresenterHost
 import com.glucose.app.presenter.*
 import com.jakewharton.rxbinding.view.clicks
 import rx.Observer
@@ -20,7 +21,7 @@ import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import java.text.SimpleDateFormat
 
-class SeriesPresenter(context: PresenterDelegate, parent: ViewGroup?) : Presenter(context, R.layout.presenter_series, parent) {
+class SeriesPresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_series, parent) {
 
     val seriesId by NativeArgument(-1, longBundler)
     val episodeClicks: PublishSubject<Episode> = PublishSubject.create<Episode>()
