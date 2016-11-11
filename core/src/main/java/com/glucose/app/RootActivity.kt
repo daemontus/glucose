@@ -6,19 +6,22 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import kotlin.properties.Delegates
 
 /**
  * An activity that is connected to a [PresenterDelegate] and has exactly one root [Presenter].
  */
 abstract class RootActivity(
-        rootPresenter: Class<out Presenter>,
-        rootArguments: Bundle = Bundle()
+        private val rootPresenter: Class<out Presenter>,
+        private val rootArguments: Bundle = Bundle()
 ) : Activity() {
 
-    protected val presenterHost = PresenterDelegate(this, rootPresenter, rootArguments)
+    protected var presenterHost by Delegates.notNull<PresenterDelegate>()
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        presenterHost = PresenterDelegate(this, rootPresenter, rootArguments)
         setContentView(presenterHost.onCreate(savedInstanceState))
     }
 

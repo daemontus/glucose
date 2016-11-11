@@ -6,19 +6,22 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import kotlin.properties.Delegates
 
 /**
  * An activity that is connected to a [PresenterDelegate] and has exactly one root [Presenter].
  */
 abstract class RootCompatActivity(
-        rootPresenter: Class<out Presenter>,
-        rootArguments: Bundle = Bundle()
+        private val rootPresenter: Class<out Presenter>,
+        private val rootArguments: Bundle = Bundle()
 ) : AppCompatActivity() {
 
-    private val presenterContext = PresenterDelegate(this, rootPresenter, rootArguments)
+    protected var presenterContext by Delegates.notNull<PresenterDelegate>()
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        presenterContext = PresenterDelegate(this, rootPresenter, rootArguments)
         setContentView(presenterContext.onCreate(savedInstanceState))
     }
 
