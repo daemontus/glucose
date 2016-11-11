@@ -10,7 +10,6 @@ subprojects {
     ext.build_tools = '24.0.2'
     ext.kotlin_version = '1.0.4'
     ext.support_library = '24.2.1'
-    ext.robolectric_version = '3.1.4'
 }
 
 buildscript {
@@ -19,7 +18,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.android.tools.build:gradle:2.2.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.4"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
     }
