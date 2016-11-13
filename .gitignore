@@ -37,3 +37,7 @@ captures/
 
 # Oh, OS X...
 .DS_Store
+
+# Latex files
+*.aux
+*.synctex.gz
