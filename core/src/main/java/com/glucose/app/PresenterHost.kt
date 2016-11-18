@@ -42,16 +42,16 @@ interface PresenterHost {
     val root: Presenter?
 
     /**
-     * Obtain a new presenter from the factory and attach it to this host with given arguments.
+     * Obtain a new presenter from the factory and attach it to this host with given instanceState.
      *
-     * The method only attaches the arguments to the presenter, but does not insert it into the
+     * The method only attaches the instanceState to the presenter, but does not insert it into the
      * view hierarchy. (parent parameter is for inflation purposes only) See [PresenterGroup]
      * if you want to also insert the presenter into the view hierarchy.
      */
     fun <P: Presenter> attach(clazz: Class<P>, arguments: Bundle = Bundle(), parent: ViewGroup? = null): P
 
     /**
-     * Obtain a new presenter from the factory and attach it to this host with given arguments
+     * Obtain a new presenter from the factory and attach it to this host with given instanceState
      * while maintaining the given state information about the hierarchy.
      *
      * This method is mainly used to restore the presenter hierarchy after config change or

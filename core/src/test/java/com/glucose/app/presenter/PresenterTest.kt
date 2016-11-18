@@ -53,7 +53,7 @@ class PresenterTest {
 
         p.performAttach(args1)
         assertTrue(p.onAttachCalled)
-        assertEquals(args1, p.arguments)
+        assertEquals(args1, p.instanceState)
         p.performStart()
         assertTrue(p.onStartCalled)
         p.performResume()
@@ -69,7 +69,7 @@ class PresenterTest {
         p.performDetach()
         assertTrue(p.onDetachCalled)
         p.performAttach(args2)
-        assertEquals(args2, p.arguments)
+        assertEquals(args2, p.instanceState)
         p.performDetach()
         p.performDestroy()
         assertTrue(p.onDestroyCalled)
@@ -168,12 +168,12 @@ class PresenterTest {
     @Test
     fun presenter_invalidArgumentsAccess() {
         val p = Presenter(host, R.layout.presenter_test, null)
-        assertFailsWith<LifecycleException> { p.arguments }
+        assertFailsWith<LifecycleException> { p.instanceState }
         val args = Bundle().apply { this.putInt("test", 1) }
         p.performAttach(args)
-        assertEquals(args, p.arguments)
+        assertEquals(args, p.instanceState)
         p.performDetach()
-        assertFailsWith<LifecycleException> { p.arguments }
+        assertFailsWith<LifecycleException> { p.instanceState }
     }
 
     @Test

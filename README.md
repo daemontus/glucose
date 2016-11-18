@@ -73,4 +73,4 @@ Currently, there are several planned extensions (mostly implemented as separate 
  - A way to present Dialogs and Snackbars.
  - A set of utility PresenterGroups - for proper remote data fetching, for morphing between two presenters, etc.
  - A module that simplifies animations involving tranfer of presenters between two positions in the main tree. 
- - Lint checker for basic problems, like accessing arguments in constructor (before onAttach), uncommited actions, etc.
+ - Lint checker for basic problems, like accessing instanceState in constructor (before onAttach), uncommited actions, etc.
