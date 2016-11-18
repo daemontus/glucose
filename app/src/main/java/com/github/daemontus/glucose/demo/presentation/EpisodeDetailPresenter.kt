@@ -11,7 +11,7 @@ import com.glucose.app.presenter.*
 class EpisodeDetailPresenter(context: PresenterHost, parent: ViewGroup?)
     : PresenterGroup(context, R.layout.presenter_episode_detail, parent) {
 
-    val episodeName by Argument(stringBundler)
+    val episodeName by State(stringBundler)
 
     override fun onAttach(arguments: Bundle) {
         super.onAttach(arguments)
@@ -42,7 +42,7 @@ class EpisodeDetailPresenter(context: PresenterHost, parent: ViewGroup?)
 
 class PersistentPresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_data, parent) {
 
-    val text by OptionalArgument(stringBundler)
+    val text by OptionalState(stringBundler)
 
     override val canChangeConfiguration: Boolean = true
 

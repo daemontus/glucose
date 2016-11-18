@@ -35,8 +35,8 @@ open class FragmentPresenter(
         private val fragmentManager: FragmentManager = (host.activity as FragmentActivity).supportFragmentManager
 ) : Presenter(host, FrameLayout(host.activity)) {
 
-    val fragmentClass by Argument(serializableBundler)
-    val fragmentArguments by OptionalArgument(bundleBundler)
+    val fragmentClass by State(serializableBundler)
+    val fragmentArguments by OptionalState(bundleBundler)
     var fragmentState by OptionalState(parcelableBundler<Fragment.SavedState>())
 
     var fragment: Fragment? = null

@@ -20,7 +20,7 @@ import rx.android.schedulers.AndroidSchedulers
 
 class ShowDetailPresenter(context: PresenterHost, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
 
-    val showId: Long by NativeArgument(-1, longBundler)
+    val showId: Long by NativeState(-1, longBundler)
 
     val repo = ShowRepository()
 

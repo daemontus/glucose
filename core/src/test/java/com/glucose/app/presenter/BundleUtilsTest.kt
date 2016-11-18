@@ -22,14 +22,14 @@ class BundleUtilsTest {
     @Test
     fun bundleUtils_nativeArguments() {
         val p = object : SimplePresenter(host) {
-            val boolArgument by NativeArgument(false, booleanBundler)
-            val byteArgument by NativeArgument(-1, byteBundler)
-            val charArgument by NativeArgument('a', charBundler)
-            val doubleArgument by NativeArgument(-1.0, doubleBundler)
-            val floatArgument by NativeArgument(-1.0f, floatBundler)
-            val intArgument by NativeArgument(-1, intBundler)
-            val longArgument by NativeArgument(-1, longBundler)
-            val shortArgument by NativeArgument(-1, shortBundler)
+            val boolArgument by NativeState(false, booleanBundler)
+            val byteArgument by NativeState(-1, byteBundler)
+            val charArgument by NativeState('a', charBundler)
+            val doubleArgument by NativeState(-1.0, doubleBundler)
+            val floatArgument by NativeState(-1.0f, floatBundler)
+            val intArgument by NativeState(-1, intBundler)
+            val longArgument by NativeState(-1, longBundler)
+            val shortArgument by NativeState(-1, shortBundler)
 
             var boolState by NativeState(false, booleanBundler)
             var byteState by NativeState(-1, byteBundler)
@@ -153,12 +153,12 @@ class BundleUtilsTest {
     @Test
     fun bundleUtils_requiredArguments() {
         val p = object : SimplePresenter(host) {
-            val charSequenceArgument by Argument(charSequenceBundler)
-            val stringArgument by Argument(stringBundler)
-            val bundleArgument by Argument(bundleBundler)
-            val serializableArgument by Argument(serializableBundler)
-            val parcelableArgument by Argument(parcelableBundler<Bundle>())
-            val sparseParcelableArgument by Argument(sparseParcelableArrayBundler<Bundle>())
+            val charSequenceArgument by State(charSequenceBundler)
+            val stringArgument by State(stringBundler)
+            val bundleArgument by State(bundleBundler)
+            val serializableArgument by State(serializableBundler)
+            val parcelableArgument by State(parcelableBundler<Bundle>())
+            val sparseParcelableArgument by State(sparseParcelableArrayBundler<Bundle>())
 
             var charSequenceState by State(charSequenceBundler)
             var stringState by State(stringBundler)
@@ -178,7 +178,7 @@ class BundleUtilsTest {
         val parcelArray1 = SparseArray<Bundle>().apply { this.put(1, parcel1) }
         val parcelArray2 = SparseArray<Bundle>().apply { this.put(2, parcel2) }
 
-        //Missing arguments
+        //Missing instanceState
         p.performAttach(Bundle())
 
         assertFailsWith<NullPointerException> {
@@ -220,7 +220,7 @@ class BundleUtilsTest {
 
         p.performDetach()
 
-        //Valid arguments
+        //Valid instanceState
         p.performAttach(bundle("charSequenceArgument" with string1) and
                 ("stringArgument" with string1) and
                 ("bundleArgument" with bundle1) and
@@ -287,11 +287,11 @@ class BundleUtilsTest {
     @Test
     fun bundleUtils_optionalArgument() {
         val p = object : SimplePresenter(host) {
-            val optionalArgument by OptionalArgument(stringBundler)
+            val optionalArgument by OptionalState(stringBundler)
             var optionalState by OptionalState(stringBundler)
         }
 
-        //Empty arguments
+        //Empty instanceState
         p.performAttach(Bundle())
         assertEquals(null, p.optionalArgument)
         assertEquals(null, p.optionalState)
@@ -300,7 +300,7 @@ class BundleUtilsTest {
         val string1 = "abc"
         val string2 = "def"
 
-        //Valid arguments
+        //Valid instanceState
         p.performAttach(("optionalArgument" with string1) and ("optionalState" with string2))
         assertEquals(string1, p.optionalArgument)
         assertEquals(string2, p.optionalState)

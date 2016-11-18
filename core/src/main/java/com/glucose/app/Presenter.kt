@@ -32,7 +32,7 @@ import rx.subjects.ReplaySubject
  * - Presenter is always connected to it's view, however, this view is only connected to the
  * view hierarchy after [onAttach] (and before [onStart]).
  * - Similarly, presenter's view is detached from the hierarchy before [onDetach], but after [onStop].
- * - Presenter is identified by it's [id]. Id is provided as part of [arguments].
+ * - Presenter is identified by it's [id]. Id is provided as part of [instanceState].
  * - Presenter can use [canChangeConfiguration] to indicate if it wants to be recreated or if
  * it will handle a configuration change on it's own.
  * - In case of a configuration change, presenter's parent should save it's state and recreate it,
@@ -99,15 +99,15 @@ open class Presenter(
 
     /**************** External configuration properties (parent/user sets this) *******************/
 
-    private var _arguments: Bundle? = null
+    private var _instanceState: Bundle? = null
     private var _host: PresenterHost? = host
 
     /**
      * The state [Bundle] of this presenter. Available when [state] >= ATTACHED,
      * otherwise throws a [LifecycleException].
      */
-    val arguments: Bundle
-        get() = _arguments ?: throw LifecycleException("Presenter is $state and has no arguments.")
+    val instanceState: Bundle
+        get() = _instanceState ?: throw LifecycleException("Presenter is $state and has no instanceState.")
 
     /**
      * The [PresenterHost] (context) of this presenter. Available when
@@ -120,20 +120,20 @@ open class Presenter(
      * The id of this presenter (should be unique within the whole tree). It is used to identify
      * the state bundle when restoring the presenter hierarchy. For more info, see main description.
      *
-     * This is a part of the presenters state and hence can be modified using the arguments bundle.
+     * This is a part of the presenters state and hence can be modified using the instanceState bundle.
      * Default: [View.NO_ID]
      */
-    val id: Int by NativeArgument(View.NO_ID, intBundler)
+    val id: Int by NativeState(View.NO_ID, intBundler)
 
     /**
      * This property indicates whether the presenter can be attached automatically when the
      * hierarchy is being restored. Use this property for presenters that are managed
      * by an adapter or when the amount of recreated presenters is too high for smooth start.
      *
-     * This is a part of the presenters state and hence can be modified using the arguments bundle.
+     * This is a part of the presenters state and hence can be modified using the instanceState bundle.
      * Default: true
      */
-    val canReattachAfterStateChange: Boolean by NativeArgument(true, booleanBundler)
+    val canReattachAfterStateChange: Boolean by NativeState(true, booleanBundler)
 
     /**************** Internal configuration properties (parent shouldn't modify these) ***********/
 
@@ -232,14 +232,14 @@ open class Presenter(
     /**
      * Called when this presenter is attached to the main tree.
      *
-     * Here you should initialize the presenter based on its arguments.
+     * Here you should initialize the presenter based on its instanceState.
      *
      * Note that if [canBeReused] is false, this will be called only once.
      *
      * @see canBeReused
      */
     protected open fun onAttach(arguments: Bundle) {
-        _arguments = arguments
+        _instanceState = arguments
         lifecycleHost.state = ATTACHED
     }
 
@@ -284,7 +284,7 @@ open class Presenter(
      */
     protected open fun onDetach() {
         lifecycleHost.state = ALIVE
-        _arguments = null
+        _instanceState = null
     }
 
     /**
@@ -351,7 +351,7 @@ open class Presenter(
      * @see Presenter.saveHierarchyState
      */
     open fun onSaveInstanceState(out: Bundle) {
-        out.putAll(arguments)   //make a copy of the current state
+        out.putAll(instanceState)   //make a copy of the current state
         out.setRestored(true)
     }
 

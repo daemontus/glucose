@@ -90,7 +90,7 @@ class PresenterWithState(host: PresenterHost, @Suppress("UNUSED_PARAMETER") pare
 class LifecycleObservingPresenter(host: PresenterHost)
 : Presenter(host, View(host.activity)) {
 
-    val goBack by NativeArgument(false, booleanBundler)
+    val goBack by NativeState(false, booleanBundler)
 
     private var attached = false
 

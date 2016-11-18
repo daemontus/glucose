@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 
 class SeriesPresenter(context: PresenterHost, parent: ViewGroup?) : Presenter(context, R.layout.presenter_series, parent) {
 
-    val seriesId by NativeArgument(-1, longBundler)
+    val seriesId by NativeState(-1, longBundler)
     val episodeClicks: PublishSubject<Episode> = PublishSubject.create<Episode>()
 
     val repo = ShowRepository()
