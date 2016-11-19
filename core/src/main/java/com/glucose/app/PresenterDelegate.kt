@@ -132,6 +132,7 @@ class PresenterDelegate(
         root?.let { root ->
         parent!!.let { parent ->
             if (root.canChangeConfiguration) {
+                factory.performConfigChange(newConfig)
                 root.onConfigurationChanged(newConfig)
             } else {
                 val savedState = root.saveWholeState()

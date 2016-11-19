@@ -12,10 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 @RunWith(RobolectricTestRunner::class)
 @Config(constants = BuildConfig::class, sdk = intArrayOf(21))
@@ -222,6 +219,22 @@ class PresenterDelegateTest {
         host.onPause()
         host.onStop()
         host.onDestroy()
+    }
+
+    @Test
+    fun presenterDelegate_configurationChangeWithDetachedPresenters() {
+        val host = PresenterDelegate(activity, LifecycleObservingPresenter::class.java)
+        host.factory.register(LifecycleObservingPresenter::class.java, { a, b -> LifecycleObservingPresenter(a) })
+        host.onCreate(null)
+        val root = host.root as LifecycleObservingPresenter
+        val detached = host.factory.obtain(LifecycleObservingPresenter::class.java, null)
+        host.factory.recycle(detached)
+        host.onConfigurationChanged(Configuration())
+        detached.assertConfig()
+        root.assertConfig()
+        host.onDestroy()
+        detached.assertDestroyed()
+        root.assertDestroyed()
     }
 
 }
