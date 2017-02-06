@@ -5,11 +5,11 @@ subprojects {
     group = 'com.github.daemontus'
     version = '1.0.0-alpha3'
     ext.version_code = 100
-    ext.compile_sdk = 24
-    ext.target_sdk = 24
-    ext.build_tools = '24.0.2'
-    ext.kotlin_version = '1.0.5'
-    ext.support_library = '25.0.0'
+    ext.compile_sdk = 25
+    ext.target_sdk = 25
+    ext.build_tools = '25.0.1'
+    ext.kotlin_version = '1.0.6'
+    ext.support_library = '25.1.1'
 }
 
 buildscript {
@@ -18,8 +18,8 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.4"
+        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.6"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
     }
 }
