@@ -314,7 +314,7 @@ open class Presenter(
     /**
      * @see Activity.onActivityResult
      */
-    open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     }
 
     /**

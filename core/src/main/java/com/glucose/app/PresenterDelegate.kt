@@ -155,7 +155,7 @@ class PresenterDelegate(
         } } ?: throw LifecycleException("Delegate is destroyed or not created.")
     }
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         root?.onActivityResult(requestCode, resultCode, data)
                 ?: throw LifecycleException("Delegate is destroyed or not created.")
     }
