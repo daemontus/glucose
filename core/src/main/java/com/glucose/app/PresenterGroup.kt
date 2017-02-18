@@ -145,7 +145,7 @@ open class PresenterGroup : Presenter {
         return myState
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         children.forEach {
             it.onActivityResult(requestCode, resultCode, data)
