@@ -43,9 +43,6 @@ interface Presenter : Holder {
 
 
 */
-
-interface Event
-interface Action
 interface PresenterHost
 
 open class Presenter(
@@ -53,25 +50,27 @@ open class Presenter(
         host: PresenterHost
 ) : Holder(view, host) {
 
-    private val eventPublisher = PublishSubject.create<Event>()
-    private val eventReceiver = PublishSubject.create<Event>()
+    private val eventBridge = PublishSubject.create<Event>()
 
-    val events: Observable<Event> = eventPublisher
+    val events: Observable<Event> = eventBridge.filter { event ->
+        consumedEvents.all { !it.isInstance(event) }
+    }
 
     private val consumedEvents = ArrayList<Class<*>>()
 
     fun emmitEvent(event: Event) {
-        this.eventReceiver.onNext(event)
+        this.eventBridge.onNext(event)
     }
 
     fun <T: Event> consumeEvent(kind: Class<T>): Observable<T> {
         return observeEvent(kind)
+                .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { consumedEvents.add(kind) }
                 .doOnUnsubscribe { consumedEvents.remove(kind) }
     }
 
     fun <T: Event> observeEvent(kind: Class<T>): Observable<T> {
-        return eventReceiver
+        return eventBridge
                 .filter { kind.isInstance(it) }
                 .cast(kind)
     }
@@ -82,7 +81,7 @@ open class Presenter(
 
         // stream events from attached presenter
         if (holder is Presenter) {
-            holder.events.subscribe(eventReceiver).whileAttached(holder)
+            holder.events.subscribe(eventBridge).whileAttached(holder)
         }
     }
 
