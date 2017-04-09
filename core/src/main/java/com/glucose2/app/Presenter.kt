@@ -7,10 +7,12 @@ import com.glucose.app.presenter.NativeBundler
 import com.glucose.app.presenter.booleanBundler
 import com.glucose.app.presenter.intBundler
 import rx.Observable
+import rx.Observer
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
+import java.util.*
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -48,43 +50,69 @@ interface PresenterHost
 open class Presenter(
         view: View,
         host: PresenterHost
-) : Holder(view, host) {
+) : Holder(view, host), EventHost {
 
-    private val eventBridge = PublishSubject.create<Event>()
+    /* ========== Event Host ============ */
 
-    val events: Observable<Event> = eventBridge.filter { event ->
-        consumedEvents.all { !it.isInstance(event) }
-    }
+    // Subjects responsible for handling local event processing
+    private val actions = PublishSubject.create<Action>()
+    private val events = PublishSubject.create<Event>()
 
+    // Lists that store currently consumed classed.
+    // Thread safety: Lists should be accessed only from EventScheduler!
+    // We use lists instead of sets because they can handle duplicates safely.
     private val consumedEvents = ArrayList<Class<*>>()
+    private val consumedActions = ArrayList<Class<*>>()
 
-    fun emmitEvent(event: Event) {
-        this.eventBridge.onNext(event)
+    // Observable of events that are not consumed by this Presenter.
+    // Parent Presenter should connect to this stream.
+    private val eventsBridge: Observable<Event>
+            = events.observeOn(EventScheduler)
+                .filter { event -> consumedEvents.all { !it.isInstance(event) } }
+
+    // Observable of actions that are not consumed by this Presenter.
+    // Child Presenters should connect to this stream.
+    private val actionBridge: Observable<Action>
+            = actions.observeOn(EventScheduler)
+            .filter { action -> consumedActions.all { !it.isInstance(action) } }
+
+    override fun <T : Event> observeEvent(type: Class<T>): Observable<T>
+            = events.observeOn(EventScheduler)
+            .filter { event -> type.isInstance(event) }
+            .cast(type)
+
+    override fun <T : Event> consumeEvent(type: Class<T>): Observable<T>
+            = observeEvent(type).observeOn(EventScheduler)
+            .doOnSubscribe { consumedEvents.add(type) }
+            .doOnUnsubscribe { consumedEvents.remove(type) }
+
+    override fun <T : Action> observeAction(type: Class<T>): Observable<T>
+            = actions.observeOn(EventScheduler)
+            .filter { action -> type.isInstance(action) }
+            .cast(type)
+
+    override fun <T : Action> consumeAction(type: Class<T>): Observable<T>
+            = observeAction(type).observeOn(EventScheduler)
+            .doOnSubscribe { consumedActions.add(type) }
+            .doOnUnsubscribe { consumedActions.remove(type) }
+
+    override fun emitEvent(event: Event) {
+        this.events.onNext(event)
     }
 
-    fun <T: Event> consumeEvent(kind: Class<T>): Observable<T> {
-        return observeEvent(kind)
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe { consumedEvents.add(kind) }
-                .doOnUnsubscribe { consumedEvents.remove(kind) }
+    override fun emitAction(action: Action) {
+        this.actions.onNext(action)
     }
 
-    fun <T: Event> observeEvent(kind: Class<T>): Observable<T> {
-        return eventBridge
-                .filter { kind.isInstance(it) }
-                .cast(kind)
+    /* ========== Holder overrides ============ */
+
+    override fun onAttach(parent: Presenter) {
+        super.onAttach(parent)
+        // while attached, pass all eventsBridge to the parent presenter
+        this.eventsBridge.subscribe(parent.events).whileAttached()
+        // while attached, receive actionBridge from the parent presenter
+        parent.actionBridge.subscribe(this.actions).whileAttached()
     }
-
-    fun attach(holder: Holder) {
-        //do some other stuff
-        holder.performAttach(this)
-
-        // stream events from attached presenter
-        if (holder is Presenter) {
-            holder.events.subscribe(eventBridge).whileAttached(holder)
-        }
-    }
-
 
 }
 
@@ -104,7 +132,7 @@ class NativeState<T>(
 open class Holder(
         val view: View,
         val host: PresenterHost
-) {
+) : Attachable<Presenter> {
 
     /* ========== Configuration properties ============ */
 
@@ -120,13 +148,27 @@ open class Holder(
     /** Default: [View.NO_ID]. Uniquely identifies this holder in the hierarchy. **/
     val id by NativeState(View.NO_ID, intBundler)
 
+    /* ========== Attachable<Presenter> ============ */
+
     private var _parent: Presenter? = null
 
-    val parent: Presenter
+    override val parent: Presenter
         get() = _parent ?: throw LifecycleException("Holder ($this) is not attached to presenter.")
 
-    val isAttached: Boolean
+    override val isAttached: Boolean
         get() = _parent != null
+
+    private val whileAttached = CompositeSubscription()
+
+    override fun Subscription.whileAttached(): Subscription {
+        if (isAttached) {
+            whileAttached.add(this)
+        } else {
+            unsubscribe()
+        }
+        return this
+    }
+
 
     private var _instanceState: Bundle? = null
 
@@ -210,17 +252,7 @@ open class Holder(
         this._instanceState = null
     }
 
-    private val whileAttached = CompositeSubscription()
     private val whileBound = CompositeSubscription()
-
-    fun Subscription.whileAttached(): Subscription {
-        if (isAttached) {
-            whileAttached.add(this)
-        } else {
-            unsubscribe()
-        }
-        return this
-    }
 
     fun Subscription.whileBound(): Subscription {
         if (isBound) {
@@ -231,10 +263,6 @@ open class Holder(
         return this
     }
 
-}
-
-fun Subscription.whileAttached(holder: Holder): Subscription = holder.run {
-    whileAttached()
 }
 
 fun Subscription.whileBound(holder: Holder): Subscription = holder.run {

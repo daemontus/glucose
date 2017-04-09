@@ -17,7 +17,7 @@ interface Attachable<out T> {
     val isAttached: Boolean
 
     /**
-     * Modify the subscription so that it is unsubscribed before next detach.
+     * Modify the subscription so that it is unsubscribed on next detach.
      */
     fun Subscription.whileAttached(): Subscription
 
@@ -28,21 +28,4 @@ interface Attachable<out T> {
  */
 fun Subscription.whileAttached(target: Attachable<*>): Subscription = target.run {
     this@whileAttached.whileAttached()
-}
-
-class AttachDelegate<out T : Any> : Attachable<T> {
-
-    private val _parent: T? = null
-
-    override val parent: T
-        get() = _parent ?: throw LifecycleException("Object is not attached to its parent.")
-
-    override val isAttached: Boolean
-        get() = _parent != null
-
-    override fun Subscription.whileAttached(): Subscription {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-
 }
