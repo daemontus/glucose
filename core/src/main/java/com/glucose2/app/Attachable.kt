@@ -5,8 +5,11 @@ import rx.Subscription
 
 /**
  * Abstraction of all types that can be attached to some kind of parent.
+ *
+ * Typically, such objects form a tree-like structure.
+ *
  */
-interface Attachable<out T> {
+interface Attachable<out T : Any> {
 
     /**
      * @throws [LifecycleException] if this instance is not attached.

@@ -132,7 +132,7 @@ class NativeState<T>(
 open class Holder(
         val view: View,
         val host: PresenterHost
-) : Attachable<Presenter> {
+) : Attachable<Presenter>, Bindable<Bundle> {
 
     /* ========== Configuration properties ============ */
 
@@ -169,14 +169,27 @@ open class Holder(
         return this
     }
 
+    /* ========== Bindable<Bundle> ============ */
 
-    private var _instanceState: Bundle? = null
+    private var _state: Bundle? = null
 
-    val instanceState: Bundle
-        get() = _instanceState ?: throw LifecycleException("Holder ($this) is not bound to a state.")
+    override val state: Bundle
+        get() = _state ?: throw LifecycleException("Holder ($this) is not bound to a state.")
 
-    val isBound: Boolean
-        get() = _instanceState != null
+    override val isBound: Boolean
+        get() = _state != null
+
+    private val whileBound = CompositeSubscription()
+
+    override fun Subscription.whileBound(): Subscription {
+        if (isBound) {
+            whileBound.add(this)
+        } else {
+            unsubscribe()
+        }
+        return this
+    }
+
 
     /**
      * Only update the parent value. Presenter is responsible for placing this holder into the
@@ -244,23 +257,12 @@ open class Holder(
     }
 
     protected open fun onBind(instanceState: Bundle) {
-        this._instanceState = instanceState
+        this._state = instanceState
     }
 
     protected open fun onReset() {
         whileBound.clear()
-        this._instanceState = null
-    }
-
-    private val whileBound = CompositeSubscription()
-
-    fun Subscription.whileBound(): Subscription {
-        if (isBound) {
-            whileBound.add(this)
-        } else {
-            unsubscribe()
-        }
-        return this
+        this._state = null
     }
 
 }
