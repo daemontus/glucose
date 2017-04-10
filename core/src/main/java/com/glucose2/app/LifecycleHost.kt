@@ -8,8 +8,15 @@ import rx.Subscription
  * Note that the semantics are a little more complex when applied to object that is
  * also [Bindable] and [Attachable].
  *
+ * Specifically, the lifecycle of [Bindable] is completely independent on ths LifecycleHost.
+ * On the other hand, LifecycleHost is directly dependent on the [Attachable] interface.
+ *
+ * That is because the information about the current state are passed from parent
+ * in the attach hierarchy. Therefore one has to be attached to have proper information
+ * about current state of the lifecycle.
+ *
  */
-interface LifecycleHost<out T : Any> : Bindable<T> {
+interface LifecycleHost<out T : Any> : Attachable<T> {
 
     val isStarted: Boolean
 
