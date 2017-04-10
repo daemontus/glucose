@@ -19,6 +19,8 @@ interface HolderFactory {
 
 interface PresenterHost : HolderFactory {
 
+
+
 }
 
 open class Presenter(
@@ -140,19 +142,50 @@ open class Presenter(
         get() = _resumed
 
     internal fun performStart() {
-        //TODO
+        if (!isBound) {
+            throw LifecycleException("Starting presenter $this which is not bound.")
+        }
+        if (isStarted) {
+            throw LifecycleException("Presenter $this is already started.")
+        }
+        onStart()
+        if (!isStarted) {
+            //TODO: Unite these messages
+            throw LifecycleException("Super.onStart not called properly in $this.")
+        }
     }
 
     internal fun performResume() {
-        //TODO
+        if (!isStarted) {
+            throw LifecycleException("Resuming presenter $this which is not started.")
+        }
+        if (isResumed) {
+            throw LifecycleException("Presenter $this is already resumed.")
+        }
+        onResume()
+        if (!isResumed) {
+            throw LifecycleException("Super.onResume not called properly in $this.")
+        }
     }
 
     internal fun performPause() {
-        //TODO
+        if (!isResumed) {
+            throw LifecycleException("Pausing presenter $this which is not resumed.")
+        }
+        onPause()
+        if (isResumed) {
+            throw LifecycleException("Super.onPause not called properly in $this.")
+        }
     }
 
     internal fun performStop() {
-        //TODO
+        if (!isStarted) {
+            throw LifecycleException("Stopping presenter $this which is not started.")
+        }
+        onStop()
+        if (isStarted) {
+            throw LifecycleException("Super.onStop not called properly in $this.")
+        }
     }
 
     protected open fun onStart() {
@@ -176,6 +209,22 @@ open class Presenter(
         this.eventsBridge.subscribe(parent.events).whileAttached()
         // while attached, receive actionBridge from the parent presenter
         parent.actionBridge.subscribe(this.actions).whileAttached()
+    }
+
+    override fun performBind(state: Bundle) {
+        super.performBind(state)
+        //TODO: What now?
+        if (isAttached) {
+            if (parent.isStarted) performStart()
+            if (parent.isResumed) performResume()
+        }
+    }
+
+    override fun performReset() {
+        // ensure proper lifecycle semantics
+        if (isResumed) performPause()
+        if (isStarted) performStop()
+        super.performReset()
     }
 
 }
@@ -303,7 +352,7 @@ open class Holder(
 
     fun reset() = performReset()
 
-    internal fun performBind(state: Bundle) {
+    internal open fun performBind(state: Bundle) {
         if (isBound) {
             throw LifecycleException("Holder ($this) is already bound to ${this.state}.")
         }
@@ -313,7 +362,7 @@ open class Holder(
         }
     }
 
-    internal fun performReset() {
+    internal open fun performReset() {
         if (!isBound) {
             throw LifecycleException("Holder ($this) is not bound to anything.")
         }
