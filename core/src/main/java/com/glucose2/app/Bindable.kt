@@ -18,6 +18,8 @@ interface Bindable<out T : Any> {
 
     /**
      * Modify the subscription so that it is unsubscribed on next reset.
+     *
+     * TODO: Semantics when not bound?
      */
     fun Subscription.whileBound(): Subscription
 

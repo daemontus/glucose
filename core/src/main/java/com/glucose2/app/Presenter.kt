@@ -24,7 +24,7 @@ interface PresenterHost : HolderFactory {
 open class Presenter(
         view: View,
         host: PresenterHost
-) : Holder(view, host), EventHost, HolderGroup {
+) : Holder(view, host), EventHost, HolderGroup, LifecycleHost<Bundle> {
 
 
 
@@ -125,6 +125,49 @@ open class Presenter(
 
 
 
+    /* ========== Lifecycle Host ============ */
+
+    private val whileStarted = CompositeSubscription()
+    private val whileResumed = CompositeSubscription()
+
+    private var _started = false
+    private var _resumed = false
+
+    override val isStarted: Boolean
+        get() = _started
+
+    override val isResumed: Boolean
+        get() = _resumed
+
+    internal fun performStart() {
+        //TODO
+    }
+
+    internal fun performResume() {
+        //TODO
+    }
+
+    internal fun performPause() {
+        //TODO
+    }
+
+    internal fun performStop() {
+        //TODO
+    }
+
+    protected open fun onStart() {
+        _started = true
+    }
+    protected open fun onResume() {
+        _resumed = true
+    }
+    protected open fun onPause() {
+        _resumed = false
+    }
+    protected open fun onStop() {
+        _started = false
+    }
+
     /* ========== Holder overrides ============ */
 
     override fun onAttach(parent: Presenter) {
@@ -150,7 +193,7 @@ open class Holder(
      * Default: true. When false, the holder won't be saved into the main hierarchy bundle.
      * Use to safely provide holders inside adapters.
      **/
-    val saveHierarchy by NativeState(true, booleanBundler)
+    val saveIntoHierarchy by NativeState(true, booleanBundler)
 
     /** Default: true. When false, the holder will be recreated upon configuration change. **/
     val surviveConfigChange by NativeState(true, booleanBundler)
@@ -181,32 +224,7 @@ open class Holder(
         return this
     }
 
-
-
-    /* ========== Bindable<Bundle> ============ */
-
-    private var _state: Bundle? = null
-
-    override val state: Bundle
-        get() = _state ?: throw LifecycleException("Holder ($this) is not bound to a state.")
-
-    override val isBound: Boolean
-        get() = _state != null
-
-    private val whileBound = CompositeSubscription()
-
-    override fun Subscription.whileBound(): Subscription {
-        if (isBound) {
-            whileBound.add(this)
-        } else {
-            unsubscribe()
-        }
-        return this
-    }
-
-
-
-    /* ========== Holder lifecycle ============ */
+    /* ========== Attachable lifecycle ============ */
 
     /**
      * Only update the parent value. Presenter is responsible for placing this holder into the
@@ -253,6 +271,38 @@ open class Holder(
         this._parent = null
     }
 
+
+
+    /* ========== Bindable<Bundle> ============ */
+
+    private var _state: Bundle? = null
+
+    override val state: Bundle
+        get() = _state ?: throw LifecycleException("Holder ($this) is not bound to a state.")
+
+    override val isBound: Boolean
+        get() = _state != null
+
+    private val whileBound = CompositeSubscription()
+
+    override fun Subscription.whileBound(): Subscription {
+        if (isBound) {
+            whileBound.add(this)
+        } else {
+            unsubscribe()
+        }
+        return this
+    }
+
+    /* ========== Bindable Lifecycle ============ */
+
+    // Note: we have these as special methods just for the sake of consistency
+    // with other similar functionality.
+
+    fun bind(state: Bundle) = performBind(state)
+
+    fun reset() = performReset()
+
     internal fun performBind(state: Bundle) {
         if (isBound) {
             throw LifecycleException("Holder ($this) is already bound to ${this.state}.")
@@ -273,8 +323,8 @@ open class Holder(
         }
     }
 
-    protected open fun onBind(instanceState: Bundle) {
-        this._state = instanceState
+    protected open fun onBind(state: Bundle) {
+        this._state = state
     }
 
     protected open fun onReset() {
