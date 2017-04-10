@@ -3,48 +3,14 @@ package com.glucose2.app
 import android.os.Bundle
 import android.view.View
 import com.glucose.app.presenter.LifecycleException
-import com.glucose.app.presenter.NativeBundler
 import com.glucose.app.presenter.booleanBundler
 import com.glucose.app.presenter.intBundler
 import rx.Observable
-import rx.Observer
 import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers
 import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
 import java.util.*
-import kotlin.properties.ReadOnlyProperty
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
 
-/*
-
-interface Holder {
-
-    val view: View
-    val parent: Presenter?
-
-    fun onAttach(parent: Presenter)
-    fun onBind(data: Bundle)
-
-    fun onReset()
-    fun onDetach()
-
-}
-
-interface Presenter : Holder {
-
-    val host: PresenterHost
-
-    fun onResume()
-    fun onStart()
-
-    fun onPause()
-    fun onStop()
-}
-
-
-*/
 interface PresenterHost
 
 open class Presenter(
@@ -116,19 +82,6 @@ open class Presenter(
 
 }
 
-
-class NativeState<T>(
-        private val default: T,
-        private val bundler: NativeBundler<T>
-) : ReadWriteProperty<Holder, T>, ReadOnlyProperty<Holder, T> {
-    override fun getValue(thisRef: Holder, property: KProperty<*>): T
-            = bundler.getter(thisRef.instanceState, property.name, default)
-
-    override fun setValue(thisRef: Holder, property: KProperty<*>, value: T)
-            = bundler.setter(thisRef.instanceState, property.name, value)
-
-}
-
 open class Holder(
         val view: View,
         val host: PresenterHost
@@ -190,6 +143,8 @@ open class Holder(
         return this
     }
 
+    /* ========== Holder lifecycle ============ */
+
 
     /**
      * Only update the parent value. Presenter is responsible for placing this holder into the
@@ -238,7 +193,7 @@ open class Holder(
 
     internal fun performBind(instanceState: Bundle) {
         if (isBound) {
-            throw LifecycleException("Holder ($this) is already bound to ${this.instanceState}.")
+            throw LifecycleException("Holder ($this) is already bound to ${this.state}.")
         }
         onBind(instanceState)
         if (!isBound) {
@@ -265,8 +220,4 @@ open class Holder(
         this._state = null
     }
 
-}
-
-fun Subscription.whileBound(holder: Holder): Subscription = holder.run {
-    whileBound()
 }

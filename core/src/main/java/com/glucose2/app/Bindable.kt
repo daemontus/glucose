@@ -1,6 +1,5 @@
 package com.glucose2.app
 
-import android.os.Bundle
 import com.glucose.app.presenter.LifecycleException
 import rx.Subscription
 
