@@ -2,6 +2,7 @@ package com.glucose2.app
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.booleanBundler
 import com.glucose.app.presenter.intBundler
@@ -11,12 +12,21 @@ import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
 import java.util.*
 
-interface PresenterHost
+interface HolderFactory {
+    fun <T: Holder> obtain(clazz: Class<T>): T
+    fun recycle(holder: Holder)
+}
+
+interface PresenterHost : HolderFactory {
+
+}
 
 open class Presenter(
         view: View,
         host: PresenterHost
-) : Holder(view, host), EventHost {
+) : Holder(view, host), EventHost, HolderGroup {
+
+
 
     /* ========== Event Host ============ */
 
@@ -70,6 +80,51 @@ open class Presenter(
         this.actions.onNext(action)
     }
 
+
+
+    /* ========== Holder Group ============ */
+
+    private val attached = ArrayList<Holder>()
+
+    override val children: Sequence<Holder>
+            get() = attached.asSequence()
+
+    override val childrenRecursive: Sequence<Holder>
+            get() = attached.asSequence().flatMap {
+                if (it is Presenter) {
+                    sequenceOf(it) + it.childrenRecursive
+                } else sequenceOf(it)
+            }
+
+    override fun <T : Holder> attach(holder: T, location: InsertionPoint): T {
+        // insert into view hierarchy
+        location.invoke(view as ViewGroup, holder)
+        if (!view.hasTransitiveChild(holder.view)) {
+            throw LifecycleException("$holder view has not been inserted properly into $this")
+        }
+        // move holder into attached state
+        attached.add(holder)
+        holder.performAttach(this)
+        return holder
+    }
+
+    override fun <T : Holder> detach(holder: T): T {
+        if (holder !in attached || holder.parent != this) {
+            throw LifecycleException("$holder not attached to $this (attached: $attached)")
+        }
+        if (!view.hasTransitiveChild(holder.view)) {
+            throw LifecycleException("$holder is not in the view tree of this presenter. Has it been moved?")
+        }
+        // move holder into detached state
+        holder.performDetach()
+        attached.remove(holder)
+        // remove holder from view hierarchy
+        (holder.view.parent as ViewGroup).removeView(holder.view)
+        return holder
+    }
+
+
+
     /* ========== Holder overrides ============ */
 
     override fun onAttach(parent: Presenter) {
@@ -87,6 +142,8 @@ open class Holder(
         val host: PresenterHost
 ) : Attachable<Presenter>, Bindable<Bundle> {
 
+
+
     /* ========== Configuration properties ============ */
 
     /**
@@ -100,6 +157,8 @@ open class Holder(
 
     /** Default: [View.NO_ID]. Uniquely identifies this holder in the hierarchy. **/
     val id by NativeState(View.NO_ID, intBundler)
+
+
 
     /* ========== Attachable<Presenter> ============ */
 
@@ -122,6 +181,8 @@ open class Holder(
         return this
     }
 
+
+
     /* ========== Bindable<Bundle> ============ */
 
     private var _state: Bundle? = null
@@ -143,8 +204,9 @@ open class Holder(
         return this
     }
 
-    /* ========== Holder lifecycle ============ */
 
+
+    /* ========== Holder lifecycle ============ */
 
     /**
      * Only update the parent value. Presenter is responsible for placing this holder into the
@@ -191,11 +253,11 @@ open class Holder(
         this._parent = null
     }
 
-    internal fun performBind(instanceState: Bundle) {
+    internal fun performBind(state: Bundle) {
         if (isBound) {
             throw LifecycleException("Holder ($this) is already bound to ${this.state}.")
         }
-        onBind(instanceState)
+        onBind(state)
         if (!isBound) {
             throw LifecycleException("Super.onBind hasn't been called properly in $this.")
         }
