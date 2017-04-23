@@ -35,7 +35,9 @@ internal class TransactionHostDelegate : TransactionHost {
     override fun <T> submit(transaction: Observable<T>): Observable<T> {
         // Concat is just to flatten the observable.
         // Since it emits only one item, there is nothing to concat.
-        // Note: we can't just use defer because that would create a new proxy for each subscription.
+        // Note: we can't just use defer because that would mean the cache will be caching
+        // the transaction results, not the proxy subjects and hence the transaction
+        // couldn't be unsubscribed.
         return Observable.concat(Observable.fromCallable { enqueueAction(transaction) }
                 .cacheWithInitialCapacity(1))    //make sure only one proxy is created)
     }
