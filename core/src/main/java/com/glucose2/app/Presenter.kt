@@ -1,14 +1,11 @@
 package com.glucose2.app
 
-import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
-import com.glucose.app.presenter.booleanBundler
-import com.glucose.app.presenter.intBundler
-import rx.Observable
+import com.glucose2.app.event.EventHost
+import com.glucose2.app.event.EventHostDelegate
 import rx.Subscription
-import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
 import java.util.*
 
@@ -23,64 +20,11 @@ interface PresenterHost : HolderFactory {
 
 }
 
-open class Presenter(
+internal open class Presenter(
         view: View,
-        host: PresenterHost
-) : Holder(view, host), EventHost, HolderGroup, LifecycleHost<Presenter> {
-
-
-
-    /* ========== Event Host ============ */
-
-    // Subjects responsible for handling local event processing
-    private val actions = PublishSubject.create<Action>()
-    private val events = PublishSubject.create<Event>()
-
-    // Lists that store currently consumed classed.
-    // Thread safety: Lists should be accessed only from EventScheduler!
-    // We use lists instead of sets because they can handle duplicates safely.
-    private val consumedEvents = ArrayList<Class<*>>()
-    private val consumedActions = ArrayList<Class<*>>()
-
-    // Observable of events that are not consumed by this Presenter.
-    // Parent Presenter should connect to this stream.
-    private val eventsBridge: Observable<Event>
-            = events.observeOn(EventScheduler)
-                .filter { event -> consumedEvents.all { !it.isInstance(event) } }
-
-    // Observable of actions that are not consumed by this Presenter.
-    // Child Presenters should connect to this stream.
-    private val actionBridge: Observable<Action>
-            = actions.observeOn(EventScheduler)
-            .filter { action -> consumedActions.all { !it.isInstance(action) } }
-
-    override fun <T : Event> observeEvent(type: Class<T>): Observable<T>
-            = events.observeOn(EventScheduler)
-            .filter { event -> type.isInstance(event) }
-            .cast(type)
-
-    override fun <T : Event> consumeEvent(type: Class<T>): Observable<T>
-            = observeEvent(type).observeOn(EventScheduler)
-            .doOnSubscribe { consumedEvents.add(type) }
-            .doOnUnsubscribe { consumedEvents.remove(type) }
-
-    override fun <T : Action> observeAction(type: Class<T>): Observable<T>
-            = actions.observeOn(EventScheduler)
-            .filter { action -> type.isInstance(action) }
-            .cast(type)
-
-    override fun <T : Action> consumeAction(type: Class<T>): Observable<T>
-            = observeAction(type).observeOn(EventScheduler)
-            .doOnSubscribe { consumedActions.add(type) }
-            .doOnUnsubscribe { consumedActions.remove(type) }
-
-    override fun emitEvent(event: Event) {
-        this.events.onNext(event)
-    }
-
-    override fun emitAction(action: Action) {
-        this.actions.onNext(action)
-    }
+        host: PresenterHost,
+        private val eventHost: EventHostDelegate = EventHostDelegate()
+) : Holder(view, host), EventHost by eventHost, HolderGroup, LifecycleHost<Presenter> {
 
 
 
@@ -243,10 +187,7 @@ open class Presenter(
 
     override fun onAttach(parent: Presenter) {
         super.onAttach(parent)
-        // while attached, pass all eventsBridge to the parent presenter
-        this.eventsBridge.subscribe(parent.events).whileAttached()
-        // while attached, receive actionBridge from the parent presenter
-        parent.actionBridge.subscribe(this.actions).whileAttached()
+        this.eventHost.onAttach(parent.eventHost).whileAttached()
     }
 
     override fun performReset() {
