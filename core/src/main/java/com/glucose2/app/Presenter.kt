@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import com.glucose.app.presenter.LifecycleException
 import com.glucose2.app.event.EventHost
 import com.glucose2.app.event.EventHostDelegate
+import com.glucose2.app.transaction.TransactionHost
 import rx.Subscription
 import rx.subscriptions.CompositeSubscription
 import java.util.*
@@ -14,7 +15,7 @@ interface HolderFactory {
     fun recycle(holder: Holder)
 }
 
-interface PresenterHost : HolderFactory {
+interface PresenterHost : HolderFactory, TransactionHost {
 
 
 

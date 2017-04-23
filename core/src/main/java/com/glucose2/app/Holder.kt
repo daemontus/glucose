@@ -5,6 +5,7 @@ import android.view.View
 import com.glucose.app.presenter.LifecycleException
 import com.glucose.app.presenter.booleanBundler
 import com.glucose.app.presenter.intBundler
+import com.glucose2.app.transaction.TransactionHost
 import rx.Subscription
 import rx.subscriptions.CompositeSubscription
 
@@ -12,7 +13,7 @@ import rx.subscriptions.CompositeSubscription
 open class Holder(
         val view: View,
         val host: PresenterHost
-) : Attachable<Presenter>, Bindable<Bundle> {
+) : Attachable<Presenter>, Bindable<Bundle>, TransactionHost by host {
 
 
 

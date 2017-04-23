@@ -1,5 +1,6 @@
 package com.glucose2.app.event
 
+import android.support.annotation.AnyThread
 import rx.Observable
 
 
@@ -32,6 +33,7 @@ import rx.Observable
  * All observables should have a publish semantics (i.e. all events/actions that
  * are not observed are forgotten) and run on the [EventScheduler].
  */
+@AnyThread
 interface EventHost {
 
     /**
