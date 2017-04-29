@@ -1,7 +1,5 @@
 package com.glucose2.app.transaction
 
-import com.glucose.app.presenter.CannotExecuteException
-import com.glucose.app.presenter.PrematureTerminationException
 import com.glucose.util.asResult
 import rx.Observable
 import rx.Subscription
