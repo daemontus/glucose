@@ -129,7 +129,7 @@ open class Holder(
 
 
 
-    /* ========== Bindable<Bundle> ============ */
+    /* ========== DataHost<Bundle> ============ */
 
     private var _state: Bundle? = null
 
@@ -150,7 +150,7 @@ open class Holder(
         return this
     }
 
-    /* ========== Bindable Lifecycle ============ */
+    /* ========== DataHost Lifecycle ============ */
 
     // Note: we have these as special methods just for the sake of consistency
     // with other similar functionality.

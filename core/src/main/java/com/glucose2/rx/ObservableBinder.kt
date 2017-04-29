@@ -1,6 +1,6 @@
 package com.glucose2.rx
 
-import com.glucose.app.presenter.LifecycleException
+import com.glucose2.app.LifecycleException
 import rx.Observable
 import rx.Subscription
 import rx.subjects.BehaviorSubject

@@ -1,9 +1,10 @@
 package com.glucose2.app.component
 
 import android.os.Bundle
-import com.glucose.app.presenter.LifecycleException
+import com.glucose2.app.LifecycleException
+import com.glucose2.rx.ObservableBinder
 
-open class Component {
+open class Component : DataHost, LifecycleHost {
 
     // ========== Lifecycle handling ==========
 
@@ -15,41 +16,43 @@ open class Component {
 
     private var state: State = State.ALIVE
 
-    /**
-     * Indicates that the component is destroyed and can't be used again.
-     */
-    val isDestroyed get() = state == State.DESTROYED
+    override final val isDestroyed get() = state == State.DESTROYED
 
-    /**
-     * Indicates that the component has not been destroyed.
-     */
-    val isAlive get() = state >= State.ALIVE
+    override final val isAlive get() = state >= State.ALIVE
+    override final val alive: ObservableBinder = ObservableBinder()
 
-    /**
-     * Indicates that the component is part of the main tree.
-     */
-    val isAttached get() = state >= State.ATTACHED
+    override final val isAttached get() = state >= State.ATTACHED
+    override final val attached: ObservableBinder = ObservableBinder()
 
-    /**
-     * Indicates that the component is part of the main tree and the activity is started.
-     */
-    val isStarted get() = state >= State.STARTED
+    override final val isStarted get() = state >= State.STARTED
+    override final val started: ObservableBinder = ObservableBinder()
 
-    /**
-     * Indicates that the component is part of the main tree and the activity is resumed.
-     */
-    val isResumed get() = state >= State.RESUMED
+    override final val isResumed get() = state >= State.RESUMED
+    override final val resumed: ObservableBinder = ObservableBinder()
+
+    // ========== DataHost interface ==========
 
     private var _data: Bundle? = null
 
-    protected val data: Bundle
+    override final val data: Bundle
         get() = _data ?: throw LifecycleException("Accessing data on a component which is not bound.")
 
-    /**
-     * Indicates that the component has an associated data bundle.
-     */
-    val isBound get() = _data != null
+    override final val isBound get() = _data != null
 
+    override final val dataBound: ObservableBinder = ObservableBinder()
 
+    override fun bindData(data: Bundle): Bundle? {
+        val old = _data
+        _data = data
+        dataBound.performStart()
+        return old
+    }
+
+    override fun unbindData(): Bundle {
+        dataBound.performStop()
+        val r = data
+        _data = null
+        return r
+    }
 
 }
