@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'com.github.dcendents.android-maven'
-//TODO apply plugin: 'org.jetbrains.dokka-android'
+apply plugin: 'org.jetbrains.dokka-android'
 apply plugin: 'jacoco'  //coverage for normal unit tests
 
 //To run all tests with coverage, use "gradle createDebugCoverageReport jacocoTestReport"
