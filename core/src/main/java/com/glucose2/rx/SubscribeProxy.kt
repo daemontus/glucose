@@ -41,9 +41,8 @@ class SubscribeProxy<out T> internal constructor(
         return if (binders.any { !it.isActive }) {
             null
         } else {
-            //TODO: witch apply to also
-            subscribe().apply {
-                binders.forEach { it.bindSubscription(this) }
+            subscribe().also { subscription ->
+                binders.forEach { it.bindSubscription(subscription) }
             }
         }
     }

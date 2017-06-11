@@ -5,10 +5,10 @@ import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
 
 /**
- * TransactionHost is an implemented by Glucose components which allow execution of
+ * TransactionHost is implemented by Glucose components which allow execution of
  * transactions.
  *
- * It is responsible executing transactions and ensuring their mutual exclusivity.
+ * It is responsible for executing transactions and ensuring their mutual exclusivity.
  * For more information about the transaction mechanism, see the package documentation.
  *
  * One can submit a new transaction either using the [submit] method or one of the
