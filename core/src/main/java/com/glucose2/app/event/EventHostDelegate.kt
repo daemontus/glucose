@@ -67,4 +67,9 @@ internal class EventHostDelegate : EventHost {
                 add(parent.actionBridge.subscribe(actions))
             }
 
+    internal fun performDestroy() {
+        this.events.onCompleted()
+        this.actions.onCompleted()
+    }
+
 }

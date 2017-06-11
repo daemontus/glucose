@@ -1,4 +1,4 @@
-package com.glucose2.app.component
+package com.glucose2.state
 
 import android.os.Bundle
 import com.glucose2.rx.ObservableBinder
@@ -13,39 +13,40 @@ import com.glucose2.rx.ObservableBinder
  * Typically, an implementation of data host will provide a onBind and onReset
  * methods that you can use to react to new data.
  */
-interface DataHost {
+interface StateHost {
 
     /**
      * Tha data bundle of this object. Only accessible when [isBound] is true.
      *
      * Use [State], [StateOptional] and [StateNative] to access data in the bundle.
      */
-    val data: Bundle
+    val state: Bundle
 
     /**
-     * Indicates whether this [DataHost] is bound to a data bundle.
+     * Indicates whether this [StateHost] is bound to a data bundle.
      */
     val isBound: Boolean
 
     /**
      * [ObservableBinder] monitoring the changes of the [isBound] state.
      *
-     * Note that this includes rebounds. So the observables associated with
-     * [dataBound] will be terminated every time the data object changes.
+     * Note that this does not include rebounds! So the observables associated with
+     * [stateBound] will be terminated only when the data object is no longer available,
+     * not every time it changes.
      */
-    val dataBound: ObservableBinder
+    val stateBound: ObservableBinder
 
     /**
-     * Bind new [data] [Bundle] to this object. If some data Bundle is already
+     * Bind new [state] [Bundle] to this object. If some data Bundle is already
      * bound to it, it will be unbound and returned. Otherwise, this method returns null.
      */
-    fun bindData(data: Bundle): Bundle?
+    fun bindState(state: Bundle): Bundle?
 
     /**
-     * Remove the [data] [Bundle] from this object and return it.
+     * Remove the [state] [Bundle] from this object and return it.
      *
      * If no data is bound, this method will return null.
      */
-    fun resetData(): Bundle?
+    fun resetState(): Bundle?
 
 }

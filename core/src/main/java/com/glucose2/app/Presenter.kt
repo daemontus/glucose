@@ -2,200 +2,131 @@ package com.glucose2.app
 
 import android.view.View
 import android.view.ViewGroup
-import com.glucose.app.presenter.LifecycleException
+import com.glucose2.app.component.LifecycleHost
 import com.glucose2.app.event.EventHost
 import com.glucose2.app.event.EventHostDelegate
 import com.glucose2.app.transaction.TransactionHost
+import com.glucose2.rx.ObservableBinder
 import rx.Subscription
 import rx.subscriptions.CompositeSubscription
 import java.util.*
 
-interface HolderFactory {
-    fun <T: Holder> obtain(clazz: Class<T>): T
-    fun recycle(holder: Holder)
-}
-
-interface PresenterHost : HolderFactory, TransactionHost {
-
-
-
-}
-
-internal open class Presenter(
+open class Presenter(
         view: View,
-        host: PresenterHost,
-        private val eventHost: EventHostDelegate = EventHostDelegate()
-) : Holder(view, host), EventHost by eventHost, HolderGroup, LifecycleHost<Presenter> {
+        host: ComponentHost
+) : AbstractComponent(view, host), TransactionHost by host {
 
+    override fun onDestroy() {
+        super.onDestroy()
+        started.performDestroy()
+        resumed.performDestroy()
+    }
 
+/* ========== Holder Group ============ */
 
-    /* ========== Holder Group ============ */
+    private val _children = ArrayList<Component>()
 
-    private val attached = ArrayList<Holder>()
+    val children: Sequence<Component>
+            get() = _children.asSequence()
 
-    override val children: Sequence<Holder>
-            get() = attached.asSequence()
-
-    override val childrenRecursive: Sequence<Holder>
-            get() = attached.asSequence().flatMap {
-                if (it is Presenter) {
-                    sequenceOf(it) + it.childrenRecursive
-                } else sequenceOf(it)
+    val childrenRecursive: Sequence<Component>
+            get() = _children.asSequence().flatMap {
+                sequenceOf(it) + if (it is ComponentGroup) it.childrenRecursive else emptySequence()
             }
 
-    override fun <T : Holder> attach(holder: T, location: InsertionPoint): T {
+    override fun <T : Component> attach(component: T, location: InsertionPoint): T {
+        // decrease lifecycle if necessary
+        if (component is Presenter) {
+            if (component.isResumed && !this.isResumed) component.performPause()
+            if (component.isStarted && !this.isStarted) component.performStop()
+        }
+        // remove from old position if necessary
+        if (component.view.parent != null) {
+            (component.view.parent as ViewGroup).removeView(component.view)
+        }
         // insert into view hierarchy
-        location.invoke(view as ViewGroup, holder)
-        if (!view.hasTransitiveChild(holder.view)) {
-            throw LifecycleException("$holder view has not been inserted properly into $this")
+        val parent = location.invoke(view as ViewGroup, component)
+        if (!view.hasTransitiveChild(parent) || !parent.hasTransitiveChild(component.view)) {
+            lifecycleError("$component view has not been inserted properly into $this")
         }
         // move holder into attached state
-        attached.add(holder)
+        _children.add(component)
+
         holder.performAttach(this)
         return holder
     }
 
-    override fun <T : Holder> detach(holder: T): T {
-        if (holder !in attached || holder.parent != this) {
-            throw LifecycleException("$holder not attached to $this (attached: $attached)")
+    fun <T : AbstractComponent> detach(component: T): T {
+        if (component !in _children) {
+            lifecycleError("$component not attached to $this (children: $attached)")
         }
-        if (!view.hasTransitiveChild(holder.view)) {
-            throw LifecycleException("$holder is not in the view tree of this presenter. Has it been moved?")
+        if (!view.hasTransitiveChild(component.view)) {
+            lifecycleError("$component is not in the view tree of $this. Has it been moved?")
+        }
+        if (component is Presenter) {
+            if (component.isResumed) component.performPause()
+            if (component.isStarted) component.performStop()
         }
         // move holder into detached state
-        holder.performDetach()
-        attached.remove(holder)
-        // remove holder from view hierarchy
-        (holder.view.parent as ViewGroup).removeView(holder.view)
-        return holder
+        component.performDetach()
+        _children.remove(component)
+        // remove component from view hierarchy
+        (component.view.parent as ViewGroup).removeView(component.view)
+        return component
     }
-
-
 
     /* ========== Lifecycle Host ============ */
 
-    private val whileStarted = CompositeSubscription()
-    private val whileResumed = CompositeSubscription()
+    val started: ObservableBinder = ObservableBinder()
+    val resumed: ObservableBinder = ObservableBinder()
 
-    private var _started = false
-    private var _resumed = false
-
-    override val isStarted: Boolean
-        get() = _started
-
-    override val isResumed: Boolean
-        get() = _resumed
+    val isStarted: Boolean = started.isActive
+    val isResumed: Boolean = resumed.isActive
 
     internal fun performStart() {
-        if (!isAttached) {
-            throw LifecycleException("Starting presenter $this which is not attached.")
-        }
-        if (isStarted) {
-            throw LifecycleException("Presenter $this is already started.")
-        }
+        if (!isAttached) lifecycleError("Starting presenter [$this] which is not attached.")
+        if (isStarted) lifecycleError("Presenter [$this] is already started.")
         onStart()
-        if (!isStarted) {
-            throw LifecycleException("Super.onStart not called properly in $this.")
-        }
+        if (!isStarted) lifecycleError("Super.onStart not called properly in [$this].")
     }
 
     internal fun performResume() {
-        if (!isStarted) {
-            throw LifecycleException("Resuming presenter $this which is not started.")
-        }
-        if (isResumed) {
-            throw LifecycleException("Presenter $this is already resumed.")
-        }
+        if (!isStarted) lifecycleError("Resuming presenter [$this] which is not started.")
+        if (isResumed) lifecycleError("Presenter [$this] is already resumed.")
         onResume()
-        if (!isResumed) {
-            throw LifecycleException("Super.onResume not called properly in $this.")
-        }
+        if (!isResumed) lifecycleError("Super.onResume not called properly in [$this].")
     }
 
     internal fun performPause() {
-        if (!isResumed) {
-            throw LifecycleException("Pausing presenter $this which is not resumed.")
-        }
+        if (!isResumed) lifecycleError("Pausing presenter [$this] which is not resumed.")
         onPause()
-        if (isResumed) {
-            throw LifecycleException("Super.onPause not called properly in $this.")
-        }
+        if (isResumed) lifecycleError("Super.onPause not called properly in [$this].")
     }
 
     internal fun performStop() {
-        if (!isStarted) {
-            throw LifecycleException("Stopping presenter $this which is not started.")
-        }
+        if (!isStarted) lifecycleError("Stopping presenter [$this] which is not started.")
         onStop()
-        if (isStarted) {
-            throw LifecycleException("Super.onStop not called properly in $this.")
-        }
+        if (isStarted) lifecycleError("Super.onStop not called properly in [$this].")
     }
 
     protected open fun onStart() {
-        _started = true
-        attached.forEach { if (it is Presenter) it.performStart() }
+        started.performStart()
+        _children.forEach { if (it is Presenter) it.performStart() }
     }
 
     protected open fun onResume() {
-        _resumed = true
-        attached.forEach { if (it is Presenter) it.performResume() }
+        resumed.performStart()
+        _children.forEach { if (it is Presenter) it.performResume() }
     }
 
     protected open fun onPause() {
-        attached.forEach { if (it is Presenter) it.performPause() }
-        whileResumed.clear()
-        _resumed = false
+        _children.forEach { if (it is Presenter) it.performPause() }
+        resumed.performStop()
     }
 
     protected open fun onStop() {
-        attached.forEach { if (it is Presenter) it.performStop() }
-        whileStarted.clear()
-        _started = false
-    }
-
-    override fun Subscription.whileResumed(): Subscription {
-        if (isResumed) {
-            whileResumed.add(this)
-        } else {
-            unsubscribe()
-        }
-        return this
-    }
-
-    override fun Subscription.whileStarted(): Subscription {
-        if (isStarted) {
-            whileStarted.add(this)
-        } else {
-            unsubscribe()
-        }
-        return this
-    }
-
-    override fun performAttach(parent: Presenter) {
-        super.performAttach(parent)
-        if (parent.isStarted) this.performStart()
-        if (parent.isResumed) this.performResume()
-    }
-
-    override fun performDetach() {
-        if (this.isResumed) this.performResume()
-        if (this.isStarted) this.performStart()
-        super.performDetach()
-    }
-
-    /* ========== Holder overrides ============ */
-
-    override fun onAttach(parent: Presenter) {
-        super.onAttach(parent)
-        this.eventHost.onAttach(parent.eventHost).whileAttached()
-    }
-
-    override fun performReset() {
-        // ensure proper lifecycle semantics
-        if (isResumed) performPause()
-        if (isStarted) performStop()
-        super.performReset()
+        _children.forEach { if (it is Presenter) it.performStop() }
+        started.performStop()
     }
 
 }
