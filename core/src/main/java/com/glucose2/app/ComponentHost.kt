@@ -2,14 +2,14 @@ package com.glucose2.app
 
 import com.glucose2.app.transaction.TransactionHost
 
-interface ComponentHost : HolderFactory, TransactionHost {
+interface ComponentHost : ComponentFactory, TransactionHost {
 
 
 
 }
 
 
-interface HolderFactory {
-    fun <T: Holder> obtain(clazz: Class<T>): T
-    fun recycle(holder: Holder)
+interface ComponentFactory {
+    fun <T: Component> obtain(clazz: Class<T>): T
+    fun recycle(holder: Component)
 }

@@ -57,7 +57,7 @@ typealias InsertionPoint = ViewGroup.(Component) -> ViewGroup
  * @throws [IllegalArgumentException] when given parent is not a part of the tree to which
  * we are inserting.
  */
-fun ComponentGroup.into(parent: ViewGroup): InsertionPoint = { holder ->
+fun Presenter.into(parent: ViewGroup): InsertionPoint = { holder ->
     if (!this.hasTransitiveChild(parent)) {
         throw IllegalArgumentException("$parent is not in the subtree defined by $this")
     }
@@ -71,7 +71,7 @@ fun ComponentGroup.into(parent: ViewGroup): InsertionPoint = { holder ->
  * @throws [IllegalArgumentException] when given parent id is not a present in the tree to which
  * we are inserting.
  */
-fun ComponentGroup.into(@IdRes parentId: Int): InsertionPoint = { holder ->
+fun Presenter.into(@IdRes parentId: Int): InsertionPoint = { holder ->
     val parent = this.findViewById(parentId) as? ViewGroup
             ?: throw IllegalArgumentException("$parentId is not in the subtree defined by $this")
     parent.addView(holder.view)

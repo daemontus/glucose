@@ -1,20 +1,14 @@
 package com.glucose2.app
 
+import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
-import com.glucose2.app.component.LifecycleHost
-import com.glucose2.app.event.EventHost
-import com.glucose2.app.event.EventHostDelegate
-import com.glucose2.app.transaction.TransactionHost
 import com.glucose2.rx.ObservableBinder
-import rx.Subscription
-import rx.subscriptions.CompositeSubscription
-import java.util.*
 
 open class Presenter(
         view: View,
-        host: ComponentHost
-) : AbstractComponent(view, host), TransactionHost by host {
+        host: ComponentHost,
+        group: (Presenter) -> ComponentGroup
+) : Component(view, host) {
 
     override fun onDestroy() {
         super.onDestroy()
@@ -22,60 +16,39 @@ open class Presenter(
         resumed.performDestroy()
     }
 
-/* ========== Holder Group ============ */
+    override fun detach() {
+        if (isResumed) performPause()
+        if (isStarted) performStop()
+        super.detach()
+    }
 
-    private val _children = ArrayList<Component>()
+    /* ========== Component Group ============ */
+
+    private val group = group(this)
 
     val children: Sequence<Component>
-            get() = _children.asSequence()
+        get() = group.children
 
     val childrenRecursive: Sequence<Component>
-            get() = _children.asSequence().flatMap {
-                sequenceOf(it) + if (it is ComponentGroup) it.childrenRecursive else emptySequence()
-            }
+        get() = group.childrenRecursive
 
-    override fun <T : Component> attach(component: T, location: InsertionPoint): T {
-        // decrease lifecycle if necessary
-        if (component is Presenter) {
-            if (component.isResumed && !this.isResumed) component.performPause()
-            if (component.isStarted && !this.isStarted) component.performStop()
-        }
-        // remove from old position if necessary
-        if (component.view.parent != null) {
-            (component.view.parent as ViewGroup).removeView(component.view)
-        }
-        // insert into view hierarchy
-        val parent = location.invoke(view as ViewGroup, component)
-        if (!view.hasTransitiveChild(parent) || !parent.hasTransitiveChild(component.view)) {
-            lifecycleError("$component view has not been inserted properly into $this")
-        }
-        // move holder into attached state
-        _children.add(component)
-
-        holder.performAttach(this)
-        return holder
+    internal fun afterChildAttach(component: Component) {
+        group.afterChildAttach(component)
     }
 
-    fun <T : AbstractComponent> detach(component: T): T {
-        if (component !in _children) {
-            lifecycleError("$component not attached to $this (children: $attached)")
-        }
-        if (!view.hasTransitiveChild(component.view)) {
-            lifecycleError("$component is not in the view tree of $this. Has it been moved?")
-        }
-        if (component is Presenter) {
-            if (component.isResumed) component.performPause()
-            if (component.isStarted) component.performStop()
-        }
-        // move holder into detached state
-        component.performDetach()
-        _children.remove(component)
-        // remove component from view hierarchy
-        (component.view.parent as ViewGroup).removeView(component.view)
-        return component
+    internal fun beforeChildDetach(component: Component) {
+        group.beforeChildDetach(component)
     }
 
-    /* ========== Lifecycle Host ============ */
+    internal fun addChild(component: Component) {
+        group.removeChild(component)
+    }
+
+    internal fun removeChild(component: Component) {
+        group.removeChild(component)
+    }
+
+    /* ========== Advanced lifecycle ============ */
 
     val started: ObservableBinder = ObservableBinder()
     val resumed: ObservableBinder = ObservableBinder()
@@ -111,22 +84,38 @@ open class Presenter(
 
     protected open fun onStart() {
         started.performStart()
-        _children.forEach { if (it is Presenter) it.performStart() }
+        group.performStart()
     }
 
     protected open fun onResume() {
         resumed.performStart()
-        _children.forEach { if (it is Presenter) it.performResume() }
+        group.performResume()
     }
 
     protected open fun onPause() {
-        _children.forEach { if (it is Presenter) it.performPause() }
+        group.performPause()
         resumed.performStop()
     }
 
     protected open fun onStop() {
-        _children.forEach { if (it is Presenter) it.performStop() }
+        group.performStop()
         started.performStop()
+    }
+
+    /* ========== State preservation ========== */
+
+    override fun saveInstanceState(): Bundle? {
+        val state = super.saveInstanceState()
+        val groupState = group.saveInstanceState()
+        return when {
+            state == null && groupState == null -> null
+            state == null -> groupState
+            groupState == null -> state
+            else -> {
+                state.putAll(groupState)
+                state
+            }
+        }
     }
 
 }
