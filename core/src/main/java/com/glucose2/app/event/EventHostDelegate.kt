@@ -2,15 +2,12 @@ package com.glucose2.app.event
 
 import com.glucose2.app.lifecycleError
 import rx.Observable
-import rx.Scheduler
 import rx.Subscription
 import rx.subjects.PublishSubject
 import rx.subscriptions.CompositeSubscription
 import java.util.*
 
-internal class EventHostDelegate(
-        private val scheduler: Scheduler = EventScheduler
-) : EventHost {
+internal class EventHostDelegate : EventHost {
 
     // Subjects responsible for handling local event processing
     private val actions = PublishSubject.create<Action>()
@@ -25,33 +22,33 @@ internal class EventHostDelegate(
     // Observable of events that are not consumed by this EventHost.
     // Parent EventHost should connect to this stream.
     private val eventsBridge: Observable<Event>
-            = events.observeOn(scheduler)
+            = events.observeOn(EventScheduler)
             .filter { event -> consumedEvents.all { !it.isInstance(event) } }
 
     // Observable of actions that are not consumed by this EventHost.
     // Child EventHosts should connect to this stream.
     private val actionBridge: Observable<Action>
-            = actions.observeOn(scheduler)
+            = actions.observeOn(EventScheduler)
             .filter { action -> consumedActions.all { !it.isInstance(action) } }
 
 
     override fun <T : Event> observeEvent(type: Class<T>): Observable<T>
-            = events.observeOn(scheduler)
+            = events.observeOn(EventScheduler)
             .filter { event -> type.isInstance(event) }
             .cast(type)
 
     override fun <T : Event> consumeEvent(type: Class<T>): Observable<T>
-            = observeEvent(type).observeOn(scheduler)
+            = observeEvent(type).observeOn(EventScheduler)
             .doOnSubscribe { consumedEvents.add(type) }
             .doOnUnsubscribe { consumedEvents.remove(type) }
 
     override fun <T : Action> observeAction(type: Class<T>): Observable<T>
-            = actions.observeOn(scheduler)
+            = actions.observeOn(EventScheduler)
             .filter { action -> type.isInstance(action) }
             .cast(type)
 
     override fun <T : Action> consumeAction(type: Class<T>): Observable<T>
-            = observeAction(type).observeOn(scheduler)
+            = observeAction(type).observeOn(EventScheduler)
             .doOnSubscribe { consumedActions.add(type) }
             .doOnUnsubscribe { consumedActions.remove(type) }
 

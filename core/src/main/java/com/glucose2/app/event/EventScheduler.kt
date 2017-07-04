@@ -1,9 +1,8 @@
 package com.glucose2.app.event
 
-import android.os.Looper
+import android.os.HandlerThread
 import rx.Scheduler
 import rx.android.schedulers.AndroidSchedulers
-import java.util.concurrent.atomic.AtomicReference
 
 
 /**
@@ -13,18 +12,19 @@ import java.util.concurrent.atomic.AtomicReference
  */
 object EventScheduler : Scheduler() {
 
-    private val looperScheduler = run {
-        val looper = AtomicReference<Looper?>(null)
-        Thread {
-            Looper.prepare()
-            looper.set(Looper.myLooper())
-            Looper.loop()
-        }
-        while (looper.get() == null) { /* do nothing */ }
-        AndroidSchedulers.from(looper.get()!!)
-    }
+    // accessible for testing purposes
+    internal var thread = HandlerThread("event-scheduler").apply { start() }
+
+    private var looperScheduler = AndroidSchedulers.from(thread.looper)
 
     override fun createWorker(): Worker = looperScheduler.createWorker()
 
     override fun now(): Long = looperScheduler.now()
+
+    // also for testing
+    internal fun reset() {
+        thread = HandlerThread("event-scheduler").apply { start() }
+        looperScheduler = AndroidSchedulers.from(thread.looper)
+    }
+
 }
