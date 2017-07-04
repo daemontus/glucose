@@ -1,10 +1,10 @@
 package com.glucose2.rx
 
 import com.glucose2.app.LifecycleException
-import rx.Observable
-import rx.Subscription
-import rx.subjects.BehaviorSubject
-import rx.subscriptions.CompositeSubscription
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
+import io.reactivex.subjects.BehaviorSubject
 
 /**
  * ObservableBinder is a class which allows you to hook observables
@@ -26,8 +26,8 @@ class ObservableBinder internal constructor() {
     var isActive: Boolean = false
         private set
 
-    private val subscription: CompositeSubscription = CompositeSubscription()
-    private val isActiveSubject: BehaviorSubject<Boolean> = BehaviorSubject.create(false)
+    private val subscription: CompositeDisposable = CompositeDisposable()
+    private val isActiveSubject: BehaviorSubject<Boolean> = BehaviorSubject.createDefault(false)
 
     /**
      * Bind a subscription to this binder.
@@ -36,9 +36,9 @@ class ObservableBinder internal constructor() {
      * Otherwise, the subscription will be unsubscribed once it becomes inactive.
      *
      */
-    fun bindSubscription(subscription: Subscription) {
+    fun bindDisposable(subscription: Disposable) {
         if (!isActive) {
-            subscription.unsubscribe()
+            subscription.dispose()
         } else {
             this.subscription.add(subscription)
         }
@@ -52,7 +52,7 @@ class ObservableBinder internal constructor() {
      *
      */
     fun <T> addObservable(observable: Observable<T>): Observable<T>
-            = observable.takeUntil(isActiveSubject.filter { it == false })
+            = observable.takeUntil(isActiveSubject.filter { !it })
 
     internal fun start() {
         if (isActive) {
@@ -71,8 +71,9 @@ class ObservableBinder internal constructor() {
         isActiveSubject.onNext(false)
     }
 
+    // TODO: Look around and ensure this is called
     internal fun destroy() {
-        subscription.unsubscribe()
+        subscription.dispose()
     }
 
 }

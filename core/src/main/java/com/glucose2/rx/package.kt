@@ -1,6 +1,6 @@
 package com.glucose2.rx
 
-import rx.Observable
+import io.reactivex.Observable
 
 /**
  * Create an observable which will emit onComplete event as soon as any of the given
@@ -15,7 +15,7 @@ fun <T> Observable<T>.observeWhile(vararg binders: ObservableBinder): Observable
 }
 
 /**
- * Create a [SubscribeProxy] which ensures that a subscription is created only
+ * Create a [DisposeProxy] which ensures that a subscription is created only
  * if all given binders are in the active state. Furthermore, as soon as any binder
  * enters inactive state, the subscription is unsubscribed.
  *
@@ -23,6 +23,6 @@ fun <T> Observable<T>.observeWhile(vararg binders: ObservableBinder): Observable
  * any binder is inactive. If you wish to terminate the observable using the
  * onCompleted event instead, see [observeWhile].
  */
-fun <T> Observable<T>.subscribeWhile(vararg binders: ObservableBinder): SubscribeProxy<T> {
-    return SubscribeProxy(this, binders)
+fun <T> Observable<T>.subscribeWhile(vararg binders: ObservableBinder): DisposeProxy<T> {
+    return DisposeProxy(this, binders)
 }

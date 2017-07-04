@@ -7,7 +7,7 @@ import com.github.daemontus.asOk
 import com.glucose2.bundle.booleanBundler
 import com.glucose2.bundle.intBundler
 import com.glucose2.state.StateNative
-import rx.Observable
+import io.reactivex.Observable
 import java.util.concurrent.atomic.AtomicInteger
 
 // reduce the amount of object allocations per each component by reusing stateless delegates.

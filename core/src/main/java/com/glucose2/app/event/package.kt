@@ -1,6 +1,8 @@
 package com.glucose2.app.event
 
-import rx.Observable
+import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.Executors
 
 /**
  * Common supertype of objects that are passed upwards through the component tree.
@@ -44,3 +46,5 @@ inline fun <reified T: Action> EventHost.observeAction(): Observable<T>
  */
 inline fun <reified T: Action> EventHost.consumeAction(): Observable<T>
         = this.consumeAction(T::class.java)
+
+val EventScheduler = Schedulers.from(Executors.newSingleThreadExecutor())

@@ -1,7 +1,7 @@
 package com.glucose2.app.event
 
 import android.support.annotation.AnyThread
-import rx.Observable
+import io.reactivex.Observable
 
 
 /**

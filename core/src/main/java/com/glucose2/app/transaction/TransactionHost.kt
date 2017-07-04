@@ -1,8 +1,8 @@
 package com.glucose2.app.transaction
 
 import android.support.annotation.AnyThread
-import rx.Observable
-import rx.android.schedulers.AndroidSchedulers
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 
 /**
  * TransactionHost is implemented by Glucose components which allow execution of

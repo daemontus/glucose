@@ -1,12 +1,11 @@
 package com.glucose2.rx
 
-import rx.Observable
-import rx.Observer
-import rx.Subscriber
-import rx.Subscription
+import io.reactivex.Observable
+import io.reactivex.disposables.Disposable
+
 
 /**
- * SubscribeProxy is a class which provides safe subscriptions
+ * DisposeProxy is a class which provides safe subscriptions
  * and as such can be only used as the last element in the observable
  * chain.
  *
@@ -19,30 +18,31 @@ import rx.Subscription
  * @see [subscribeWhile]
  * @see [observeWhile]
  */
-class SubscribeProxy<out T> internal constructor(
+class DisposeProxy<out T> internal constructor(
         private val observable: Observable<T>,
         private val binders: Array<out ObservableBinder>
 ) {
 
-    fun subscribe(): Subscription?
+    fun subscribe(): Disposable?
             = checkState { observable.subscribe() }
-    fun subscribe(onNext: (T) -> Unit): Subscription?
+    fun subscribe(onNext: (T) -> Unit): Disposable?
             = checkState { observable.subscribe(onNext) }
-    fun subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit): Subscription?
+    fun subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit): Disposable?
             = checkState { observable.subscribe(onNext, onError) }
     fun subscribe(onNext: (T) -> Unit, onError: (Throwable) -> Unit, onCompleted: () -> Unit)
             = checkState { observable.subscribe(onNext, onError, onCompleted) }
-    fun subscribe(observer: Observer<in T>): Subscription?
-            = checkState { observable.subscribe(observer) }
-    fun subscribe(subscriber: Subscriber<in T>): Subscription?
-            = checkState { observable.subscribe(subscriber) }
+    // TODO: Deal with this shit...
+    //fun subscribe(observer: Observer<in T>): Disposable?
+    //        = checkState { observable.subscribe(observer) }
+    //fun subscribe(subscriber: Disposable<in T>): Disposable?
+    //        = checkState { observable.subscribe(subscriber) }
 
-    private inline fun checkState(subscribe: () -> Subscription): Subscription? {
+    private inline fun checkState(subscribe: () -> Disposable): Disposable? {
         return if (binders.any { !it.isActive }) {
             null
         } else {
             subscribe().also { subscription ->
-                binders.forEach { it.bindSubscription(subscription) }
+                binders.forEach { it.bindDisposable(subscription) }
             }
         }
     }

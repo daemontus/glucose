@@ -2,11 +2,14 @@ package com.glucose2.app.event
 
 import com.github.daemontus.glucose.core.BuildConfig
 import com.glucose2.app.LifecycleException
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.disposables.Disposable
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import rx.Observable
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -35,151 +38,146 @@ class EventHostDelegateTest {
         override fun toString(): String = "B2"
     }
 
-    private fun advanceEvents() {
-        org.robolectric.Shadows.shadowOf(EventScheduler.thread.looper).runToEndOfTasks()
-    }
+    data class A(val tag: String): Action
+    data class E(val tag: String): Event
+    data class AE(val tag: String): Action, Event
 
-    @Test
+    @Test(timeout = 1000)
     fun t01_local_delivery() {
-
-        EventScheduler.reset()
-
         val host = EventHostDelegate()
 
-        val actual = ArrayList<Pair<Any, Any>>()
+        val actual = HashSet<Any>()
+        val barrier = Semaphore(-3)
 
-        host.observeAction<A1>().subscribe { actual.add(A1 to it) }
-        host.consumeAction<A2>().subscribe { actual.add(A2 to it) }
-        host.observeEvent<E1>().subscribe { actual.add(E1 to it) }
-        host.consumeEvent<E2>().subscribe { actual.add(E2 to it) }
+        val observer = object : Observer<Any> {
+            override fun onComplete() { barrier.release() }
+            override fun onError(e: Throwable) { throw e }
+            override fun onNext(it: Any) { synchronized(actual) { actual.add(it) } }
+            override fun onSubscribe(d: Disposable) {}
+        }
 
-        advanceEvents()
-        host.emitAction(A1)
-        advanceEvents()
-        host.emitAction(A2)
-        advanceEvents()
-        host.emitEvent(B2)
-        advanceEvents()
-        host.emitEvent(E2)
-        advanceEvents()
-        host.emitEvent(E1)
-        advanceEvents()
-        host.emitAction(B1)
-        advanceEvents()
-        host.emitEvent(E2)
-        advanceEvents()
-        host.emitAction(A1)
-        advanceEvents()
+        host.observeAction<A>().subscribe(observer)
+        host.consumeAction<AE>().subscribe(observer)
+        host.observeEvent<E>().subscribe(observer)
+        host.consumeEvent<AE>().subscribe(observer)
+
+        host.emitAction(A("1"))
+        host.emitAction(A("2"))
+        host.emitEvent(AE("3"))
+        host.emitEvent(E("4"))
+        host.emitEvent(E("5"))
+        host.emitAction(AE("6"))
+        host.emitEvent(E("7"))
+        host.emitAction(A("8"))
+
+        Thread.sleep(100)
 
         host.destroy()
 
-        advanceEvents()
+        barrier.acquire()
 
-        // the order should be preserved because of the immediate scheduler
-        // the pairs are there to check if we are not mixing receivers
-
-        val expected = listOf(A1, A2, E2, E1, E2, A1).map { it to it }
+        val expected = hashSetOf(A("1"), A("2"), AE("3"), E("4"), E("5"), AE("6"), E("7"), A("8"))
 
         assertEquals(expected, actual)
 
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun t02_remote_action_delivery() {
-
-        EventScheduler.reset()
-
         val parent = EventHostDelegate()
         val child = EventHostDelegate()
 
         child.attach(parent)
 
-        val actual = ArrayList<Pair<Any, Any>>()
+        val actual = HashSet<Any>()
+        val barrier = Semaphore(-1)
 
-        child.observeAction<A1>().subscribe { actual.add(A1 to it) }
-        child.observeAction<A2>().subscribe { actual.add(A2 to it) }
+        val observer = object : Observer<Any> {
+            override fun onComplete() { barrier.release() }
+            override fun onError(e: Throwable) { throw e }
+            override fun onNext(it: Any) { synchronized(actual) { actual.add(it) } }
+            override fun onSubscribe(d: Disposable) {}
+        }
 
-        advanceEvents()
+        child.observeAction<A>().subscribe(observer)
+        child.observeAction<AE>().subscribe(observer)
 
-        parent.emitAction(A1)
-        parent.emitAction(A1)
-        parent.emitAction(A2)
+        parent.emitAction(A("1"))
+        parent.emitAction(A("2"))
+        parent.emitAction(AE("3"))
 
-        advanceEvents()
+        parent.consumeAction<AE>().subscribe()
 
-        parent.consumeAction<A1>().subscribe()
+        parent.emitAction(A("4"))
+        parent.emitEvent(E("5"))
+        parent.emitAction(AE("6"))
+        parent.emitAction(A("7"))
 
-        advanceEvents()
+        child.emitAction(A("8"))
+        child.emitAction(AE("9"))
 
-        parent.emitAction(A1)
-        parent.emitEvent(E1)
-        parent.emitAction(A2)
-        parent.emitAction(A1)
-
-        advanceEvents()
-
-        child.emitAction(A1)
-        child.emitAction(A2)
-
-        advanceEvents()
+        Thread.sleep(100)
 
         child.detach()
         parent.destroy()
         child.destroy()
 
-        advanceEvents()
+        barrier.acquire()
 
-        val expected = listOf(A1, A1, A2, A2, A1, A2).map { it to it }
+        val expected: Set<Any> = hashSetOf(A("1"), A("2"), AE("3"), A("4"), A("7"), A("8"), AE("9"))
 
-        assertEquals<List<Pair<Any, Any>>>(expected, actual)
+        assertEquals(expected, actual)
     }
 
-    @Test
+    @Test(timeout = 1000)
     fun t03_remote_event_delivery() {
-
-        EventScheduler.reset()
-
         val parent = EventHostDelegate()
         val child = EventHostDelegate()
 
         child.attach(parent)
 
-        val actual = ArrayList<Pair<Any, Any>>()
+        val actual = HashSet<Any>()
+        val barrier = Semaphore(-1)
 
-        parent.observeEvent<E1>().subscribe { actual.add(E1 to it) }
-        parent.observeEvent<E2>().subscribe { actual.add(E2 to it) }
+        val observer = object : Observer<Any> {
+            override fun onComplete() { barrier.release() }
+            override fun onError(e: Throwable) { throw e }
+            override fun onNext(it: Any) { synchronized(actual) { actual.add(it) } }
+            override fun onSubscribe(d: Disposable) {}
+        }
 
-        child.emitEvent(E1)
-        child.emitEvent(E1)
-        child.emitEvent(E2)
+        parent.observeEvent<E>().subscribe(observer)
+        parent.observeEvent<AE>().subscribe(observer)
 
-        advanceEvents()
+        child.emitEvent(E("1"))
+        child.emitEvent(E("2"))
+        child.emitEvent(AE("3"))
 
-        child.consumeEvent<E1>().subscribe()
+        child.consumeEvent<AE>().subscribe()
 
-        advanceEvents()
+        child.emitEvent(E("4"))
+        child.emitAction(A("5"))
+        child.emitEvent(AE("6"))
+        child.emitEvent(E("7"))
 
-        child.emitEvent(E1)
-        child.emitAction(A1)
-        child.emitEvent(E2)
-        child.emitEvent(E1)
+        parent.emitEvent(E("8"))
+        parent.emitEvent(AE("9"))
 
-        advanceEvents()
+        Thread.sleep(100)
 
-        parent.emitEvent(E1)
-        parent.emitEvent(E2)
+        child.detach()
+        parent.destroy()
+        child.destroy()
 
-        advanceEvents()
+        barrier.acquire()
 
-        val expected = listOf(E1, E1, E2, E2, E1, E2).map { it to it }
-        assertEquals<List<Pair<Any, Any>>>(expected, actual)
+        val expected: Set<Any> = hashSetOf(E("1"), E("2"), AE("3"), E("4"), E("7"), E("8"), AE("9"))
+
+        assertEquals(expected, actual)
     }
 
     @Test
     fun t04_reattaching() {
-
-        EventScheduler.reset()
-
         val child = EventHostDelegate()
         val parent = EventHostDelegate()
 
@@ -189,31 +187,18 @@ class EventHostDelegateTest {
             child.attach(parent)
         }
 
-
         child.destroy()
         parent.destroy()
-
-        advanceEvents()
     }
 
     @Test
     fun t05_empty_detach() {
-
-        EventScheduler.reset()
-
         val host = EventHostDelegate()
-
         host.detach()
-
-        advanceEvents()
-
     }
 
     @Test
     fun t06_complex_test() {
-
-        EventScheduler.reset()
-
         val child11 = EventHostDelegate()
         val child12 = EventHostDelegate()
         val child2 = EventHostDelegate()
@@ -223,16 +208,17 @@ class EventHostDelegateTest {
         child12.attach(parent)
         child2.attach(child11)
 
-        val actualParent = ArrayList<Any>()
-        val actual11 = ArrayList<Any>()
-        val actual12 = ArrayList<Any>()
-        val actual2 = ArrayList<Any>()
+        val actualParent = HashSet<Any>()
+        val actual11 = HashSet<Any>()
+        val actual12 = HashSet<Any>()
+        val actual2 = HashSet<Any>()
 
-        // tunnel B1 through parent
-        parent.consumeEvent<B1>().subscribe { parent.emitAction(B1) }
+        // tunnel through parent
+        parent.consumeEvent<AE>().subscribe { parent.emitAction(it) }
 
-        // tunnel B2 through child11
-        child11.consumeEvent<B2>().subscribe { child11.emitAction(B2) }
+        // tunnel through child11
+        child11.consumeEvent<AE>().subscribe { child11.emitAction(it) }
+
 
         // hook everything to the lists
         parent.observeEvent<Event>().subscribe { actualParent.add(it) }
@@ -244,50 +230,42 @@ class EventHostDelegateTest {
         child2.observeEvent<Event>().subscribe { actual2.add(it) }
         child2.observeAction<Action>().subscribe { actual2.add(it) }
 
-        advanceEvents()
-
         // basic action/event sending
 
-        child2.emitEvent(E1); advanceEvents()
-        child11.emitEvent(E1); advanceEvents()
-        child12.emitEvent(E1); advanceEvents()
-        parent.emitEvent(E1); advanceEvents()
+        child2.emitEvent(E("1"))
+        child11.emitEvent(E("2"))
+        child12.emitEvent(E("3"))
+        parent.emitEvent(E("4"))
 
-        parent.emitAction(A1); advanceEvents()
-        child11.emitAction(A1); advanceEvents()
-        child12.emitAction(A1); advanceEvents()
-        child2.emitAction(A1); advanceEvents()
+        parent.emitAction(A("5"))
+        child11.emitAction(A("6"))
+        child12.emitAction(A("7"))
+        child2.emitAction(A("8"))
 
         // try tunnelling
+        child12.emitEvent(AE("9"))
+        child2.emitEvent(AE("10"))
 
-        child2.emitEvent(B1); advanceEvents()
-        child2.emitEvent(B2); advanceEvents()
+        Thread.sleep(100)
 
         child2.detach()
         child11.detach()
         child12.detach()
-
-        advanceEvents()
 
         child2.destroy()
         child11.destroy()
         child12.destroy()
         parent.destroy()
 
-        advanceEvents()
-
-        assertEquals(listOf(E1, E1, E1, E1, A1, B1, B1), actualParent)
-        assertEquals(listOf(E1, E1, A1, A1, B1, B1, B2, B2), actual11)
-        assertEquals(listOf(E1, A1, A1, B1), actual12)
-        assertEquals(listOf(E1, A1, A1, A1, B1, B1, B2, B2), actual2)
+        assertEquals(setOf(E("1"), E("2"), E("3"), E("4"), A("5"), AE("9")), actualParent)
+        assertEquals(setOf(E("1"), E("2"), A("5"), A("6"), AE("9"), AE("10")), actual11)
+        assertEquals(setOf(E("3"), A("5"), A("7"), AE("9")), actual12)
+        assertEquals(setOf(E("1"), A("5"), A("6"), A("8"), AE("9"), AE("10")), actual2)
 
     }
 
     @Test
     fun t07_scheduler() {
-
-        EventScheduler.reset()
-
         var value = 0
 
         Observable.just(5)
@@ -295,12 +273,7 @@ class EventHostDelegateTest {
                 .delay(10, TimeUnit.MILLISECONDS)
                 .subscribe { value = it }
 
-
-        advanceEvents()
-
         Thread.sleep(100)
-
-        advanceEvents()
 
         assertEquals(5, value)
     }

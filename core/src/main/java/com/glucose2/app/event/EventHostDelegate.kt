@@ -1,10 +1,9 @@
 package com.glucose2.app.event
 
 import com.glucose2.app.lifecycleError
-import rx.Observable
-import rx.Subscription
-import rx.subjects.PublishSubject
-import rx.subscriptions.CompositeSubscription
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 
 internal class EventHostDelegate : EventHost {
@@ -14,7 +13,7 @@ internal class EventHostDelegate : EventHost {
     private val events = PublishSubject.create<Event>()
 
     // Lists that store currently consumed classed.
-    // Thread safety: Lists should be accessed only from the associated scheduler!
+    // Thread safety: Lists should be accessed only from the EventScheduler!
     // We use lists instead of sets because they can handle duplicates safely.
     private val consumedEvents = ArrayList<Class<*>>()
     private val consumedActions = ArrayList<Class<*>>()
@@ -40,7 +39,7 @@ internal class EventHostDelegate : EventHost {
     override fun <T : Event> consumeEvent(type: Class<T>): Observable<T>
             = observeEvent(type).observeOn(EventScheduler)
             .doOnSubscribe { consumedEvents.add(type) }
-            .doOnUnsubscribe { consumedEvents.remove(type) }
+            .doOnDispose { consumedEvents.remove(type) }
 
     override fun <T : Action> observeAction(type: Class<T>): Observable<T>
             = actions.observeOn(EventScheduler)
@@ -50,7 +49,7 @@ internal class EventHostDelegate : EventHost {
     override fun <T : Action> consumeAction(type: Class<T>): Observable<T>
             = observeAction(type).observeOn(EventScheduler)
             .doOnSubscribe { consumedActions.add(type) }
-            .doOnUnsubscribe { consumedActions.remove(type) }
+            .doOnDispose { consumedActions.remove(type) }
 
     override fun emitEvent(event: Event) {
         this.events.onNext(event)
@@ -60,26 +59,26 @@ internal class EventHostDelegate : EventHost {
         this.actions.onNext(action)
     }
 
-    private var parentSubscription: Subscription? = null
+    private var parentSubscription: CompositeDisposable? = null
 
     internal fun attach(parent: EventHostDelegate) {
         if(parentSubscription != null) lifecycleError("This EvenHost is already attached.")
-        parentSubscription = CompositeSubscription().apply {
+        parentSubscription = CompositeDisposable().apply {
             // while subscribed, pass all events from bridge to the parent presenter
-            add(eventsBridge.subscribe(parent.events))
+            add(eventsBridge.subscribe(parent.events::onNext))
             // while subscribed, receive all actions from bridge from the parent presenter
-            add(parent.actionBridge.subscribe(actions))
+            add(parent.actionBridge.subscribe(actions::onNext))
         }
     }
 
     internal fun detach() {
-        parentSubscription?.unsubscribe()
+        parentSubscription?.dispose()
         parentSubscription = null
     }
 
     internal fun destroy() {
-        this.events.onCompleted()
-        this.actions.onCompleted()
+        this.events.onComplete()
+        this.actions.onComplete()
     }
 
 }
