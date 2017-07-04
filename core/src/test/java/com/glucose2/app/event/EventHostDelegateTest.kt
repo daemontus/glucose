@@ -18,26 +18,6 @@ import kotlin.test.assertFailsWith
 @Config(constants = BuildConfig::class, sdk = intArrayOf(21))
 class EventHostDelegateTest {
 
-    object A1 : Action {
-        override fun toString(): String = "A1"
-    }
-    object A2 : Action {
-        override fun toString(): String = "A2"
-    }
-    object E1 : Event {
-        override fun toString(): String = "E1"
-    }
-    object E2 : Event {
-        override fun toString(): String = "E2"
-    }
-
-    object B1 : Action, Event {
-        override fun toString(): String = "B1"
-    }
-    object B2 : Action, Event {
-        override fun toString(): String = "B2"
-    }
-
     data class A(val tag: String): Action
     data class E(val tag: String): Event
     data class AE(val tag: String): Action, Event
@@ -106,15 +86,19 @@ class EventHostDelegateTest {
         parent.emitAction(A("2"))
         parent.emitAction(AE("3"))
 
-        parent.consumeAction<AE>().subscribe()
+        val c = parent.consumeAction<AE>().subscribe()
 
         parent.emitAction(A("4"))
         parent.emitEvent(E("5"))
         parent.emitAction(AE("6"))
         parent.emitAction(A("7"))
 
+        Thread.sleep(100)
+
+        c.dispose()
+
         child.emitAction(A("8"))
-        child.emitAction(AE("9"))
+        parent.emitAction(AE("9"))
 
         Thread.sleep(100)
 
@@ -153,15 +137,19 @@ class EventHostDelegateTest {
         child.emitEvent(E("2"))
         child.emitEvent(AE("3"))
 
-        child.consumeEvent<AE>().subscribe()
+        val c = child.consumeEvent<AE>().subscribe()
 
         child.emitEvent(E("4"))
         child.emitAction(A("5"))
         child.emitEvent(AE("6"))
         child.emitEvent(E("7"))
 
+        Thread.sleep(100)
+
+        c.dispose()
+
         parent.emitEvent(E("8"))
-        parent.emitEvent(AE("9"))
+        child.emitEvent(AE("9"))
 
         Thread.sleep(100)
 
@@ -246,7 +234,7 @@ class EventHostDelegateTest {
         child12.emitEvent(AE("9"))
         child2.emitEvent(AE("10"))
 
-        Thread.sleep(100)
+        Thread.sleep(200)
 
         child2.detach()
         child11.detach()
