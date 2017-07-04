@@ -1,6 +1,6 @@
 package com.glucose2.app.transaction
 
-import com.glucose.util.asResult
+import com.glucose2.app.asResult
 import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers

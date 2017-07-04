@@ -33,7 +33,7 @@
 	
 	\node[text width=20em](onDestroy) at (4.5, 1) { \textbf{onDestroy}: \textbf{Final} lifecycle \textbf{callback}. At this point even the View and PresenterHost references are no longer valid. };
 	
-	\node[text width=20em, align=right](onAttach) at (-4.5, -1.5) { \textbf{onAttach}: Presenter is connected with the \textbf{state bundle}. State properties become accessible, but Presenter is not part of the View hierarchy yet. };
+	\node[text width=20em, align=right](attach) at (-4.5, -1.5) { \textbf{attach}: Presenter is connected with the \textbf{state bundle}. State properties become accessible, but Presenter is not part of the View hierarchy yet. };
 	
 	\node[text width=20em](onDetach) at (4.5, -1.5) { \textbf{onDetach}: The state bundle is detached. \textbf{State properties become inaccessible}. If \emph{canBeReused} is false, the Presenter is \mbox{immediately} destroyed. };
 	

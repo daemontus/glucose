@@ -54,7 +54,7 @@ class ObservableBinder internal constructor() {
     fun <T> addObservable(observable: Observable<T>): Observable<T>
             = observable.takeUntil(isActiveSubject.filter { it == false })
 
-    internal fun performStart() {
+    internal fun start() {
         if (isActive) {
             throw LifecycleException("Starting active ObservableBinder.")
         }
@@ -62,7 +62,7 @@ class ObservableBinder internal constructor() {
         isActiveSubject.onNext(true)
     }
 
-    internal fun performStop() {
+    internal fun stop() {
         if (!isActive) {
             throw LifecycleException("Stopping inactive ObservableBinder.")
         }
@@ -71,7 +71,7 @@ class ObservableBinder internal constructor() {
         isActiveSubject.onNext(false)
     }
 
-    internal fun performDestroy() {
+    internal fun destroy() {
         subscription.unsubscribe()
     }
 

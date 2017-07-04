@@ -1,11 +1,14 @@
 package com.glucose2.app
 
-import android.support.annotation.IdRes
 import android.view.View
-import android.view.ViewGroup
+import com.github.daemontus.Result
+import com.github.daemontus.asError
+import com.github.daemontus.asOk
 import com.glucose2.bundle.booleanBundler
 import com.glucose2.bundle.intBundler
 import com.glucose2.state.StateNative
+import rx.Observable
+import java.util.concurrent.atomic.AtomicInteger
 
 // reduce the amount of object allocations per each component by reusing stateless delegates.
 internal val ID_DELEGATE = StateNative(View.NO_ID, intBundler)
@@ -20,60 +23,29 @@ class LifecycleException(message: String) : Exception(message)
 
 internal fun lifecycleError(message: String): Nothing = throw LifecycleException(message)
 
-/**
- * Check if given view resides somewhere in the view hierarchy rooted
- * in target view.
- *
- * Performance note: Don't use this in performance critical tasks, since it
- * has to traverse the whole in the worst case.
- */
-internal fun View.hasTransitiveChild(view: View): Boolean {
-    var parent: View? = view
-    while (parent != null && parent != this) {
-        parent = parent.parent as? View
-    }
-    return parent == this
-}
-/**
- * This type alias represents a lambda function that can be used to insert a [Holder]
- * into the view hierarchy.
- *
- * The target [ViewGroup] is the root of the view tree to which the holder can
- * be placed. Furthermore, the function receives a holder instance that should be
- * inserted.
- *
- * Using this information, the function should determine a proper place to insert
- * the holder and then do so. (optionally, it can also perform some other
- * necessary related actions on the view hierarchy)
- *
- * Finally, it should return the actual [ViewGroup] where the holder has been inserted.
- * This is mainly for validation purposes.
- */
-typealias InsertionPoint = ViewGroup.(Component) -> ViewGroup
+
+//Provide a unique ID storage
+private val nextViewId = AtomicInteger(1)
 
 /**
- * Create a [InsertionPoint] from an existing view.
- *
- * @throws [IllegalArgumentException] when given parent is not a part of the tree to which
- * we are inserting.
+ * Creates a new synthetic ID that should be unique compared to all previously generated IDs
+ * (assuming an overflow does not occur) and compared to all ID resources.
  */
-fun Presenter.into(parent: ViewGroup): InsertionPoint = { holder ->
-    if (!this.hasTransitiveChild(parent)) {
-        throw IllegalArgumentException("$parent is not in the subtree defined by $this")
+fun newSyntheticId(): Int {
+    while (true) {  //we have to repeat until the atomic compare passes
+        val result = nextViewId.get()
+        // aapt-generated IDs have the high byte nonzero; clamp to the range under that.
+        var newValue = result + 1
+        if (newValue > 0x00FFFFFF) newValue = 1 // Roll over to 1, not 0.
+        if (nextViewId.compareAndSet(result, newValue)) {
+            return result
+        }
     }
-    parent.addView(holder.view)
-    parent
 }
 
 /**
- * Create a [InsertionPoint] from an existing ID resource.
- *
- * @throws [IllegalArgumentException] when given parent id is not a present in the tree to which
- * we are inserting.
+ * Create an observable that will not throw an error, instead it will propagate it in form of
+ * result object.
  */
-fun Presenter.into(@IdRes parentId: Int): InsertionPoint = { holder ->
-    val parent = this.findViewById(parentId) as? ViewGroup
-            ?: throw IllegalArgumentException("$parentId is not in the subtree defined by $this")
-    parent.addView(holder.view)
-    parent
-}
+fun <R> Observable<R>.asResult(): Observable<Result<R, Throwable>>
+        = this.map { it.asOk<R, Throwable>() }.onErrorReturn { it.asError() }
