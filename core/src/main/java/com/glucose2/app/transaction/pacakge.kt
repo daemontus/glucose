@@ -1,6 +1,8 @@
 package com.glucose2.app.transaction
 
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.Executors
 
 
 /**
@@ -20,3 +22,8 @@ class PrematureTerminationException(message: String) : RuntimeException(message)
  */
 fun <T> Observable<T>.asTransaction(host: TransactionHost): Observable<T>
     = host.submit(this)
+
+/**
+ * Scheduler used to run the transaction pipeline.
+ */
+val TransactionScheduler = Schedulers.from(Executors.newSingleThreadExecutor())

@@ -19,7 +19,7 @@ internal val TRUE_DELEGATE = StateNative(true, booleanBundler)
  * by the lifecycle restrictions, such as accessing state of a component
  * that does not have any bound.
  */
-class LifecycleException(message: String) : Exception(message)
+class LifecycleException(message: String) : RuntimeException(message)
 
 internal fun lifecycleError(message: String): Nothing = throw LifecycleException(message)
 

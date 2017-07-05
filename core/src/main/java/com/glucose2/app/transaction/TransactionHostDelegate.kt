@@ -36,7 +36,7 @@ internal class TransactionHostDelegate : TransactionHost {
 
         // We need the observeOn to break the call stack if it's to deep.
         // (f.e. when destroying with full queue)
-        return proxy.observeOn(Schedulers.single()).doOnSubscribe {
+        return proxy.observeOn(TransactionScheduler).doOnSubscribe {
             // Subject ensures this runs only once for each transaction.
             synchronized(this) {
                 if (pending.size >= maxCapacity) {

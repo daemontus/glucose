@@ -47,4 +47,7 @@ inline fun <reified T: Action> EventHost.observeAction(): Observable<T>
 inline fun <reified T: Action> EventHost.consumeAction(): Observable<T>
         = this.consumeAction(T::class.java)
 
+/**
+ * Scheduler used to run the event pipeline.
+ */
 val EventScheduler = Schedulers.from(Executors.newSingleThreadExecutor())
