@@ -1,7 +1,7 @@
 package com.github.daemontus.glucose.demo.domain
 
 import com.github.daemontus.glucose.demo.data.*
-import rx.Observable
+import io.reactivex.Observable
 import java.util.*
 
 class ShowRepository {

@@ -1,18 +1,5 @@
 package com.glucose.app
 
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
-import android.content.res.Configuration
-import android.os.Bundle
-import android.support.v4.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import com.glucose.app.PresenterFragment.Companion.ROOT_PRESENTER_ARGS_KEY
-import com.glucose.app.PresenterFragment.Companion.ROOT_PRESENTER_CLASS_KEY
-import com.glucose.app.presenter.LifecycleException
-
 
 /**
  * A Fragment implementation which provides a basic context for planting a viable
@@ -47,7 +34,7 @@ import com.glucose.app.presenter.LifecycleException
  * be saved into the bundle in [onSaveInstanceState], just make sure it's not lost).
  * 3. If the fragment is used as a nested fragment, you have to make sure activity results and
  * permission results are delivered to that fragment.
- */
+ *//*
 open class PresenterFragment(
         private var rootPresenter: Class<out Presenter>? = null,
         private var rootArguments: Bundle? = null
@@ -137,4 +124,4 @@ open class PresenterFragment(
     fun onTrimMemory(level: Int) {
         presenterContext?.onTrimMemory(level)
     }
-}
+}*/

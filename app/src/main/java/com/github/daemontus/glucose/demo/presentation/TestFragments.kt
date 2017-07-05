@@ -1,14 +1,6 @@
 package com.github.daemontus.glucose.demo.presentation
 
-import android.os.Bundle
-import android.support.v4.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import com.github.daemontus.glucose.demo.R
-import com.glucose.app.PresenterFragment
-
+/*
 class SimpleFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -21,4 +13,4 @@ class SimpleFragment : Fragment() {
 
 class NestedPresenterTree : PresenterFragment() {
 
-}
+}*/

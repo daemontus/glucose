@@ -1,13 +1,6 @@
 package com.github.daemontus.glucose.demo.presentation
 
-import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.view.ViewGroup
-import android.widget.TextView
-import com.github.daemontus.glucose.demo.R
-import com.glucose.app.*
-import com.glucose.app.presenter.*
-
+/*
 class EpisodeDetailPresenter(context: PresenterHost, parent: ViewGroup?)
     : PresenterGroup(context, R.layout.presenter_episode_detail, parent) {
 
@@ -77,4 +70,4 @@ class SimpleFragmentPresenter(host: PresenterHost, @Suppress("UNUSED_PARAMETER")
 
 class NestedFragmentPresenter(host: PresenterHost, @Suppress("UNUSED_PARAMETER") parent: ViewGroup?) : FragmentPresenter(
         host, (host.activity as AppCompatActivity).supportFragmentManager
-)
+)*/

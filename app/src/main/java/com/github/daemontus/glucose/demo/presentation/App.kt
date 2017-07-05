@@ -1,7 +1,7 @@
 package com.github.daemontus.glucose.demo.presentation
 
+import android.app.Activity
 import android.app.Application
-import com.glucose.app.RootCompatActivity
 import timber.log.Timber
 
 class App : Application() {
@@ -11,4 +11,4 @@ class App : Application() {
     }
 }
 
-class PresenterActivity : RootCompatActivity(RootPresenter::class.java)
+class PresenterActivity : Activity()//: RootCompatActivity(RootPresenter::class.java)

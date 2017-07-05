@@ -55,5 +55,5 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile 'com.jakewharton.timber:timber:4.3.0'
     compile 'com.github.daemontus:android-constrained-widgets:1.2.2@aar'
-    compile 'com.jakewharton.rxbinding:rxbinding-kotlin:0.4.0'
+    //compile 'com.jakewharton.rxbinding:rxbinding-kotlin:0.4.0'
 }

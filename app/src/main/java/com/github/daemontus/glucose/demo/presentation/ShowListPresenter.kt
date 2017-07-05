@@ -1,26 +1,6 @@
 package com.github.daemontus.glucose.demo.presentation
 
-import android.content.Context
-import android.os.Bundle
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
-import com.github.daemontus.glucose.demo.R
-import com.github.daemontus.glucose.demo.data.Show
-import com.github.daemontus.glucose.demo.domain.ShowRepository
-import com.glucose.app.Presenter
-import com.glucose.app.PresenterDelegate
-import com.glucose.app.PresenterHost
-import com.glucose.app.presenter.findView
-import com.jakewharton.rxbinding.view.clicks
-import rx.Observer
-import rx.android.schedulers.AndroidSchedulers
-import rx.subjects.PublishSubject
-
+/*
 class ShowListPresenter(context: PresenterHost, parent: ViewGroup?)
     : Presenter(context, R.layout.presenter_show_list, parent) {
 
@@ -76,4 +56,4 @@ class ShowListPresenter(context: PresenterHost, parent: ViewGroup?)
             }
         }
     }
-}
+}*/

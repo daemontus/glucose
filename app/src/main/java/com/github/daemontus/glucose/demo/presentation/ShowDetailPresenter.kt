@@ -1,23 +1,6 @@
 package com.github.daemontus.glucose.demo.presentation
 
-import android.os.Bundle
-import android.support.design.widget.TabLayout
-import android.support.v4.view.PagerAdapter
-import android.support.v4.view.ViewPager
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
-import com.github.daemontus.glucose.demo.R
-import com.github.daemontus.glucose.demo.data.Series
-import com.github.daemontus.glucose.demo.data.Show
-import com.github.daemontus.glucose.demo.domain.ShowRepository
-import com.glucose.app.Presenter
-import com.glucose.app.PresenterDelegate
-import com.glucose.app.PresenterGroup
-import com.glucose.app.PresenterHost
-import com.glucose.app.presenter.*
-import rx.android.schedulers.AndroidSchedulers
-
+/*
 class ShowDetailPresenter(context: PresenterHost, parent: ViewGroup?) : PresenterGroup(context, R.layout.presenter_show_detail, parent) {
 
     val showId: Long by NativeState(-1, longBundler)
@@ -92,4 +75,4 @@ class ShowDetailPresenter(context: PresenterHost, parent: ViewGroup?) : Presente
         override fun getCount(): Int = series.size
 
     }
-}
+}*/

@@ -1,8 +1,8 @@
 package com.github.daemontus.glucose.demo.presentation.util
 
 import android.view.ViewPropertyAnimator
-import rx.Observable
-import rx.subjects.UnicastSubject
+import io.reactivex.Observable
+import io.reactivex.subjects.UnicastSubject
 
 object Duration {
     val ENTER_FAST = 115L

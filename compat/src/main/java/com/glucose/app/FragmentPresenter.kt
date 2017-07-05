@@ -1,13 +1,5 @@
 package com.glucose.app
 
-import android.os.Bundle
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentActivity
-import android.support.v4.app.FragmentManager
-import android.widget.FrameLayout
-import com.glucose.app.presenter.*
-import com.glucose.util.newSyntheticId
-
 /**
  * FragmentPresenter allows you to insert a fully functioning [Fragment]
  * into your presenter hierarchy as a leaf of the presenter tree.
@@ -29,7 +21,7 @@ import com.glucose.util.newSyntheticId
  *
  * To configure the presenter, use [fragmentClass], [fragmentArguments] and
  * possibly also [fragmentState].
- */
+ *//*
 open class FragmentPresenter(
         host: PresenterHost,
         private val fragmentManager: FragmentManager = (host.activity as FragmentActivity).supportFragmentManager
@@ -83,4 +75,4 @@ open class FragmentPresenter(
         fragment = null
         super.onDetach()
     }
-}
+}*/

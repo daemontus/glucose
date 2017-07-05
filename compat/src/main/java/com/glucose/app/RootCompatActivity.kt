@@ -1,16 +1,8 @@
 package com.glucose.app
 
-import android.annotation.TargetApi
-import android.content.Intent
-import android.content.res.Configuration
-import android.os.Build
-import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import com.glucose.app.presenter.LifecycleException
-
 /**
  * An activity that is connected to a [PresenterDelegate] and has exactly one root [Presenter].
- */
+ *//*
 abstract class RootCompatActivity(
         rootPresenter: Class<out Presenter>,
         rootArguments: Bundle = Bundle()
@@ -89,4 +81,4 @@ abstract class RootCompatActivity(
         presenterHost.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 }
-
+*/
