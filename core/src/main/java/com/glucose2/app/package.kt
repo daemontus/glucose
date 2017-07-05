@@ -73,3 +73,13 @@ val Presenter.isStarted
  */
 val Presenter.isResumed
     get() = this.resumed.isActive
+
+internal fun wrapForGroup(presenter: Presenter): ComponentGroup.Parent = object : ComponentGroup.Parent {
+    override fun registerChild(child: Component) {
+        presenter.registerChild(child)
+    }
+    override fun unregisterChild(child: Component) {
+        presenter.unregisterChild(child)
+    }
+    override val factory: ComponentFactory = presenter.host.factory
+}

@@ -39,21 +39,15 @@ abstract class ComponentGroup<in IP> internal constructor(
 ) : StateHost {
 
     internal interface Parent {
+        val factory: ComponentFactory
         fun registerChild(child: Component)
         fun unregisterChild(child: Component)
     }
 
-    constructor(host: Presenter) : this(object : Parent {
-        override fun registerChild(child: Component) {
-            host.registerChild(child)
-        }
-        override fun unregisterChild(child: Component) {
-            host.unregisterChild(child)
-        }
-    })
+    constructor(host: Presenter) : this(wrapForGroup(host))
 
     private var _state: Bundle? = null
-    override val state: Bundle
+    override final val state: Bundle
         get() = _state ?: lifecycleError("ComponentGroup $this currently has no state.")
 
     /**
@@ -131,30 +125,30 @@ abstract class ComponentGroup<in IP> internal constructor(
      * [Component.canChangeConfiguration] set to false here.
      */
     @CallSuper
-    abstract fun configurationChange(newConfig: Configuration)
+    open fun configurationChange(newConfig: Configuration) = Unit
 
     /**
      * Called when the parent presenter becomes started.
      */
     @CallSuper
-    abstract fun start()
+    open fun start() = Unit
 
     /**
      * Called when the parent presenter becomes resumed.
      */
     @CallSuper
-    abstract fun resume()
+    open fun resume() = Unit
 
     /**
      * Called when the parent presenter becomes paused.
      */
     @CallSuper
-    abstract fun pause()
+    open fun pause() = Unit
 
     /**
      * Called when the parent presenter becomes stopped.
      */
     @CallSuper
-    abstract fun stop()
+    open fun stop() = Unit
 
 }

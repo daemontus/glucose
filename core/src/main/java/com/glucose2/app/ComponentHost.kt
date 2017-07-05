@@ -1,15 +1,14 @@
 package com.glucose2.app
 
+import android.app.Activity
 import com.glucose2.app.transaction.TransactionHost
 
-interface ComponentHost : ComponentFactory, TransactionHost {
+interface ComponentHost : TransactionHost {
 
+    val activity: Activity
 
+    val factory: ComponentFactory
 
 }
 
 
-interface ComponentFactory {
-    fun <T: Component> obtain(clazz: Class<T>): T
-    fun recycle(holder: Component)
-}

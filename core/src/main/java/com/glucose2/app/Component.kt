@@ -80,7 +80,14 @@ open class Component private constructor(
      *
      *  Use this property to forcibly recreate parts of your component tree during config changes.
      **/
-    val canChangeConfiguration by TRUE_DELEGATE
+    var canChangeConfiguration = true
+
+    /** Default: true
+     *  If false, the component is never reused (it should still be recycled though).
+     *
+     *  Set to false before recycling a component which had [canChangeConfiguration] set to false.
+     */
+    var canReuse = true
 
     /* ========== Internal state ========== */
 
@@ -109,6 +116,8 @@ open class Component private constructor(
     internal fun unregisterChild(child: Component) {
         child._eventHost.detach()
     }
+
+    internal fun getEventHostDelegate(): EventHostDelegate = _eventHost
 
     /**
      * Attach this component to a [parent] group at the given [location] with the given [state].
