@@ -3,7 +3,6 @@ package com.glucose2.app.transaction
 import com.glucose2.app.asResult
 import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.UnicastSubject
 import java.util.*
 
@@ -50,14 +49,15 @@ internal class TransactionHostDelegate : TransactionHost {
             }
         }.doFinally {
             synchronized(this) {
+                // ENABLE THIS IN CASE OF PROBLEMS
                 // Check if some bad shit didn't go down.
                 // Active transaction can be different only if this transaction was refused!
-                active?.takeIf {
+                /*active?.takeIf {
                     it.second != proxy && proxy.throwable !is CannotExecuteException
                 }?.let { active ->
                     throw IllegalStateException("GLUCOSE INTERNAL ERROR: Active transaction " +
                                                 "is ${active.second}, but $proxy just finished!")
-                }
+                }*/
                 // If we got here, transaction a) is disposed b) is completed c) has error.
                 // In either case, we just want to mark it as done and move to the next one.
                 active = null
