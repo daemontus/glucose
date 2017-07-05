@@ -3,29 +3,34 @@ package com.glucose2.app
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.annotation.CallSuper
+import android.view.View
 import com.glucose2.rx.ObservableBinder
-import com.glucose2.state.StateHost
 
-val Component.isAlive
-    get() = this.alive.isActive
-
-val Component.isAttached
-    get() = this.attached.isActive
-
-val Presenter.isStarted
-    get() = this.started.isActive
-
-val Presenter.isResumed
-    get() = this.resumed.isActive
-
-open class Presenter : Component() {
+/**
+ * Presenter is an extension of [Component] which
+ *  - has full lifecycle, including start/resume/pause/stop
+ *  - can have an associated [ComponentGroup]s to attach child components
+ *
+ *  start()
+ *      -> this.onStart
+ *
+ *  resume()
+ *      -> this.onResume
+ *
+ *  pause()
+ *      -> this.onPause
+ *
+ *  stop()
+ *      -> this.onStop
+ */
+open class Presenter(view: View, host: ComponentHost) : Component(view, host) {
 
     /* ========== Visible state ========== */
 
     /** Active while the presenter is part of a started hierarchy **/
     val started: ObservableBinder = ObservableBinder()
 
-    /** Active while the presenter is part of a resume hierarchy **/
+    /** Active while the presenter is part of a resumed hierarchy **/
     val resumed: ObservableBinder = ObservableBinder()
 
     /* ========== Internal state ========== */
@@ -38,7 +43,7 @@ open class Presenter : Component() {
     /* ========== Driving the lifecycle ========== */
 
     /** Called exactly once during construction to collect all component groups. */
-    protected fun registerComponentGroups(): Map<String, ComponentGroup<*>> = emptyMap()
+    protected open fun registerComponentGroups(): Map<String, ComponentGroup<*>> = emptyMap()
 
     fun start() {
         if (!isAttached) lifecycleError("Starting a detach presenter $this.")
@@ -69,7 +74,7 @@ open class Presenter : Component() {
     override fun saveInstanceState(): Bundle {
         val state = super.saveInstanceState()
         for ((key, group) in _groupMap) {
-            state.putBundle(key, group.saveInstanceState())
+            state.putBundle(":group:$key", group.saveInstanceState())
         }
         return state
     }
@@ -84,7 +89,7 @@ open class Presenter : Component() {
     override fun onAttach(state: Bundle) {
         super.onAttach(state)
         for ((key, group) in _groupMap) {
-            val groupState = state.getBundle(key) ?: Bundle()
+            val groupState = state.getBundle(":group:$key") ?: Bundle()
             group.attach(groupState)
         }
     }
@@ -113,81 +118,15 @@ open class Presenter : Component() {
         started.stop()
     }
 
-    override fun onDetach() {
+    override fun detach(): Bundle {
         if (isResumed) pause()
         if (isStarted) stop()
+        return super.detach()
+    }
+
+    override fun onDetach() {
         _groups.forEach { it.detach() }
         super.onDetach()
     }
-}
-
-abstract class ComponentGroup<in IP> internal constructor(
-        private val host: Parent
-) : StateHost {
-
-    constructor(host: Presenter) : this(object : Parent {
-        override fun registerChild(child: Component) {
-            host.registerChild(child)
-        }
-        override fun unregisterChild(child: Component) {
-            host.unregisterChild(child)
-        }
-    })
-
-    internal interface Parent {
-        fun registerChild(child: Component)
-        fun unregisterChild(child: Component)
-    }
-
-    private var _state: Bundle? = null
-    override val state: Bundle
-        get() = _state ?: lifecycleError("ComponentGroup $this currently has no state.")
-
-    @CallSuper
-    open fun attach(state: Bundle) {
-        _state = state
-    }
-
-    @CallSuper
-    open fun detach(): Bundle {
-        val state = saveInstanceState()
-        _state = null
-        return state
-    }
-
-    open fun saveInstanceState(): Bundle {
-        return Bundle().apply { putAll(state) }
-    }
-
-    @CallSuper
-    open fun addChild(child: Component, location: IP) {
-        host.registerChild(child)
-    }
-
-    @CallSuper
-    open fun attachChild(child: Component) = Unit
-
-    @CallSuper
-    open fun detachChild(child: Component) = Unit
-
-    @CallSuper
-    open fun removeChild(child: Component) {
-        host.unregisterChild(child)
-    }
-
-    @CallSuper
-    abstract fun configurationChange(newConfig: Configuration)
-
-    @CallSuper
-    abstract fun start()
-
-    @CallSuper
-    abstract fun resume()
-
-    @CallSuper
-    abstract fun pause()
-
-    @CallSuper
-    abstract fun stop()
 
 }

@@ -49,3 +49,27 @@ fun newSyntheticId(): Int {
  */
 fun <R> Observable<R>.asResult(): Observable<Result<R, Throwable>>
         = this.map { it.asOk<R, Throwable>() }.onErrorReturn { it.asError() }
+
+/**
+ * see [Component.alive]
+ */
+val Component.isAlive
+    get() = this.alive.isActive
+
+/**
+ * see [Component.attached]
+ */
+val Component.isAttached
+    get() = this.attached.isActive
+
+/**
+ * see [Presenter.started]
+ */
+val Presenter.isStarted
+    get() = this.started.isActive
+
+/**
+ * see [Presenter.resumed]
+ */
+val Presenter.isResumed
+    get() = this.resumed.isActive

@@ -44,20 +44,6 @@ import com.glucose2.view.ViewHost
  *      -> oldParent.detachChild - see reattach
  *      -> this.onDetach - last chance to commit something to state
  *      -> oldParent.removeChild - see reattach
- *
- *  Only for Presenter:
- *
- *  start()
- *      -> this.onStart
- *
- *  resume()
- *      -> this.onResume
- *
- *  pause()
- *      -> this.onPause
- *
- *  stop()
- *      -> this.onStop
  */
 open class Component private constructor(
         override val view: View,
@@ -127,7 +113,7 @@ open class Component private constructor(
     /**
      * Attach this component to a [parent] group at the given [location] with the given [state].
      */
-    fun <IP> attach(parent: ComponentGroup<IP>, location: IP, state: Bundle) {
+    open fun <IP> attach(parent: ComponentGroup<IP>, location: IP, state: Bundle) {
         if (!isAlive) lifecycleError("Attaching a dead component: $this.")
         if (isAttached) lifecycleError("Component $this is already attached. Use reattach instead.")
         parent.addChild(this, location)
@@ -141,7 +127,7 @@ open class Component private constructor(
      * Move this component from current to new [location] under the same or a different [parent].
      * Component [state] remains the same.
      */
-    fun <IP> reattach(parent: ComponentGroup<IP>, location: IP) {
+    open fun <IP> reattach(parent: ComponentGroup<IP>, location: IP) {
         if (!isAttached) lifecycleError("Reattaching a component $this which is not attached.")
         _parent!!.let { oldParent ->
             oldParent.detachChild(this)
@@ -158,7 +144,7 @@ open class Component private constructor(
     /**
      * Detach this component from its current [ComponentGroup] parent, returning the latest [state].
      */
-    fun detach(): Bundle {
+    open fun detach(): Bundle {
         if (!isAttached) lifecycleError("Detaching a component $this which is not attached.")
         _parent!!.let { oldParent ->
             oldParent.detachChild(this)
@@ -174,7 +160,7 @@ open class Component private constructor(
     /**
      * Destroy this component (component must be detached first).
      */
-    fun destroy() {
+    open fun destroy() {
         if (!isAlive) lifecycleError("Component $this is already dead.")
         if (isAttached) lifecycleError("Component $this is attached. Detach it before destroying.")
         this.onDestroy()
