@@ -12,7 +12,7 @@ class ComponentHostDelegate internal constructor(
         rootView: ViewGroup,
         override val activity: Activity,
         override val factory: ComponentFactory,
-        private val rootEventHostDelegate: EventHostDelegate
+        internal val rootEventHostDelegate: EventHostDelegate
 ) : SingletonGroup(rootComponent, rootView,
         object : ComponentGroup.Parent {
             override val factory: ComponentFactory = factory

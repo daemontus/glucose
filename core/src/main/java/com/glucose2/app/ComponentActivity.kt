@@ -27,6 +27,12 @@ abstract class ComponentActivity : Activity() {
         delegate.attach(state)
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        delegate.rootEventHostDelegate.emitAction(PermissionAction(requestCode, permissions, grantResults))
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 

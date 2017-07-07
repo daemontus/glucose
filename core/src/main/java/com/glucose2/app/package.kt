@@ -4,10 +4,12 @@ import android.view.View
 import com.github.daemontus.Result
 import com.github.daemontus.asError
 import com.github.daemontus.asOk
+import com.glucose2.app.event.Action
 import com.glucose2.bundle.booleanBundler
 import com.glucose2.bundle.intBundler
 import com.glucose2.state.StateNative
 import io.reactivex.Observable
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 // reduce the amount of object allocations per each component by reusing stateless delegates.
@@ -82,4 +84,30 @@ internal fun wrapForGroup(presenter: Presenter): ComponentGroup.Parent = object 
         presenter.unregisterChild(child)
     }
     override val factory: ComponentFactory = presenter.host.factory
+}
+
+data class PermissionAction(
+        val requestCode: Int,
+        val permissions: Array<out String>?,
+        val grantResults: IntArray?
+) : Action {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other?.javaClass != javaClass) return false
+
+        other as PermissionAction
+
+        if (requestCode != other.requestCode) return false
+        if (!Arrays.equals(permissions, other.permissions)) return false
+        if (!Arrays.equals(grantResults, other.grantResults)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = requestCode
+        result = 31 * result + Arrays.hashCode(permissions)
+        result = 31 * result + Arrays.hashCode(grantResults)
+        return result
+    }
 }
