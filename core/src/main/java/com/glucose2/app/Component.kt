@@ -1,10 +1,12 @@
 package com.glucose2.app
 
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.annotation.CallSuper
 import android.util.SparseArray
 import android.view.View
+import com.glucose2.ContextHost
 import com.glucose2.app.event.EventHost
 import com.glucose2.app.event.EventHostDelegate
 import com.glucose2.app.transaction.TransactionHost
@@ -49,7 +51,7 @@ open class Component private constructor(
         override val view: View,
         val host: ComponentHost,
         private val _eventHost: EventHostDelegate
-) : StateHost, EventHost by _eventHost, ViewHost, TransactionHost by host {
+) : StateHost, EventHost by _eventHost, ViewHost, TransactionHost by host, ContextHost {
 
     constructor(view: View, host: ComponentHost): this(view, host, EventHostDelegate())
 
@@ -88,6 +90,8 @@ open class Component private constructor(
      *  Set to false before recycling a component which had [canChangeConfiguration] set to false.
      */
     var canReuse = true
+
+    override val context: Context = host.activity
 
     /* ========== Internal state ========== */
 

@@ -1,95 +1,124 @@
 package com.glucose2
 
+import android.content.Context
 import android.content.res.ColorStateList
-import android.content.res.Resources
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.support.annotation.*
-import com.glucose2.app.Component
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
+//TODO: Caching? What about config changes then...
+
+//Note: Resources object is synchronized, so it is safe to use from different threads!
+
+interface ContextHost {
+    val context: Context
+}
+
 interface ResourceGetter<out T : Any> {
-    fun Resources.get(id: Int): T
+    fun Context.get(id: Int): T
 }
 
 private object ColorGetter : ResourceGetter<Int> {
-    override fun Resources.get(id: Int): Int = this.getColor(id)
+    override fun Context.get(id: Int): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.resources.getColor(id, this.theme)
+        } else {
+            @Suppress("DEPRECATION")    // only on SDK 22 or older
+            this.resources.getColor(id)
+        }
+    }
 }
 
 private object ColorStateListGetter : ResourceGetter<ColorStateList> {
-    override fun Resources.get(id: Int): ColorStateList = this.getColorStateList(id)
+    override fun Context.get(id: Int): ColorStateList {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.resources.getColorStateList(id, this.theme)
+        } else {
+            @Suppress("DEPRECATION")    // only on SDK 22 or older
+            this.resources.getColorStateList(id)
+        }
+    }
 }
 
 private object DimensionPixelGetter : ResourceGetter<Int> {
-    override fun Resources.get(id: Int): Int = this.getDimensionPixelSize(id)
+    override fun Context.get(id: Int): Int = this.resources.getDimensionPixelSize(id)
 }
 
 private object DimensionGetter : ResourceGetter<Float> {
-    override fun Resources.get(id: Int): Float = this.getDimension(id)
+    override fun Context.get(id: Int): Float = this.resources.getDimension(id)
 }
 
 private object BooleanGetter : ResourceGetter<Boolean> {
-    override fun Resources.get(id: Int): Boolean = this.getBoolean(id)
+    override fun Context.get(id: Int): Boolean = this.resources.getBoolean(id)
 }
 
 private object DrawableGetter : ResourceGetter<Drawable> {
-    override fun Resources.get(id: Int): Drawable = this.getDrawable(id)
+    override fun Context.get(id: Int): Drawable {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+            this.resources.getDrawable(id, this.theme)
+        } else {
+            @Suppress("DEPRECATION")    // only on SDK 21 or older
+            this.resources.getDrawable(id)
+        }
+    }
 }
 
 private object IntArrayGetter : ResourceGetter<IntArray> {
-    override fun Resources.get(id: Int): IntArray = this.getIntArray(id)
+    override fun Context.get(id: Int): IntArray = this.resources.getIntArray(id)
 }
 
 private object IntGetter : ResourceGetter<Int> {
-    override fun Resources.get(id: Int): Int = this.getInteger(id)
+    override fun Context.get(id: Int): Int = this.resources.getInteger(id)
 }
 
 private object StringGetter : ResourceGetter<String> {
-    override fun Resources.get(id: Int): String = this.getString(id)
+    override fun Context.get(id: Int): String = this.resources.getString(id)
 }
 
 private object StringArrayGetter : ResourceGetter<Array<String>> {
-    override fun Resources.get(id: Int): Array<String> = this.getStringArray(id)
+    override fun Context.get(id: Int): Array<String> = this.resources.getStringArray(id)
 }
 
 
 private class ResourceDelegate<out T : Any>(
         private val id: Int,
         private val getter: ResourceGetter<T>
-) : ReadOnlyProperty<Component, T> {
+) : ReadOnlyProperty<ContextHost, T> {
 
-    override fun getValue(thisRef: Component, property: KProperty<*>): T {
-        return getter.run { thisRef.host.activity.resources.get(id) }
+    override fun getValue(thisRef: ContextHost, property: KProperty<*>): T {
+        return getter.run { thisRef.context.get(id) }
     }
 
 }
 
-fun Component.colorResource(@ColorRes id: Int): ReadOnlyProperty<Component, Int>
+fun ContextHost.colorResource(@ColorRes id: Int): ReadOnlyProperty<ContextHost, Int>
         = ResourceDelegate(id, ColorGetter)
 
-fun Component.dimensionPixelResource(@DimenRes id: Int): ReadOnlyProperty<Component, Int>
+fun ContextHost.dimensionPixelResource(@DimenRes id: Int): ReadOnlyProperty<ContextHost, Int>
         = ResourceDelegate(id, DimensionPixelGetter)
 
-fun Component.dimensionResource(@DimenRes id: Int): ReadOnlyProperty<Component, Float>
+fun ContextHost.dimensionResource(@DimenRes id: Int): ReadOnlyProperty<ContextHost, Float>
         = ResourceDelegate(id, DimensionGetter)
 
-fun Component.colorStateListResource(id: Int): ReadOnlyProperty<Component, ColorStateList>
+fun ContextHost.colorStateListResource(id: Int): ReadOnlyProperty<ContextHost, ColorStateList>
         = ResourceDelegate(id, ColorStateListGetter)
 
-fun Component.booleanResource(@BoolRes id: Int): ReadOnlyProperty<Component, Boolean>
+fun ContextHost.booleanResource(@BoolRes id: Int): ReadOnlyProperty<ContextHost, Boolean>
         = ResourceDelegate(id, BooleanGetter)
 
-fun Component.drawableResource(@DrawableRes id: Int): ReadOnlyProperty<Component, Drawable>
+fun ContextHost.drawableResource(@DrawableRes id: Int): ReadOnlyProperty<ContextHost, Drawable>
         = ResourceDelegate(id, DrawableGetter)
 
-fun Component.intArrayResource(id: Int): ReadOnlyProperty<Component, IntArray>
+fun ContextHost.intArrayResource(id: Int): ReadOnlyProperty<ContextHost, IntArray>
         = ResourceDelegate(id, IntArrayGetter)
 
-fun Component.integerResource(@IntegerRes id: Int): ReadOnlyProperty<Component, Int>
+fun ContextHost.integerResource(@IntegerRes id: Int): ReadOnlyProperty<ContextHost, Int>
         = ResourceDelegate(id, IntGetter)
 
-fun Component.stringResource(@StringRes id: Int): ReadOnlyProperty<Component, String>
+fun ContextHost.stringResource(@StringRes id: Int): ReadOnlyProperty<ContextHost, String>
         = ResourceDelegate(id, StringGetter)
 
-fun Component.stringArrayResource(id: Int): ReadOnlyProperty<Component, Array<String>>
+fun ContextHost.stringArrayResource(id: Int): ReadOnlyProperty<ContextHost, Array<String>>
         = ResourceDelegate(id, StringArrayGetter)
