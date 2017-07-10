@@ -1,8 +1,12 @@
 package com.glucose2.app
 
+import android.app.Activity
+import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.support.annotation.CallSuper
+import com.glucose2.ActivityHost
+import com.glucose2.ContextHost
 import com.glucose2.state.StateHost
 
 /**
@@ -36,15 +40,19 @@ import com.glucose2.state.StateHost
  */
 abstract class ComponentGroup<in IP> internal constructor(
         private val host: Parent
-) : StateHost {
+) : StateHost, ActivityHost {
 
     internal interface Parent {
         val factory: ComponentFactory
+        val context: Activity
         fun registerChild(child: Component)
         fun unregisterChild(child: Component)
     }
 
     constructor(host: Presenter) : this(wrapForGroup(host))
+
+    override val activity: Activity
+        get() = host.context
 
     private var _state: Bundle? = null
     override final val state: Bundle

@@ -1,5 +1,6 @@
 package com.glucose2
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
@@ -17,6 +18,10 @@ import kotlin.reflect.KProperty
 
 interface ContextHost {
     val context: Context
+}
+
+interface ActivityHost {
+    val activity: Activity
 }
 
 interface ResourceGetter<out T : Any> {
