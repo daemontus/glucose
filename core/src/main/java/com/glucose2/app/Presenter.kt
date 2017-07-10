@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.support.annotation.CallSuper
 import android.view.View
 import com.glucose2.rx.ObservableBinder
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 /**
  * Presenter is an extension of [Component] which
@@ -35,10 +37,22 @@ open class Presenter(view: View, host: ComponentHost) : Component(view, host) {
 
     /* ========== Internal state ========== */
 
-    private val _groupMap: Map<String, ComponentGroup<*>> = registerComponentGroups()
+    private val _groupMap = HashMap<String, ComponentGroup<*>>()
 
     private val _groups
         get() = _groupMap.values
+
+    inner class ComponentGroupDelegate<out G : ComponentGroup<*>>(
+            private val group: G
+    ) : ReadOnlyProperty<Presenter, G> {
+
+        operator fun provideDelegate(thisRef: Presenter, property: KProperty<*>): ReadOnlyProperty<Presenter, G> {
+            _groupMap.put(property.name, group)
+            return this
+        }
+
+        override fun getValue(thisRef: Presenter, property: KProperty<*>): G = group
+    }
 
     /* ========== Driving the lifecycle ========== */
 
