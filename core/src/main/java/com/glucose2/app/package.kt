@@ -1,5 +1,6 @@
 package com.glucose2.app
 
+import android.content.Intent
 import android.view.View
 import com.github.daemontus.Result
 import com.github.daemontus.asError
@@ -86,7 +87,7 @@ internal fun wrapForGroup(presenter: Presenter): ComponentGroup.Parent = object 
     override val factory: ComponentFactory = presenter.host.factory
 }
 
-data class PermissionAction(
+data class PermissionResultAction(
         val requestCode: Int,
         val permissions: Array<out String>?,
         val grantResults: IntArray?
@@ -95,7 +96,7 @@ data class PermissionAction(
         if (this === other) return true
         if (other?.javaClass != javaClass) return false
 
-        other as PermissionAction
+        other as PermissionResultAction
 
         if (requestCode != other.requestCode) return false
         if (!Arrays.equals(permissions, other.permissions)) return false
@@ -111,3 +112,9 @@ data class PermissionAction(
         return result
     }
 }
+
+data class ActivityResultAction(
+        val requestCode: Int,
+        val resultCode: Int,
+        val data: Intent?
+) : Action

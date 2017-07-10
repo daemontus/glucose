@@ -1,6 +1,7 @@
 package com.glucose2.app
 
 import android.app.Activity
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup
@@ -29,8 +30,12 @@ abstract class ComponentActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        delegate.rootEventHostDelegate.emitAction(PermissionResultAction(requestCode, permissions, grantResults))
+    }
 
-        delegate.rootEventHostDelegate.emitAction(PermissionAction(requestCode, permissions, grantResults))
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        delegate.rootEventHostDelegate.emitAction(ActivityResultAction(requestCode, resultCode, data))
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
