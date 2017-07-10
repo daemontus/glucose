@@ -15,6 +15,7 @@ class ComponentHostDelegate internal constructor(
         internal val rootEventHostDelegate: EventHostDelegate
 ) : SingletonGroup(rootComponent, rootView,
         object : ComponentGroup.Parent {
+            override val context: Activity = activity
             override val factory: ComponentFactory = factory
             override fun registerChild(child: Component) {
                 child.getEventHostDelegate().attach(rootEventHostDelegate)

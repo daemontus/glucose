@@ -1,5 +1,6 @@
 package com.glucose2.app
 
+import android.app.Activity
 import android.content.Intent
 import android.view.View
 import com.github.daemontus.Result
@@ -78,6 +79,7 @@ val Presenter.isResumed
     get() = this.resumed.isActive
 
 internal fun wrapForGroup(presenter: Presenter): ComponentGroup.Parent = object : ComponentGroup.Parent {
+    override val context: Activity = presenter.host.activity
     override fun registerChild(child: Component) {
         presenter.registerChild(child)
     }
