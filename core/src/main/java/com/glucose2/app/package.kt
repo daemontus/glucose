@@ -118,3 +118,7 @@ data class ActivityResultAction(
         val resultCode: Int,
         val data: Intent?
 ) : Action
+
+data class TrimMemoryAction(
+        val level: Int
+) : Action

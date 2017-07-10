@@ -1,6 +1,7 @@
 package com.glucose2.app
 
 import android.app.Activity
+import android.content.ComponentCallbacks2
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -36,6 +37,16 @@ abstract class ComponentActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         delegate.rootEventHostDelegate.emitAction(ActivityResultAction(requestCode, resultCode, data))
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        delegate.rootEventHostDelegate.emitAction(TrimMemoryAction(level))
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        delegate.rootEventHostDelegate.emitAction(TrimMemoryAction(ComponentCallbacks2.TRIM_MEMORY_COMPLETE))
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
