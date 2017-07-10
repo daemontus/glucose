@@ -7,12 +7,15 @@ import android.support.annotation.CallSuper
 import android.util.SparseArray
 import android.view.View
 import com.glucose2.ContextHost
+import com.glucose2.ResettableLazyDelegate
+import com.glucose2.ResourceGetter
 import com.glucose2.app.event.EventHost
 import com.glucose2.app.event.EventHostDelegate
 import com.glucose2.app.transaction.TransactionHost
 import com.glucose2.rx.ObservableBinder
 import com.glucose2.state.StateHost
 import com.glucose2.view.ViewHost
+import kotlin.properties.ReadOnlyProperty
 
 /**
  * Component
@@ -64,6 +67,10 @@ open class Component private constructor(
         WARNING: The binder is NOT reset during [reattach] **/
     val attached: ObservableBinder
 
+    /** This binder is active while a single configuration is associated with this component.
+        Once the configuration changes, this binder will reset. **/
+    val hasConfiguration: ObservableBinder
+
     /** The state data bundle of this component. When possible, use [State] delegates to
         access this data. **/
     override val state: Bundle
@@ -106,6 +113,7 @@ open class Component private constructor(
     // initialize this whole mess in one place, so that it is easier to reason about correctness.
     init {
         alive = ObservableBinder().apply { this.start() }
+        hasConfiguration = ObservableBinder().apply { this.start() }
         attached = ObservableBinder()
     }
 
@@ -216,7 +224,10 @@ open class Component private constructor(
     }
 
     @CallSuper
-    protected open fun onConfigurationChange(newConfig: Configuration) = Unit
+    protected open fun onConfigurationChange(newConfig: Configuration) {
+        hasConfiguration.stop()
+        hasConfiguration.start()
+    }
 
     @CallSuper
     protected open fun beforeReattach() = Unit
@@ -232,10 +243,29 @@ open class Component private constructor(
 
     @CallSuper
     protected open fun onDestroy() {
+        hasConfiguration.stop()
         this.alive.stop()
         attached.destroy()
+        hasConfiguration.destroy()
         alive.destroy()
         _eventHost.destroy()
     }
+
+    /* ========== Resource delegates ========== */
+
+    private class ResourceDelegate<out T : Any>(
+            private val id: Int,
+            private val getter: ResourceGetter<T>,
+            resetTrigger: ObservableBinder
+    ) : ResettableLazyDelegate<ContextHost, T>(resetTrigger) {
+
+        override fun initializer(thisRef: ContextHost): T {
+            return getter.run { thisRef.context.get(id) }
+        }
+
+    }
+
+    fun <T : Any> resourceDelegate(id: Int, getter: ResourceGetter<T>): ReadOnlyProperty<ContextHost, T>
+            = ResourceDelegate(id, getter, hasConfiguration)
 
 }
